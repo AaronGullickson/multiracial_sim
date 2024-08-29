@@ -10,7 +10,8 @@ packages = c(
   "knitr", # for processing quarto
   "readr","haven", # I/O
   "tidyverse","lubridate","broom", #tidyverse and friends
-  "modelsummary","gt" # for table output
+  "modelsummary","gt", # for table output
+  "devtools" # for installing RSOCSIM
 )
 
 package.check <- lapply(packages, FUN = function(x) {
@@ -19,3 +20,8 @@ package.check <- lapply(packages, FUN = function(x) {
     library(x, character.only = TRUE)
   }
 })
+
+# install rsocsim
+if(!require(rsocsim)) {
+   devtools::install_github("MPIDR/rsocsim")
+}
