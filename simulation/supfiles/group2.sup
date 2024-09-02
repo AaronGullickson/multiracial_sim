@@ -1,0 +1,86 @@
+***************************************************************************
+* Supervisory file for SOCSIM microsimulation for 2 Group test
+***************************************************************************
+
+segments 12  
+input_file presim
+
+marriage_queues 2
+random_father 1
+
+***************************************************************************
+
+* pre-sim 100 years with no exogamy to get stable populations
+duration 1200
+endogamy 1
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+* now sim for 100 years with very low level of exogamy
+duration 1200
+endogamy 0.98
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+* increment 5 years for 10 segments and decrease endogamy each time
+duration 60
+endogamy 0.93
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.88
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.83
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.78
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.73
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.68
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.63
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.63
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.58
+include rates/USAfert2000
+include rates/USAmort2000
+run
+
+duration 60
+endogamy 0.53
+include rates/USAfert2000
+include rates/USAmort2000
+run
