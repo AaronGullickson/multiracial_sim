@@ -50,7 +50,8 @@ presim.opop$pid <- 1:size_opop
 presim.opop$fem <- sample(0:1, nrow(presim.opop), replace = T)
 
 # sample between two groups 
-presim.opop$group <- sample(1:2, nrow(presim.opop), replace = T)
+presim.opop$group <- sample(1:2, nrow(presim.opop), replace = T,
+                            prob = c(0.8, 0.2))
 
 # Add random dates of birth (max age around 70)
 presim.opop$dob <- sample(360:1200, nrow(presim.opop), replace = T)

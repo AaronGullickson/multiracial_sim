@@ -30,9 +30,10 @@ marriages <- mar |>
   select(mid, wpid, hpid, dstart) |>
   left_join(husband) |>
   left_join(wife) |>
+  filter(dstart < 3600) |>
   mutate(year = floor((dstart - 1200) / 12),
          time_period = cut(year, 
-                           breaks = c(0, 50, 150, 160, 170, 180, 190, 200, 210), 
+                           breaks = c(0, 50, 150, 160, 170, 180, 190, 200), 
                            right = FALSE)) |>
   select(mid, year, time_period, hgroup, wgroup)
 
