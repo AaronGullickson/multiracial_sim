@@ -1,5 +1,4 @@
 library(here)
-
 source(here("utils", "check_packages.R"))
 
 base_folder = here("simulation", "sims")
@@ -40,15 +39,9 @@ presim.omar <- data.frame()
 
 # Basic test --------------------------------------------------------------
 
-folder <- create_simulation_folder(simulation_name = "test", 
-                                   basefolder = base_folder)
-supfile <-  create_sup_file(folder)
+dir_delete(here(base_folder, "baseline"))
 
-socsim(folder, supfile, seed)
-
-# Two-Group Test ----------------------------------------------------------
-
-folder <- create_simulation_folder(simulation_name = "group2", 
+folder <- create_simulation_folder(simulation_name = "baseline", 
                                    basefolder = base_folder)
 
 # populate folder
@@ -57,12 +50,10 @@ write.table(presim.opop, here(folder, "presim.opop"),
 write.table(data.frame(), here(folder, "presim.omar"), 
             row.names = F, col.names = F)
 
-dir.create(here(folder, "rates"))
-rate_files <- list.files(here("simulation", "rates"))
-file.copy(here("simulation", "rates", rate_files), 
-          here(folder, "rates", rate_files))
-file.copy(here("simulation", "supfiles", "group2.sup"),
-          here(folder, "group2.sup"))
+#dir_copy(here("simulation", "rates"), here(folder, "rates"))
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "baseline.sup"), 
+          here(folder, "baseline.sup"))
 
-
-socsim(folder, "group2.sup", seed)
+socsim(folder, "baseline.sup", seed)

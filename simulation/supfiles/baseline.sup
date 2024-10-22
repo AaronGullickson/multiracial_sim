@@ -1,0 +1,16 @@
+***************************************************************************
+* Supervisory file for SOCSIM microsimulation for 2 Group test
+***************************************************************************
+
+segments 2  
+input_file presim
+include basic_rates
+
+marriage_queues 1
+
+***************************************************************************
+
+* pre-sim 100 years with no exogamy to get stable populations
+duration 1200
+endogamy 1
+run
