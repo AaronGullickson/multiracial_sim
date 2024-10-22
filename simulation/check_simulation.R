@@ -11,11 +11,6 @@ pop <- read_table(here(base_folder, "result.opop"),
                                 "pop", "nesibm", "nesibp", "lborn", 
                                 "marid", "mstat", "dod", "fmult"))
 
-# have to add the junk variable due to trailing zeroes
-mar <- read_table(here(base_folder, "result.omar"),
-                  col_names = c("mid", "wpid", "hpid", "dstart", "dend",
-                                "rend", "wprior", "hprior", "junk"))
-
 #### Population pyramids ---------------------------------------------------
 
 plot_pop_pyramid <- function(date, age_width = 5) {
@@ -40,7 +35,7 @@ plot_pop_pyramid(3000)
 
 #### Total Population Growth ---------------------------------------------
 
-year_range <- 1200:3000
+year_range <- 1200:3600
 
 total_pop <- map_vec(year_range, function(x) {
   pop |> filter(dob <= x & (dod == 0 | dod > x)) |> nrow()
@@ -55,9 +50,9 @@ tibble(year_range, total_pop) |>
 #### Fertility Rates ------------------------------------------------------
 
 asfr_sim <- rsocsim::estimate_fertility_rates(opop = pop,
-  final_sim_year = 150, #[Jan-Dec]
+  final_sim_year = 200, #[Jan-Dec]
   year_min = 0, # Closed [
-  year_max = 150, # Open )
+  year_max = 200, # Open )
   year_group = 10, 
   age_min_fert = 10, # Closed [
   age_max_fert = 55, # Open )

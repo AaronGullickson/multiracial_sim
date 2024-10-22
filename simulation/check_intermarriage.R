@@ -31,13 +31,20 @@ marriages <- mar |>
   left_join(husband) |>
   left_join(wife) |>
   mutate(year = floor((dstart - 1200) / 12),
-         decade = floor(year / 10) * 10) |>
-  select(mid, year, decade, hgroup, wgroup)
+         time_period = cut(year, 
+                           breaks = c(0, 50, 150, 160, 170, 180, 190, 200, 210), 
+                           right = FALSE)) |>
+  select(mid, year, time_period, hgroup, wgroup)
 
-tab <- table(marriages$hgroup, marriages$wgroup, marriages$decade)
+tab <- table(marriages$hgroup, marriages$wgroup, marriages$time_period)
 
 # according to my paper, pre-civil rights period, this should be in the -12 to 
 # -16 ballpark
 lor <- log((tab[1,2,] * tab[2,1,])/(tab[1,1,] * tab[2,2,]))
 
+enframe(lor[-1], name = "era", value = "lor") |>
+  mutate(era = factor(era, levels = levels(marriages$time_period))) |>
+  ggplot(aes(x = era, y = lor, group = 1))+
+  geom_line(linetype = 2)+
+  geom_point()
 
