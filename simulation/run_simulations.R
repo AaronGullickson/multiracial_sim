@@ -6,6 +6,32 @@ source(here("utils", "check_packages.R"))
 base_folder = here("simulation", "sims")
 seed <- 42
 
+# turn off scientific notation for correct writing out of fertility rates
+options(scipen = 999)
+
+# Functions --------------------------------------------------------------
+
+# this function helps tune the 2000 US fertility rates with a simple 
+# multiplier to get a roughly stationary population
+create_fertility_rates <- function(file, multiplier) {
+  fert <- read_table(here("simulation", "rates", "fertility_rates"), 
+                     col_names = c("age", "not_sure", "rate"),
+                     col_types = cols(age = "i", 
+                                      not_sure = "i",
+                                      rate = "d"),
+                     comment = "*") 
+  # turn into characters to avoid scientific notation
+  fert$rate <- as.character(fert$rate * multiplier)
+  cat("\n\n*** Fertility Rates ***\n\n", file = file, append = TRUE)
+  cat("birth 1 F single 0\n", file = file, append = TRUE)
+  cat("111 0 0\n\n", file = file, append = TRUE)
+  cat("birth 2 F single 0\n", file = file, append = TRUE)
+  cat("111 0 0\n\n", file = file, append = TRUE)
+  cat("birth 1 F married 0\n", file = file, append = TRUE)
+  write_delim(fert, file = file, col_names = FALSE, append =TRUE)
+  cat("\n\nbirth 2 F married 0\n", file = file, append = TRUE)
+  write_delim(fert, file = file, col_names = FALSE, append =TRUE)
+}
 
 # Create starter pop ------------------------------------------------------
 
@@ -26,8 +52,8 @@ presim.opop$fem <- sample(0:1, nrow(presim.opop), replace = T)
 # sample between two groups 
 presim.opop$group <- sample(1:2, nrow(presim.opop), replace = T)
 
-# Add random dates of birth (max age around 50)
-presim.opop$dob <- sample(600:1200, nrow(presim.opop), replace = T)
+# Add random dates of birth (max age around 70)
+presim.opop$dob <- sample(360:1200, nrow(presim.opop), replace = T)
 
 ## Create an empty data frame for presim.omar
 presim.omar <- data.frame()
@@ -52,10 +78,12 @@ write.table(presim.opop, here(folder, "presim.opop"),
 write.table(data.frame(), here(folder, "presim.omar"), 
             row.names = F, col.names = F)
 
-#dir_copy(here("simulation", "rates"), here(folder, "rates"))
 file_copy(here("simulation", "rates", "basic_rates"), 
           here(folder, "basic_rates"))
 file_copy(here("simulation", "supfiles", "baseline.sup"), 
           here(folder, "baseline.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), 1.05)
+
 
 socsim(folder, "baseline.sup", seed)
