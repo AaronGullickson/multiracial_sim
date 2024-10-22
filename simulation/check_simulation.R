@@ -1,3 +1,5 @@
+# Load stuff -------------------------------------------------------------
+
 library(here)
 source(here("utils", "check_packages.R"))
 sim_folder <- "baseline"
@@ -9,7 +11,10 @@ pop <- read_table(here(base_folder, "result.opop"),
                                 "pop", "nesibm", "nesibp", "lborn", 
                                 "marid", "mstat", "dod", "fmult"))
 
-
+# have to add the junk variable due to trailing zeroes
+mar <- read_table(here(base_folder, "result.omar"),
+                  col_names = c("mid", "wpid", "hpid", "dstart", "dend",
+                                "rend", "wprior", "hprior", "junk"))
 
 #### Population pyramids ---------------------------------------------------
 
