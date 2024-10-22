@@ -3,28 +3,26 @@
 * Where X is the proportion who start a marriage search in the interval
 * and Y is the length of the interval in months
 
+* We are basically going to have people start partnering up at birth, ala
+* arranged marriages or something. This may seem odd, but makes sense for our
+* purposes. We want to keep all fertility in the maritality fertility rates so
+* that we can be sure how our endogamy parameters are affecting the results. So
+* by making people partner up well before fertility starts we can ensure that
+* the marital fertility rate is close to the overall fertility rate, making it
+* easier to tune the fertility rates to what we want. We dont really care if 
+* these are proper marriages or just partnerships of some sort. 
 
 marriage 1 F single
-18   0   0.000
-25   0   0.3
-45   0   0.1
-100  0   0.00001
+111   0   0.9
   
 marriage 1 M single
-19   0   0.000
-26   0   0.3
-46   0   0.1
-100  0   0.00001
+111   0   0.9
   
 marriage 1 F widowed
-18   0   0.000
-45   0   0.99
-100  0   0.00001
+111   0   0.9
   
 marriage 1 M widowed
-18   0   0.000
-45   0   0.99
-100  0   0.00001
+111   0   0.9
   
 marriage 1 M divorced
 18   0   0.000
@@ -37,26 +35,16 @@ marriage 1 F divorced
 100  0   0.00001
 
 marriage 2 F single
-18   0   0.000
-25   0   0.3
-45   0   0.1
-100  0   0.00001
+111   0   0.9
   
 marriage 2 M single
-19   0   0.000
-26   0   0.3
-46   0   0.1
-100  0   0.00001
+111   0   0.9
   
 marriage 2 F widowed
-18   0   0.000
-45   0   0.99
-100  0   0.00001
+111   0   0.9
   
 marriage 2 M widowed
-18   0   0.000
-45   0   0.99
-100  0   0.00001
+111   0   0.9
   
 marriage 2 M divorced
 18   0   0.000
