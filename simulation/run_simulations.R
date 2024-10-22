@@ -36,55 +36,183 @@ create_fertility_rates <- function(file, multiplier) {
 # Create starter pop ------------------------------------------------------
 
 # Set size of initial population
-size_opop <-  20000
+size_opop <-  30000
 
 # Create data.frame with 14 columns and nrows = size_opop
-presim.opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
+presim_even.opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
                         c("pid","fem","group","nev","dob","mom","pop",
                           "nesibm","nesibp","lborn","marid","mstat","dod","fmult"))
 
 # Add pid 1:sizeopop
-presim.opop$pid <- 1:size_opop
+presim_even.opop$pid <- 1:size_opop
 
 # Add sex randomly
-presim.opop$fem <- sample(0:1, nrow(presim.opop), replace = T)
-
-# sample between two groups 
-presim.opop$group <- sample(1:2, nrow(presim.opop), replace = T,
-                            prob = c(0.8, 0.2))
+presim_even.opop$fem <- sample(0:1, nrow(presim_even.opop), replace = T)
 
 # Add random dates of birth (max age around 70)
-presim.opop$dob <- sample(360:1200, nrow(presim.opop), replace = T)
+presim_even.opop$dob <- sample(360:1200, nrow(presim_even.opop), replace = T)
+
+# sample between two groups 
+presim_uneven.opop <- presim_highly_uneven.opop <- presim_even.opop
+
+presim_even.opop$group <- sample(1:2, nrow(presim_even.opop), replace = T,
+                            prob = c(0.5, 0.5))
+
+presim_uneven.opop$group <- sample(1:2, nrow(presim_uneven.opop), replace = T,
+                            prob = c(0.75, 0.25))
+
+presim_highly_uneven.opop$group <- sample(1:2, nrow(presim_highly_uneven.opop), replace = T,
+                            prob = c(0.9, 0.1))
 
 ## Create an empty data frame for presim.omar
 presim.omar <- data.frame()
 
-# Write initial population for pre-simulation (without fertility multiplier)
-#write.table(presim.opop, "presim.opop", row.names = F, col.names = F)
+# 2 group even, high -------------------------------------------------------
 
-# Write empty omar for pre-simulation
-#write.table(presim.omar, "presim.omar", row.names = F, col.names = F)
+if(dir_exists(here(base_folder, "group2_even_high"))) {
+  dir_delete(here(base_folder, "group2_even_high"))
+}
 
-
-# Basic test --------------------------------------------------------------
-
-dir_delete(here(base_folder, "baseline"))
-
-folder <- create_simulation_folder(simulation_name = "baseline", 
+folder <- create_simulation_folder(simulation_name = "group2_even_high", 
                                    basefolder = base_folder)
 
 # populate folder
-write.table(presim.opop, here(folder, "presim.opop"), 
+write.table(presim_even.opop, here(folder, "presim.opop"), 
             row.names = F, col.names = F)
 write.table(data.frame(), here(folder, "presim.omar"), 
             row.names = F, col.names = F)
 
 file_copy(here("simulation", "rates", "basic_rates"), 
           here(folder, "basic_rates"))
-file_copy(here("simulation", "supfiles", "baseline.sup"), 
-          here(folder, "baseline.sup"))
+file_copy(here("simulation", "supfiles", "group2_high.sup"), 
+          here(folder, "group2_high.sup"))
 
 create_fertility_rates(here(folder, "basic_rates"), 1.05)
 
 
-socsim(folder, "baseline.sup", seed)
+socsim(folder, "group2_high.sup", seed)
+
+# 2 group even, low -------------------------------------------------------
+
+if(dir_exists(here(base_folder, "group2_even_low"))) {
+  dir_delete(here(base_folder, "group2_even_low"))
+}
+
+folder <- create_simulation_folder(simulation_name = "group2_even_low", 
+                                   basefolder = base_folder)
+
+# populate folder
+write.table(presim_even.opop, here(folder, "presim.opop"), 
+            row.names = F, col.names = F)
+write.table(data.frame(), here(folder, "presim.omar"), 
+            row.names = F, col.names = F)
+
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_low.sup"), 
+          here(folder, "group2_low.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), 1.05)
+
+
+socsim(folder, "group2_low.sup", seed)
+
+# 2 group uneven, high -------------------------------------------------------
+
+if(dir_exists(here(base_folder, "group2_uneven_high"))) {
+  dir_delete(here(base_folder, "group2_uneven_high"))
+}
+
+folder <- create_simulation_folder(simulation_name = "group2_uneven_high", 
+                                   basefolder = base_folder)
+
+# populate folder
+write.table(presim_uneven.opop, here(folder, "presim.opop"), 
+            row.names = F, col.names = F)
+write.table(data.frame(), here(folder, "presim.omar"), 
+            row.names = F, col.names = F)
+
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_high.sup"), 
+          here(folder, "group2_high.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), 1.05)
+
+
+socsim(folder, "group2_high.sup", seed)
+
+# 2 group even, low -------------------------------------------------------
+
+if(dir_exists(here(base_folder, "group2_uneven_low"))) {
+  dir_delete(here(base_folder, "group2_uneven_low"))
+}
+
+folder <- create_simulation_folder(simulation_name = "group2_uneven_low", 
+                                   basefolder = base_folder)
+
+# populate folder
+write.table(presim_uneven.opop, here(folder, "presim.opop"), 
+            row.names = F, col.names = F)
+write.table(data.frame(), here(folder, "presim.omar"), 
+            row.names = F, col.names = F)
+
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_low.sup"), 
+          here(folder, "group2_low.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), 1.05)
+
+
+socsim(folder, "group2_low.sup", seed)
+
+# 2 group uneven, high -------------------------------------------------------
+
+if(dir_exists(here(base_folder, "group2_highly_uneven_high"))) {
+  dir_delete(here(base_folder, "group2_highly_uneven_high"))
+}
+
+folder <- create_simulation_folder(simulation_name = "group2_highly_uneven_high", 
+                                   basefolder = base_folder)
+
+# populate folder
+write.table(presim_highly_uneven.opop, here(folder, "presim.opop"), 
+            row.names = F, col.names = F)
+write.table(data.frame(), here(folder, "presim.omar"), 
+            row.names = F, col.names = F)
+
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_high.sup"), 
+          here(folder, "group2_high.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), 1.05)
+
+
+socsim(folder, "group2_high.sup", seed)
+
+# 2 group even, low -------------------------------------------------------
+
+if(dir_exists(here(base_folder, "group2_highly_uneven_low"))) {
+  dir_delete(here(base_folder, "group2_highly_uneven_low"))
+}
+
+folder <- create_simulation_folder(simulation_name = "group2_highly_uneven_low", 
+                                   basefolder = base_folder)
+
+# populate folder
+write.table(presim_highly_uneven.opop, here(folder, "presim.opop"), 
+            row.names = F, col.names = F)
+write.table(data.frame(), here(folder, "presim.omar"), 
+            row.names = F, col.names = F)
+
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_low.sup"), 
+          here(folder, "group2_low.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), 1.05)
+
+
+socsim(folder, "group2_low.sup", seed)

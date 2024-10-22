@@ -1,5 +1,6 @@
 ***************************************************************************
-* Supervisory file for SOCSIM microsimulation for 2 Group test
+* Supervisory file for SOCSIM microsimulation for 2 Group test with low
+* exogamy
 ***************************************************************************
 
 segments 12
@@ -18,56 +19,56 @@ run
 * sim for 100 years with very low exogamy
 duration 1200
 include basic_rates
-endogamy 0.995
+endogamy 0.999
 run
 
 * increment 5 years for 10 segments and decrease endogamy each time
 duration 60
 include basic_rates
-endogamy 0.98
+endogamy 0.994
 run
 
 duration 60
 include basic_rates
-endogamy 0.97
+endogamy 0.989
 run
 
 duration 60
 include basic_rates
-endogamy 0.96
+endogamy 0.984
 run
 
 duration 60
 include basic_rates
-endogamy 0.95
+endogamy 0.979
 run
 
 duration 60
 include basic_rates
-endogamy 0.94
+endogamy 0.974
 run
 
 duration 60
 include basic_rates
-endogamy 0.93
+endogamy 0.969
 run
 
 duration 60
 include basic_rates
-endogamy 0.92
+endogamy 0.964
 run
 
 duration 60
 include basic_rates
-endogamy 0.91
+endogamy 0.959
 run
 
 duration 60
 include basic_rates
-endogamy 0.90
+endogamy 0.954
 run
 
 duration 60
 include basic_rates
-endogamy 0.89
+endogamy 0.949
 run
