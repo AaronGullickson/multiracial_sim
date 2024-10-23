@@ -49,50 +49,19 @@ pairings <- pop |>
   select(pid, fem, group, dob, dod, mom, dad, mom_group, dad_group) |>
   mutate(intermar = mom_group != dad_group)
 
+# create a function to grab all the next generation of pairings from a 
+# pairing record
 get_next_ancestor_pairings <- function(record) {
-  next_ancestors <- pairings |> 
-    filter(pid %in% record$mom | pid %in% record$dad)
+  next_ancestors <- pairings[c(record$mom, record$dad),]
+  # using the slightly more awkward coding above which depends on 
+  # actual position because the more elegant code below does not 
+  # correctly add people twice when they are duplicated in mom or dad
+  # vector due to inbreeding somewhere in the line. Might be a safer
+  # way to do this as I don't like depending on position.
+  #next_ancestors <- pairings |> 
+  #  filter(pid %in% record$mom | pid %in% record$dad)
   return(next_ancestors)
 }
-
-test <- pop |> filter(pid == 124467)
-
-current_ancestors <- pairings |> filter(pid == test$pid)
-gen <- 1
-current_ancestors$gen <- gen
-ancestors <- current_ancestors
-while(nrow(current_ancestors) > 0) {
-  gen <- gen + 1
-  next_ancestors <- get_next_ancestor_pairings(current_ancestors)
-  next_ancestors$gen <- gen
-  ancestors <- ancestors |> bind_rows(next_ancestors)
-  current_ancestors <- next_ancestors |>
-    filter(!is.na(mom))
-}
-
-table(ancestors$gen)
-
-table(ancestors$intermar, ancestors$gen)
-
-orig_ancestors <- ancestors |>
-  filter(is.na(mom)) |>
-  mutate(ancestry_fraction = 1/(2^(gen-1)),
-         ancestry_group1 = ifelse(group == 1, ancestry_fraction, 0)) |>
-  select(pid, fem, group, gen, starts_with("ancestry_"))
-
-# should sum to 1
-sum(orig_ancestors$ancestry_fraction)
-# FIXME: not working exactly
-
-# ancestry in groups
-sum(orig_ancestors$ancestry_group1)
-1-sum(orig_ancestors$ancestry_group1)
-
-ancestors_intermar <- ancestors |>
-  filter(intermar)
-
-# get most recent generational locus
-ifelse(nrow(ancestors_intermar) == 0, NA, min(ancestors_intermar$gen))
 
 # create a function based on a pid value to collect all ancestors and 
 # calculate summary stats
@@ -129,10 +98,16 @@ get_ancestry_summary <- function(id) {
 
 }
 
-get_ancestry_summary(124469)
+#get_ancestry_summary(124469)
 
-test <- pop[sample(1:nrow(pop), 200, replace = TRUE),]
+# get all non-founders
+descendants <- pop |> filter(!is.na(mom))
 
+# test time and correctness
+test <- descendants[sample(1:nrow(temp), 200, replace = TRUE),]
 system.time(
 x <- map(test$pid, get_ancestry_summary) |>
   bind_rows())
+
+ancestry_summary <- map(pop$pid, get_ancestry_summary) |>
+  bind_rows()
