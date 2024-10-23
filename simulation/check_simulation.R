@@ -2,8 +2,8 @@
 
 library(here)
 source(here("utils", "check_packages.R"))
-sim_folder <- "baseline"
-sim_name <- "sim_results_baseline.sup_42_"
+sim_folder <- "group2_even_low"
+sim_name <- "sim_results_group2_low.sup_42_"
 base_folder = here("simulation", "sims", sim_folder, sim_name)
 
 pop <- read_table(here(base_folder, "result.opop"), 
