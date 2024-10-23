@@ -109,5 +109,27 @@ system.time(
 x <- map(test$pid, get_ancestry_summary) |>
   bind_rows())
 
-ancestry_summary <- map(pop$pid, get_ancestry_summary) |>
+ancestry_summary <- map(descendants$pid, get_ancestry_summary) |>
   bind_rows()
+
+analytical_data <- descendants |>
+  left_join(ancestry_summary) |>
+  mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
+         dob = dob / 12, dod = dod /12) |>
+  select(pid, sex, group, dob, dod, starts_with("ancestry_"), nearest_gen_locus)
+
+ggplot(analytical_data, aes(x = ancestry_group1))+
+  geom_histogram()
+
+ggplot(analytical_data, aes(x = nearest_gen_locus))+
+  geom_histogram()
+
+analytical_data |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  group_by(decade) |>
+  summarize(nearest_gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
+  ggplot(aes(x = decade, y = nearest_gen_locus))+
+  geom_point()+
+  geom_line()
+
+
