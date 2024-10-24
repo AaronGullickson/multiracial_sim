@@ -3,66 +3,111 @@
 * exogamy
 ***************************************************************************
 
-segments 12
+segments 20
 input_file presim
 
 marriage_queues 1
 
 ***************************************************************************
 
-* pre-sim for 200 years with very low exogamy to get stable populations
-duration 2400
-include basic_rates
-endogamy 0.99
-run
-
-* increment 5 years for 10 segments and decrease endogamy each time
+* increment 5 years for 20 segments and decrease endogamy each time
 duration 60
 include basic_rates
-endogamy 0.994
+endogamy 0.985
 run
 
 duration 60
 include basic_rates
-endogamy 0.989
+endogamy 0.98
 run
 
 duration 60
 include basic_rates
-endogamy 0.984
+endogamy 0.975
 run
 
 duration 60
 include basic_rates
-endogamy 0.979
+endogamy 0.97
 run
 
 duration 60
 include basic_rates
-endogamy 0.974
+endogamy 0.965
 run
 
 duration 60
 include basic_rates
-endogamy 0.969
+endogamy 0.96
 run
 
 duration 60
 include basic_rates
-endogamy 0.964
+endogamy 0.96
 run
 
 duration 60
 include basic_rates
-endogamy 0.959
+endogamy 0.955
 run
 
 duration 60
 include basic_rates
-endogamy 0.954
+endogamy 0.95
 run
 
 duration 60
 include basic_rates
-endogamy 0.949
+endogamy 0.945
 run
+
+duration 60
+include basic_rates
+endogamy 0.94
+run
+
+duration 60
+include basic_rates
+endogamy 0.935
+run
+
+duration 60
+include basic_rates
+endogamy 0.93
+run
+
+duration 60
+include basic_rates
+endogamy 0.925
+run
+
+duration 60
+include basic_rates
+endogamy 0.92
+run
+
+duration 60
+include basic_rates
+endogamy 0.915
+run
+
+duration 60
+include basic_rates
+endogamy 0.91
+run
+
+duration 60
+include basic_rates
+endogamy 0.905
+run
+
+duration 60
+include basic_rates
+endogamy 0.90
+run
+
+duration 60
+include basic_rates
+endogamy 0.895
+run
+
