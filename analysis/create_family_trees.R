@@ -1,7 +1,7 @@
 library(here)
 source(here("utils", "check_packages.R"))
-sim_folder <- "group2_even_low"
-sim_name <- "sim_results_group2_low.sup_42_"
+sim_folder <- "group2_even_high"
+sim_name <- "sim_results_group2_high.sup_42_"
 base_folder = here("simulation", "sims", sim_folder, sim_name)
 
 pop <- read_table(here(base_folder, "result.opop"), 
@@ -103,20 +103,19 @@ get_ancestry_summary <- function(id) {
 # get all non-founders
 descendants <- pop |> filter(!is.na(mom))
 
-# test time and correctness
-test <- descendants[sample(1:nrow(temp), 200, replace = TRUE),]
-system.time(
-x <- map(test$pid, get_ancestry_summary) |>
-  bind_rows())
-
 ancestry_summary <- map(descendants$pid, get_ancestry_summary) |>
   bind_rows()
 
 analytical_data <- descendants |>
   left_join(ancestry_summary) |>
   mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
-         dob = dob / 12, dod = dod /12) |>
-  select(pid, sex, group, dob, dod, starts_with("ancestry_"), nearest_gen_locus)
+         dob = dob / 12, 
+         dod = dod /12,
+         mixedness = ifelse(ancestry_group1 >= ancestry_group2,
+                            ancestry_group1, ancestry_group2),
+         biracial = !is.na(nearest_gen_locus) & nearest_gen_locus == 1) |>
+  select(pid, sex, group, dob, dod, starts_with("ancestry_"), 
+         nearest_gen_locus, biracial, mixedness)
 
 ggplot(analytical_data, aes(x = ancestry_group1))+
   geom_histogram()
@@ -132,4 +131,55 @@ analytical_data |>
   geom_point()+
   geom_line()
 
+analytical_data |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  ggplot(aes(x = nearest_gen_locus))+
+  geom_histogram()+
+  facet_wrap(~decade)
 
+fractions <- tibble(nearest_gen_locus = 1:9,
+                    mixedness = 1-1/(2^(1:9)))
+
+actual_fractions <- analytical_data |>
+  group_by(nearest_gen_locus) |>
+  summarize(mixedness = mean(mixedness))
+
+analytical_data |>
+  filter(!is.na(nearest_gen_locus)) |>
+  ggplot(aes(x = nearest_gen_locus, y = mixedness))+
+  scale_x_continuous(breaks = 1:9)+
+  geom_jitter(alpha = 0.1)+
+  geom_point(data = fractions, color = "red", size = 3)+
+  geom_point(data = actual_fractions, color = "blue", size = 3)+
+  theme_bw()
+
+analytical_data |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  group_by(decade) |>
+  summarize(p_biracial = mean(biracial)) |>
+  ggplot(aes(x = decade, y = p_biracial))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  theme_bw()
+
+# first gen as share of multiracial pop
+analytical_data |>
+  filter(!is.na(nearest_gen_locus)) |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  group_by(decade) |>
+  summarize(p_biracial = mean(biracial)) |>
+  ggplot(aes(x = decade, y = p_biracial))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  theme_bw()
+
+# first gen as share of multiracial pop, close up on stable pop
+analytical_data |>
+  #filter(dob > 250 & !is.na(nearest_gen_locus)) |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  group_by(decade) |>
+  summarize(p_biracial = mean(biracial)) |>
+  ggplot(aes(x = decade, y = p_biracial))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  theme_bw()
