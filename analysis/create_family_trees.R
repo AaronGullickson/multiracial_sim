@@ -162,6 +162,31 @@ analytical_data |>
   geom_smooth(se = FALSE)+
   theme_bw()
 
+# get all of the loci as a share of the population
+analytical_data |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  group_by(decade) |>
+  summarize(n = n(),
+            p1 = sum(nearest_gen_locus == 1, na.rm = TRUE)/n,
+            p2 = sum(nearest_gen_locus == 2, na.rm = TRUE)/n,
+            p3 = sum(nearest_gen_locus == 3, na.rm = TRUE)/n,
+            p4plus = sum(nearest_gen_locus >= 4, na.rm = TRUE)/n) |>
+  select(decade, starts_with("p")) |>
+  pivot_longer(cols = starts_with("p"), names_to = "group", values_to = "prop") |>
+  mutate(group = factor(group, levels = c("p1", "p2", "p3", "p4plus"),
+                        labels = c("1st gen (biracial)", "2nd gen", "3rd gen", "4th gen"))) |>
+  filter(decade >= 300) |>
+  ggplot(aes(x = decade+5, y = prop, group = group, color = group))+
+  geom_point(alpha = 0.3)+
+  geom_smooth(se = FALSE, method = "loess", alpha = 0.7)+
+  geom_vline(xintercept = 400, linetype = 2)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth (at decade intervals)", 
+       y = "share of population",
+       color = "generational locus")+
+  theme_bw()
+
+
 # first gen as share of multiracial pop
 analytical_data |>
   filter(!is.na(nearest_gen_locus)) |>
@@ -175,7 +200,7 @@ analytical_data |>
 
 # first gen as share of multiracial pop, close up on stable pop
 analytical_data |>
-  #filter(dob > 250 & !is.na(nearest_gen_locus)) |>
+  filter(dob > 250 & !is.na(nearest_gen_locus)) |>
   mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(p_biracial = mean(biracial)) |>
@@ -183,3 +208,10 @@ analytical_data |>
   geom_point()+
   geom_smooth(se = FALSE)+
   theme_bw()
+
+analytical_data |>
+  filter(!is.na(nearest_gen_locus)) |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  ggplot(aes(x = factor(nearest_gen_locus), y = after_stat(prop),
+             group = decade, fill = decade))+
+  geom_bar(position = "dodge")
