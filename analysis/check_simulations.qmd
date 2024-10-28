@@ -1,0 +1,142 @@
+---
+title: "Check Simulations"
+---
+
+```{r}
+#| label: load-libs-funcs
+library(here)
+source(here("utils", "check_packages.R"))
+source(here("utils", "functions.R"))
+```
+
+```{r}
+#| label: load-data
+sim_folder <- "group2_even_baseline"
+sim_name <- "sim_results_group2_baseline.sup_42_"
+base_folder = here("simulation", "sims", sim_folder, sim_name)
+
+pop_even_base <- read_table(here(base_folder, "result.opop"), 
+                            col_names = c("pid", "fem", "group", "nev", 
+                                          "dob", "mom", "pop", "nesibm", 
+                                          "nesibp", "lborn", "marid", 
+                                          "mstat", "dod", "fmult"))
+
+# have to add the junk variable due to trailing zeroes
+mar_even_base <- read_table(here(base_folder, "result.omar"),
+                            col_names = c("mid", "wpid", "hpid", "dstart", 
+                                          "dend", "rend", "wprior", "hprior", 
+                                          "junk"))
+```
+
+# Basic Demographic Information
+
+## Population Pyramids
+
+Lets start by plotting some population pyramids from the beginning of the time
+period until the end of the time period. 
+
+```{r}
+#| label: fig-pop-pyramid-even-1200
+#| fig-cap: Population pyramid of the even population at beginning of the simulation
+plot_pop_pyramid(pop_even_base, 1200)
+```
+
+```{r}
+#| label: fig-pop-pyramid-even-1800
+#| fig-cap: Population pyramid of the even population at 50 years.
+plot_pop_pyramid(pop_even_base, 1800)
+```
+
+```{r}
+#| label: fig-pop-pyramid-even-4800
+#| fig-cap: Population pyramid of the even population at 300 years.
+plot_pop_pyramid(pop_even_base, 4800)
+```
+
+
+## Total Population Growth
+
+```{r}
+#| label: fig-pop-growth
+#| fig-cap: Overall size of the population from the beginning of the simulation to the end.
+year_range <- 1200:4800
+
+total_pop <- map_vec(year_range, function(x) {
+  pop_even_base |> filter(dob <= x & (dod == 0 | dod > x)) |> nrow()
+})
+
+tibble(year_range, total_pop) |>
+  mutate(year = (year_range - 1200) / 12) |>
+  ggplot(aes(x = year, y = total_pop))+
+  geom_line()+
+  labs(x = "years from start of simulation", y = "population size")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-pop-growth-group
+#| fig-cap: Overall size of the population from the beginning of the simulation to the end, by group.
+total_pop_group <- map(year_range, function(x) {
+  pop_even_base |> filter(dob <= x & (dod == 0 | dod > x)) |> 
+    group_by(group) |>
+    summarize(year = x, n = n())
+}) |>
+  bind_rows()
+
+total_pop_group |>
+  mutate(group = factor(group)) |>
+  ggplot(aes(x = (year - 1200) / 12, y = n, group = group, color = group))+
+  geom_line()+
+  labs(x = "year from start of simulation", y = "population size")+
+  theme_bw()
+```
+
+## Fertility Rates
+
+```{r}
+#| label: calculate-asfr
+asfr_sim <- rsocsim::estimate_fertility_rates(opop = pop_even_base,
+  final_sim_year = 300, #[Jan-Dec]
+  year_min = 0, # Closed [
+  year_max = 300, # Open )
+  year_group = 30, 
+  age_min_fert = 10, # Closed [
+  age_max_fert = 55, # Open )
+  age_group = 5) #[,)
+```
+
+```{r}
+#| label: fig-asfr
+#| fig-cap: Age-specific fertility rates by 30 year interval
+ggplot(asfr_sim, aes(x = age, y = socsim, group = year, color = year))+
+  geom_line()+
+  labs(x = "age", y = "age-specific fertility rate", color = "year interval")+
+  theme_bw()
+```
+
+```{r}
+#| label: tbl-tfr
+#| tbl-cap: Total fertility rate by 30 year interval
+asfr_sim |>
+  group_by(year) |>
+    summarize(tfr = sum(5 * socsim)) |>
+    gt() |>
+    cols_label(year = "Year", tfr = "TFR")
+```
+
+# Intermarriage Patterns
+
+```{r}
+#| label: get-marriages
+marriages_even_base <- get_marriages(pop_even_base, mar_even_base) |>
+  mutate(year = (dstart - 1200) / 12,
+         time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400)))
+```
+
+```{r}
+tab_lor <- calculate_lor(marriages_even_base)
+
+ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
+  geom_line()+
+  geom_point()
+```
