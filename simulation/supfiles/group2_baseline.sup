@@ -13,5 +13,5 @@ marriage_queues 1
 * pre-sim for 300 years with very low exogamy to get stable populations
 duration 3600
 include basic_rates
-endogamy 0.99
+endogamy 0.999
 run
