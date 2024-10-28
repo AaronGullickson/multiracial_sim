@@ -11,7 +11,7 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_folder <- "group2_even_baseline"
+sim_folder <- "group2_uneven_baseline"
 sim_name <- "sim_results_group2_baseline.sup_42_"
 base_folder = here("simulation", "sims", sim_folder, sim_name)
 
@@ -136,6 +136,8 @@ marriages_even_base <- get_marriages(pop_even_base, mar_even_base) |>
 ```
 
 ```{r}
+#| label: fig-exogamy
+#| fig-cap: Log odds ratio of exogamy between groups over time
 tab_lor <- calculate_lor(marriages_even_base)
 
 ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
