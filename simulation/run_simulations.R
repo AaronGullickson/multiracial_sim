@@ -33,6 +33,8 @@ create_fertility_rates <- function(file, multiplier) {
   write_delim(fert, file = file, col_names = FALSE, append =TRUE)
 }
 
+fert_multiplier <- 1.05
+
 # Create starter pop ------------------------------------------------------
 
 # Set size of initial population
@@ -90,7 +92,55 @@ file_copy(here("simulation", "rates", "basic_rates"),
 file_copy(here("simulation", "supfiles", "group2_baseline.sup"), 
           here(folder, "group2_baseline.sup"))
 
-create_fertility_rates(here(folder, "basic_rates"), 1.05)
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
+
+socsim(folder, "group2_baseline.sup", seed)
+
+# 2 group uneven, baseline -------------------------------------------------
+
+if(dir_exists(here(base_folder, "group2_uneven_baseline"))) {
+  dir_delete(here(base_folder, "group2_uneven_baseline"))
+}
+
+folder <- create_simulation_folder(simulation_name = "group2_uneven_baseline", 
+                                   basefolder = base_folder)
+
+# populate folder
+write.table(presim_uneven.opop, here(folder, "presim.opop"), 
+            row.names = F, col.names = F)
+write.table(data.frame(), here(folder, "presim.omar"), 
+            row.names = F, col.names = F)
+
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_baseline.sup"), 
+          here(folder, "group2_baseline.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
+
+socsim(folder, "group2_baseline.sup", seed)
+
+# 2 group highly uneven, baseline --------------------------------------------
+
+if(dir_exists(here(base_folder, "group2_highly_uneven_baseline"))) {
+  dir_delete(here(base_folder, "group2_highly_uneven_baseline"))
+}
+
+folder <- create_simulation_folder(simulation_name = "group2_highly_uneven_baseline", 
+                                   basefolder = base_folder)
+
+# populate folder
+write.table(presim_highly_uneven.opop, here(folder, "presim.opop"), 
+            row.names = F, col.names = F)
+write.table(data.frame(), here(folder, "presim.omar"), 
+            row.names = F, col.names = F)
+
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_baseline.sup"), 
+          here(folder, "group2_baseline.sup"))
+
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
 
 socsim(folder, "group2_baseline.sup", seed)
 
@@ -115,7 +165,7 @@ file_copy(here("simulation", "rates", "basic_rates"),
 file_copy(here("simulation", "supfiles", "group2_high.sup"), 
           here(folder, "group2_high.sup"))
 
-create_fertility_rates(here(folder, "basic_rates"), 1.05)
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
 
 socsim(folder, "group2_high.sup", seed)
 
@@ -140,7 +190,7 @@ file_copy(here("simulation", "rates", "basic_rates"),
 file_copy(here("simulation", "supfiles", "group2_low.sup"), 
           here(folder, "group2_low.sup"))
 
-create_fertility_rates(here(folder, "basic_rates"), 1.05)
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
 
 
 socsim(folder, "group2_low.sup", seed)
