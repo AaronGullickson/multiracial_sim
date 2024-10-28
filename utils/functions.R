@@ -109,9 +109,7 @@ get_next_ancestor_pairings <- function(record, parent_info) {
   return(next_ancestors)
 }
 
-# a function based on a pid value to collect all ancestors and calculate summary 
-# stats
-get_ancestry_summary <- function(id, parent_info) {
+get_all_ancestors <- function(id, parent_info) {
   current_ancestors <- parent_info |> filter(pid == id)
   gen <- 1
   current_ancestors$gen <- gen
@@ -124,7 +122,15 @@ get_ancestry_summary <- function(id, parent_info) {
     current_ancestors <- next_ancestors |>
       filter(!is.na(mom))
   }
+  
+  return(ancestors)
+}
 
+# a function based on a pid value to collect all ancestors and calculate summary 
+# stats
+get_ancestry_summary <- function(id, parent_info) {
+  ancestors <- get_all_ancestors(id, parent_info)
+  
   orig_ancestors <- ancestors |>
     filter(is.na(mom)) |>
     mutate(ancestry_fraction = 1/(2^(gen-1)),
