@@ -28,6 +28,16 @@ mar_even_base <- read_table(here(base_folder, "result.omar"),
                                           "junk"))
 ```
 
+```{r}
+#| label: data-cleaning
+
+pop_even_base <- add_ancestry_info(pop_even_base)
+
+marriages_even_base <- get_marriages(pop_even_base, mar_even_base) |>
+  mutate(year = (dstart - 1200) / 12,
+         time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400)))
+```
+
 # Basic Demographic Information
 
 ## Population Pyramids
@@ -129,13 +139,6 @@ asfr_sim |>
 ## Intermarriage Trends
 
 ```{r}
-#| label: get-marriages
-marriages_even_base <- get_marriages(pop_even_base, mar_even_base) |>
-  mutate(year = (dstart - 1200) / 12,
-         time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400)))
-```
-
-```{r}
 tab_lor <- calculate_lor(marriages_even_base)
 
 ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
@@ -154,13 +157,11 @@ descendants <- pop_even_base |> filter(!is.na(mom))
 ancestry_summary <- map(descendants$pid, get_ancestry_summary, parent_info) |>
   bind_rows()
 
-pop_ancestry <- descendants |>
-  left_join(ancestry_summary) |>
+pop_ancestry <- pop_even_base |>
+  filter(mom > 0) |>
   mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
-         dob = dob / 12, 
-         dod = dod /12,
-         mixedness = ifelse(ancestry_group1 >= ancestry_group2,
-                            ancestry_group1, ancestry_group2)) |>
+         dob = (dob - 1200) / 12, 
+         dod = (dod - 1200) /12) |>
   select(pid, sex, group, dob, dod, starts_with("ancestry_"), 
          nearest_gen_locus, mixedness)
 ```
@@ -169,7 +170,7 @@ pop_ancestry <- descendants |>
 #| label: fig-mean-gen-locus
 #| fig-cap: Mean generational locus of mixing by decade of birth
 pop_ancestry |>
-  mutate(decade = (floor(dob / 10) * 10) - 100) |>
+  mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(nearest_gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
   ggplot(aes(x = decade, y = nearest_gen_locus))+
@@ -183,7 +184,7 @@ pop_ancestry |>
 #| label: fig-mean-mixedness
 #| fig-cap: Mean level of mixedness by decade of birth
 pop_ancestry |>
-  mutate(decade = (floor(dob / 10) * 10) - 100) |>
+  mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(mixedness = mean(mixedness)) |>
   ggplot(aes(x = decade, y = mixedness))+
@@ -196,20 +197,24 @@ pop_ancestry |>
 ```{r}
 #| label: fig-mixedness-locus
 #| fig-cap: Distribution of mixedness by nearest generational locus. Red dots indicate exact fraction if mixing only happened ion the nearest generational locus, while blue dots indicate actual mean of mixedness by generational locus.
-fractions <- tibble(nearest_gen_locus = 1:10,
-                    mixedness = 1-1/(2^(1:10)))
 
-actual_fractions <- pop_ancestry |>
+max_gen <- max(pop_ancestry$nearest_gen_locus, na.rm = TRUE)
+
+fractions <- pop_ancestry |>
+  filter(!is.na(nearest_gen_locus)) |>
   group_by(nearest_gen_locus) |>
-  summarize(mixedness = mean(mixedness))
+  summarize(mixedness_actual = mean(mixedness)) |>
+  ungroup() |>
+  # theoretical mixedness if only one event
+  mutate(mixedness_theoretical = 1-(2^(2*nearest_gen_locus)-2^(nearest_gen_locus+1)+2)/(2^(2*nearest_gen_locus)))
 
 pop_ancestry |>
   filter(!is.na(nearest_gen_locus)) |>
   ggplot(aes(x = nearest_gen_locus, y = mixedness))+
-  scale_x_continuous(breaks = 1:10)+
-  geom_jitter(alpha = 0.1)+
-  geom_point(data = fractions, color = "red", size = 3)+
-  geom_point(data = actual_fractions, color = "blue", size = 3)+
+  scale_x_continuous(breaks = 1:max_gen)+
+  geom_jitter(alpha = 0.01)+
+  geom_point(data = fractions, (aes(y = mixedness_actual)), color = "blue", size = 2)+
+  geom_point(data = fractions, (aes(y = mixedness_theoretical)), color = "red", size = 2)+
   theme_bw()
 ```
 
@@ -217,8 +222,7 @@ pop_ancestry |>
 #| label: fig-nearest-locus-trend
 #| fig-cap: Share of each generational locus over time
 pop_ancestry |>
-  filter(dob > 100) |>
-  mutate(decade = floor(dob / 10) * 10 - 100) |>
+  mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(n = n(),
             punmixed = sum(is.na(nearest_gen_locus)) / n, 
