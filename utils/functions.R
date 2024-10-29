@@ -2,10 +2,15 @@
 
 # Demographic summary functions ---------------------------------------------
 
+get_pop_alive <- function(pop, date) {
+  pop |>
+    filter(dob <= date & (is.na(dod) | dod > date))
+}
+
 # functions shared across scripts are placed here
 plot_pop_pyramid <- function(pop, date, age_width = 5) {
   dat_pyramid <- pop |>
-    filter(dob <= date & (dod == 0 | dod > date)) |>
+    get_pop_alive(date) |>
     mutate(age = floor(date - dob),
            age_group = cut(age, seq(from = 0, 
                                     by = age_width, 

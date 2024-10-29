@@ -104,9 +104,18 @@ run_simulation <- function(sim_name,
       ancestry$ancestry_group2[new_kids$pop]/2
     new_kids$group_mom <- pop$group[new_kids$mom]
     new_kids$group_pop <- pop$group[new_kids$pop]
-    # for now one-drop them
+    # randomly assign
     new_kids <- new_kids |>
-      mutate(group = ifelse(group_mom == 2 | group_pop == 2, 2, 1))
+      mutate(group = case_when(
+        group_mom == 1 & group_pop == 1 ~ 1,
+        group_mom == 2 & group_pop == 2 ~ 2,
+        TRUE ~ 3
+      ))
+    new_kids$group[new_kids$group == 3] <- sample(1:2, replace = TRUE, 
+                                                  size = sum(new_kids$group == 3))
+    # one-drop them
+    #new_kids <- new_kids |>
+    #  mutate(group = ifelse(group_mom == 2 | group_pop == 2, 2, 1))
     pop$group[new_kids$pid] <- new_kids$group
     
     # add this to ancestry data for next generation

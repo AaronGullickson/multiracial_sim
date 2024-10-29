@@ -38,7 +38,7 @@ pop <- pop |>
          mom = ifelse(mom == 0, NA, mom),
          dad = ifelse(pop == 0, NA, pop),
          dob = (dob - 1200) / 12,
-         dod = (dod - 1200) / 12,
+         dod = ifelse(dod == 0, NA, (dod - 1200) / 12),
          founder = is.na(mom) & is.na(dad)) |>
   select(pid, sex, group, founder, dob, dod, mom, dad, 
          ancestry_group1, ancestry_group2)
@@ -68,7 +68,7 @@ plot_pop_pyramid(pop, 50)
 ```{r}
 #| label: fig-pop-pyramid-end
 #| fig-cap: Population pyramid of the even population at 300 years.
-plot_pop_pyramid(pop, 250)
+plot_pop_pyramid(pop, 300)
 ```
 
 
@@ -80,7 +80,7 @@ plot_pop_pyramid(pop, 250)
 year_range <- 0:300
 
 total_pop <- map_vec(year_range, function(x) {
-  pop |> filter(dob <= x & (dod == 0 | dod > x)) |> nrow()
+  pop |> get_pop_alive(x) |> nrow()
 })
 
 tibble(year_range, total_pop) |>
@@ -94,7 +94,8 @@ tibble(year_range, total_pop) |>
 #| label: fig-pop-growth-group
 #| fig-cap: Overall size of the population from the beginning of the simulation to the end, by group.
 total_pop_group <- map(year_range, function(x) {
-  pop_even_base |> filter(dob <= x & (dod == 0 | dod > x)) |> 
+  pop |> 
+    get_pop_alive(x) |> 
     group_by(group) |>
     summarize(year = x, n = n())
 }) |>
