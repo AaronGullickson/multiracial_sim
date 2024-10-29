@@ -109,7 +109,7 @@ total_pop_group <- map(year_range, function(x) {
 
 total_pop_group |>
   mutate(group = factor(group)) |>
-  ggplot(aes(x = (year - 1200) / 12, y = n, group = group, color = group))+
+  ggplot(aes(x = year, y = n, group = group, color = group))+
   geom_line()+
   labs(x = "year from start of simulation", y = "population size")+
   theme_bw()
@@ -262,6 +262,7 @@ pop |>
 #| fig-cap: Share of each generational locus over time
 pop |>
   mutate(decade = floor(dob / 10) * 10) |>
+  filter(decade >= 0) |>
   group_by(decade) |>
   summarize(n = n(),
             punmixed = sum(is.na(nearest_gen_locus)) / n, 
@@ -281,5 +282,26 @@ pop |>
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
        color = "generational locus")+
+  theme_bw()
+```
+
+
+```{r}
+pop |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  filter(decade >= 0) |>
+  group_by(decade, group) |>
+  summarize(n = n(),
+            p_unmixed = sum(is.na(nearest_gen_locus)) / n) |>
+  ungroup() |>
+  mutate(group = factor(group)) |>
+  select(decade, group, p_unmixed) |>
+  ggplot(aes(x = decade, y = p_unmixed, group = group, color = group))+
+  geom_line()+
+  geom_point()+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth (at decade intervals)", 
+       y = "percent unmixed",
+       color = "group")+
   theme_bw()
 ```
