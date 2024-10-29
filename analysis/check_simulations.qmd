@@ -183,6 +183,9 @@ ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
 ```{r}
 #| label: get_ancestry
 #| eval: false
+
+# this just checks to make sure the ancestry data is measured the same by
+# both methods, but is not run by default as it takes a long time.
 parent_info <- get_parent_info(pop)
 descendants <- pop |> filter(!founder)
 ancestry_summary <- map(descendants$pid, get_ancestry_summary, parent_info) |>
