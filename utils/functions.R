@@ -76,30 +76,23 @@ get_marriages <- function(pop, mar) {
 # create a dataset taht gives us pairing information of parents for each 
 # person in the population.
 get_parent_info <- function(pop) {
-  
-  # the zero ids for mom and dad in the data should  be NAs to clearly
-  # identify when we have hit the founder population
-  pop <- pop |>
-    mutate(mom = ifelse(mom == 0, NA, mom),
-          dad = ifelse(dad == 0, NA, dad))
-
 
   # create a dataset that gives us mom and dad information for each current
   # person, based on mom and dad
   moms <- pop |>
-    filter(fem == 1) |>
+    filter(sex == "Female") |>
     select(pid, group) |>
     rename(mom = pid, mom_group = group)
 
   dads <- pop |>
-    filter(fem == 0) |>
+    filter(sex == "Male") |>
     select(pid, group) |>
     rename(dad = pid, dad_group = group)
                                 
   pop |>
     left_join(moms) |>
     left_join(dads) |>
-    select(pid, fem, group, dob, dod, mom, dad, mom_group, dad_group) |>
+    select(pid, sex, group, dob, dod, mom, dad, mom_group, dad_group) |>
     mutate(intermar = mom_group != dad_group)
 }
 
@@ -143,7 +136,7 @@ get_ancestry_summary <- function(id, parent_info) {
      filter(is.na(mom)) |>
      mutate(ancestry_fraction = 1/(2^(gen-1)),
             ancestry_group1 = ifelse(group == 1, ancestry_fraction, 0)) |>
-     select(pid, fem, group, gen, starts_with("ancestry_"))
+     select(pid, sex, group, gen, starts_with("ancestry_"))
  
    ancestors_intermar <- ancestors |>
      filter(intermar)
