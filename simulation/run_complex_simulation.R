@@ -91,7 +91,6 @@ run_simulation <- function(sim_name,
         append = TRUE)
     socsim(folder, "run.sup", seed = seed)
     
-    # make the result of last run the new presim
     pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
       as_tibble()
     mar <- rsocsim::read_omar(folder, "run.sup", seed) |>
@@ -115,6 +114,7 @@ run_simulation <- function(sim_name,
       select(pid, ancestry_group1, ancestry_group2) |>
       bind_rows(ancestry)
     
+    # make the result of last run the new presim
     write.table(pop, here(folder, "presim.opop"), 
                 row.names = F, col.names = F)
     write.table(mar, here(folder, "presim.omar"), 
