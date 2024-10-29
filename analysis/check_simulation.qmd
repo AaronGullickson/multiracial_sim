@@ -1,5 +1,10 @@
 ---
-title: "Check Simulations"
+title: "Check Simulation"
+execute: 
+  echo: false
+  warning: false
+  message: false
+  
 ---
 
 ```{r}
