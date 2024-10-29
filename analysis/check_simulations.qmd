@@ -39,9 +39,10 @@ pop <- pop |>
          dad = ifelse(pop == 0, NA, pop),
          dob = (dob - 1200) / 12,
          dod = ifelse(dod == 0, NA, (dod - 1200) / 12),
-         founder = is.na(mom) & is.na(dad)) |>
+         founder = is.na(mom) & is.na(dad),
+         mixedness = 1 - (ancestry_group1^2+ancestry_group2^2)) |>
   select(pid, sex, group, founder, dob, dod, mom, dad, 
-         ancestry_group1, ancestry_group2)
+         ancestry_group1, ancestry_group2, nearest_gen_locus, mixedness)
 
 mar <- get_marriages(pop, mar)
 ```
@@ -181,24 +182,25 @@ ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
 
 ```{r}
 #| label: get_ancestry
-parent_info <- get_parent_info(pop_even_base)
-descendants <- pop_even_base |> filter(!is.na(mom))
+#| eval: false
+parent_info <- get_parent_info(pop)
+descendants <- pop |> filter(!founder)
 ancestry_summary <- map(descendants$pid, get_ancestry_summary, parent_info) |>
-  bind_rows()
+  bind_rows() 
 
-pop_ancestry <- pop_even_base |>
-  filter(mom > 0) |>
-  mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
-         dob = (dob - 1200) / 12, 
-         dod = (dod - 1200) /12) |>
-  select(pid, sex, group, dob, dod, starts_with("ancestry_"), 
-         nearest_gen_locus, mixedness)
+temp <- descendants |>
+  full_join(ancestry_summary, by = "pid")
+
+table(temp$nearest_gen_locus.x, temp$nearest_gen_locus.y, exclude = NULL)
+
+ggplot(temp, aes(x = ancestry_group1.x, y = ancestry_group1.y))+
+  geom_jitter(alpha = 0.05)
 ```
 
 ```{r}
 #| label: fig-mean-gen-locus
 #| fig-cap: Mean generational locus of mixing by decade of birth
-pop_ancestry |>
+pop |>
   mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(nearest_gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
@@ -212,7 +214,7 @@ pop_ancestry |>
 ```{r}
 #| label: fig-mean-mixedness
 #| fig-cap: Mean level of mixedness by decade of birth
-pop_ancestry |>
+pop |>
   mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(mixedness = mean(mixedness)) |>
@@ -227,9 +229,9 @@ pop_ancestry |>
 #| label: fig-mixedness-locus
 #| fig-cap: Distribution of mixedness by nearest generational locus. Red dots indicate exact fraction if mixing only happened ion the nearest generational locus, while blue dots indicate actual mean of mixedness by generational locus.
 
-max_gen <- max(pop_ancestry$nearest_gen_locus, na.rm = TRUE)
+max_gen <- max(pop$nearest_gen_locus, na.rm = TRUE)
 
-fractions <- pop_ancestry |>
+fractions <- pop |>
   filter(!is.na(nearest_gen_locus)) |>
   group_by(nearest_gen_locus) |>
   summarize(mixedness_actual = mean(mixedness)) |>
@@ -237,7 +239,7 @@ fractions <- pop_ancestry |>
   # theoretical mixedness if only one event
   mutate(mixedness_theoretical = 1-(2^(2*nearest_gen_locus)-2^(nearest_gen_locus+1)+2)/(2^(2*nearest_gen_locus)))
 
-pop_ancestry |>
+pop |>
   filter(!is.na(nearest_gen_locus)) |>
   ggplot(aes(x = nearest_gen_locus, y = mixedness))+
   scale_x_continuous(breaks = 1:max_gen)+
@@ -250,7 +252,7 @@ pop_ancestry |>
 ```{r}
 #| label: fig-nearest-locus-trend
 #| fig-cap: Share of each generational locus over time
-pop_ancestry |>
+pop |>
   mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(n = n(),

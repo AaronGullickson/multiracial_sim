@@ -67,8 +67,9 @@ run_simulation <- function(sim_name,
   ancestry <- pop_start |>
     as_tibble() |>
     mutate(ancestry_group1 = as.numeric(group == 1),
-           ancestry_group2 = as.numeric(group == 2)) |>
-    select(pid, ancestry_group1, ancestry_group2)
+           ancestry_group2 = as.numeric(group == 2),
+           nearest_gen_locus = NA) |>
+    select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
   
   # rate file
   file_copy(here("simulation", "rates", "basic_rates"), 
@@ -97,30 +98,58 @@ run_simulation <- function(sim_name,
       as_tibble()
     
     # deal with new kids' group and ancestry
-    new_kids <- pop |> filter(group == 3)
-    new_kids$ancestry_group1 <- ancestry$ancestry_group1[new_kids$mom]/2+
-      ancestry$ancestry_group1[new_kids$pop]/2
-    new_kids$ancestry_group2 <- ancestry$ancestry_group2[new_kids$mom]/2+
-      ancestry$ancestry_group2[new_kids$pop]/2
-    new_kids$group_mom <- pop$group[new_kids$mom]
-    new_kids$group_pop <- pop$group[new_kids$pop]
-    # randomly assign
+    moms <- ancestry |>
+      rename(mom = pid, 
+             group_mom = group,
+             ancestry_group1_mom = ancestry_group1, 
+             ancestry_group2_mom = ancestry_group2,
+             gen_locus_mom = nearest_gen_locus)
+    dads <- ancestry |>
+      rename(pop = pid, 
+             group_pop = group,
+             ancestry_group1_pop = ancestry_group1, 
+             ancestry_group2_pop = ancestry_group2,
+             gen_locus_pop = nearest_gen_locus)
+    new_kids <- pop |> filter(group == 3) |>
+      left_join(moms) |>
+      left_join(dads) |>
+      select(pid, 
+             starts_with("group"), 
+             starts_with("ancestry"), 
+             starts_with("gen_locus"))
+    
     new_kids <- new_kids |>
-      mutate(group = case_when(
-        group_mom == 1 & group_pop == 1 ~ 1,
-        group_mom == 2 & group_pop == 2 ~ 2,
-        TRUE ~ 3
-      ))
+      mutate(ancestry_group1 = ancestry_group1_mom/2 + ancestry_group1_pop/2,
+             ancestry_group2 = ancestry_group2_mom/2 + ancestry_group2_pop/2,
+             gen_locus_mom = gen_locus_mom + 1,
+             gen_locus_pop = gen_locus_pop + 1,
+             nearest_gen_locus = case_when(
+               group_mom != group_pop ~ 1,
+               is.na(gen_locus_mom) & is.na(gen_locus_pop) ~ NA_integer_,
+               !is.na(gen_locus_mom) & 
+                 (is.na(gen_locus_pop) |
+                    gen_locus_mom <= gen_locus_pop) ~ gen_locus_mom,
+               TRUE ~ gen_locus_pop))
+    
+    # randomly assign group
+    new_kids <- new_kids |>
+      mutate(
+        group = case_when(
+          group_mom == 1 & group_pop == 1 ~ 1,
+          group_mom == 2 & group_pop == 2 ~ 2,
+          TRUE ~ 3))
     new_kids$group[new_kids$group == 3] <- sample(1:2, replace = TRUE, 
                                                   size = sum(new_kids$group == 3))
     # one-drop them
     #new_kids <- new_kids |>
     #  mutate(group = ifelse(group_mom == 2 | group_pop == 2, 2, 1))
+    
+    # assign back the new group to pop
     pop$group[new_kids$pid] <- new_kids$group
     
     # add this to ancestry data for next generation
     ancestry <- new_kids |>
-      select(pid, ancestry_group1, ancestry_group2) |>
+      select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus) |>
       bind_rows(ancestry)
     
     # make the result of last run the new presim
