@@ -37,10 +37,10 @@ create_fertility_rates <- function(file, multiplier) {
 }
 
 # for testing
-sim_name <- "test"
-pop_start <- presim_even.opop
-segments <- rep(10, 30)
-endogamy <- rep(0.999, 30)
+#sim_name <- "test"
+#pop_start <- presim_even.opop
+#segments <- rep(10, 30)
+#endogamy <- rep(0.999, 30)
 
 run_simulation <- function(sim_name, 
                            pop_start, 
@@ -169,3 +169,11 @@ presim_highly_uneven.opop$group <- sample(1:2, nrow(presim_highly_uneven.opop), 
                             prob = c(0.9, 0.1))
 
 
+
+# Run simulations ---------------------------------------------------------
+
+run_simulation("test", 
+               presim_even.opop, 
+               segments = rep(10, 30),
+               endogamy = rep(0.999, 30),
+               fert_multiplier = fert_multiplier)
