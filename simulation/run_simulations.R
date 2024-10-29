@@ -192,105 +192,104 @@ file_copy(here("simulation", "supfiles", "group2_low.sup"),
 
 create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
 
-
 socsim(folder, "group2_low.sup", seed)
 
 # 2 group uneven, high -------------------------------------------------------
 
-# if(dir_exists(here(base_folder, "group2_uneven_high"))) {
-#   dir_delete(here(base_folder, "group2_uneven_high"))
-# }
+if(dir_exists(here(base_folder, "group2_uneven_high"))) {
+   dir_delete(here(base_folder, "group2_uneven_high"))
+}
 
-# folder <- create_simulation_folder(simulation_name = "group2_uneven_high", 
-#                                    basefolder = base_folder)
+folder <- create_simulation_folder(simulation_name = "group2_uneven_high",
+                                    basefolder = base_folder)
 
 # # populate folder
-# write.table(presim_uneven.opop, here(folder, "presim.opop"), 
-#             row.names = F, col.names = F)
-# write.table(data.frame(), here(folder, "presim.omar"), 
-#             row.names = F, col.names = F)
+file_copy(here("simulation", "sims", "group2_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.opop"),
+          here(folder, "presim.opop"))
+file_copy(here("simulation", "sims", "group2_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.omar"),
+          here(folder, "presim.omar"))
+file_copy(here("simulation", "rates", "basic_rates"),
+           here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_high.sup"),
+          here(folder, "group2_high.sup"))
 
-# file_copy(here("simulation", "rates", "basic_rates"), 
-#           here(folder, "basic_rates"))
-# file_copy(here("simulation", "supfiles", "group2_high.sup"), 
-#           here(folder, "group2_high.sup"))
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
 
-# create_fertility_rates(here(folder, "basic_rates"), 1.05)
-
-
-# socsim(folder, "group2_high.sup", seed)
+socsim(folder, "group2_high.sup", seed)
 
 # 2 group uneven, low -------------------------------------------------------
 
-# if(dir_exists(here(base_folder, "group2_uneven_low"))) {
-#   dir_delete(here(base_folder, "group2_uneven_low"))
-# }
+if(dir_exists(here(base_folder, "group2_uneven_low"))) {
+   dir_delete(here(base_folder, "group2_uneven_low"))
+}
 
-# folder <- create_simulation_folder(simulation_name = "group2_uneven_low", 
-#                                    basefolder = base_folder)
+folder <- create_simulation_folder(simulation_name = "group2_uneven_low", 
+                                   basefolder = base_folder)
 
 # # populate folder
-# write.table(presim_uneven.opop, here(folder, "presim.opop"), 
-#             row.names = F, col.names = F)
-# write.table(data.frame(), here(folder, "presim.omar"), 
-#             row.names = F, col.names = F)
+file_copy(here("simulation", "sims", "group2_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.opop"),
+          here(folder, "presim.opop"))
+file_copy(here("simulation", "sims", "group2_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.omar"),
+          here(folder, "presim.omar"))
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_low.sup"), 
+          here(folder, "group2_low.sup"))
 
-# file_copy(here("simulation", "rates", "basic_rates"), 
-#           here(folder, "basic_rates"))
-# file_copy(here("simulation", "supfiles", "group2_low.sup"), 
-#           here(folder, "group2_low.sup"))
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
 
-# create_fertility_rates(here(folder, "basic_rates"), 1.05)
-
-
-# socsim(folder, "group2_low.sup", seed)
+socsim(folder, "group2_low.sup", seed)
 
 # 2 group highly uneven, high -------------------------------------------------------
 
-# if(dir_exists(here(base_folder, "group2_highly_uneven_high"))) {
-#   dir_delete(here(base_folder, "group2_highly_uneven_high"))
-# }
+if(dir_exists(here(base_folder, "group2_highly_uneven_high"))) {
+   dir_delete(here(base_folder, "group2_highly_uneven_high"))
+}
 
-# folder <- create_simulation_folder(simulation_name = "group2_highly_uneven_high", 
-#                                    basefolder = base_folder)
+folder <- create_simulation_folder(simulation_name = "group2_highly_uneven_high", 
+                                   basefolder = base_folder)
 
 # # populate folder
-# write.table(presim_highly_uneven.opop, here(folder, "presim.opop"), 
-#             row.names = F, col.names = F)
-# write.table(data.frame(), here(folder, "presim.omar"), 
-#             row.names = F, col.names = F)
+file_copy(here("simulation", "sims", "group2_highly_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.opop"),
+          here(folder, "presim.opop"))
+file_copy(here("simulation", "sims", "group2_highly_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.omar"),
+          here(folder, "presim.omar"))
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_high.sup"), 
+          here(folder, "group2_high.sup"))
 
-# file_copy(here("simulation", "rates", "basic_rates"), 
-#           here(folder, "basic_rates"))
-# file_copy(here("simulation", "supfiles", "group2_high.sup"), 
-#           here(folder, "group2_high.sup"))
+create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
 
-# create_fertility_rates(here(folder, "basic_rates"), 1.05)
-
-
-# socsim(folder, "group2_high.sup", seed)
+socsim(folder, "group2_high.sup", seed)
 
 # 2 group highly uneven, low -------------------------------------------------------
 
-# if(dir_exists(here(base_folder, "group2_highly_uneven_low"))) {
-#   dir_delete(here(base_folder, "group2_highly_uneven_low"))
-# }
+if(dir_exists(here(base_folder, "group2_highly_uneven_low"))) {
+   dir_delete(here(base_folder, "group2_highly_uneven_low"))
+}
 
-# folder <- create_simulation_folder(simulation_name = "group2_highly_uneven_low", 
-#                                    basefolder = base_folder)
+folder <- create_simulation_folder(simulation_name = "group2_highly_uneven_low", 
+                                   basefolder = base_folder)
 
 # # populate folder
-# write.table(presim_highly_uneven.opop, here(folder, "presim.opop"), 
-#             row.names = F, col.names = F)
-# write.table(data.frame(), here(folder, "presim.omar"), 
-#             row.names = F, col.names = F)
+file_copy(here("simulation", "sims", "group2_highly_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.opop"),
+          here(folder, "presim.opop"))
+file_copy(here("simulation", "sims", "group2_highly_uneven_baseline",
+               "sim_results_group2_baseline.sup_42_", "result.omar"),
+          here(folder, "presim.omar"))
+file_copy(here("simulation", "rates", "basic_rates"), 
+          here(folder, "basic_rates"))
+file_copy(here("simulation", "supfiles", "group2_low.sup"), 
+          here(folder, "group2_low.sup"))
 
-# file_copy(here("simulation", "rates", "basic_rates"), 
-#           here(folder, "basic_rates"))
-# file_copy(here("simulation", "supfiles", "group2_low.sup"), 
-#           here(folder, "group2_low.sup"))
+create_fertility_rates(here(folder, "basic_rates"), 1.05)
 
-# create_fertility_rates(here(folder, "basic_rates"), 1.05)
-
-
-# socsim(folder, "group2_low.sup", seed)
+socsim(folder, "group2_low.sup", seed)
