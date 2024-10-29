@@ -91,8 +91,9 @@ run_simulation <- function(sim_name,
     cat("run\n", file = here(folder, "run.sup"),
         append = TRUE)
     
-    # run the simulation
-    socsim(folder, "run.sup", seed = seed)
+    # run the simulation - future is needed not to screw up other sims without
+    # restarting R
+    socsim(folder, "run.sup", seed = seed, process_method = "future")
     
     # get the new pop and mar data
     pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
@@ -221,8 +222,8 @@ presim_highly_uneven.opop$group <- sample(1:2, nrow(presim_highly_uneven.opop), 
 # Run simulations ---------------------------------------------------------
 
 run_simulation("test", 
-               presim_even.opop, 
+               presim_uneven.opop, 
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep("random", 30),
+               inheritance = rep("hypodescent", 30),
                fert_multiplier = fert_multiplier)
