@@ -11,7 +11,7 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_folder <- "group2_uneven_baseline"
+sim_folder <- "group2_even_baseline"
 sim_name <- "sim_results_group2_baseline.sup_42_"
 base_folder = here("simulation", "sims", sim_folder, sim_name)
 
@@ -34,8 +34,7 @@ mar_even_base <- read_table(here(base_folder, "result.omar"),
 pop_even_base <- add_ancestry_info(pop_even_base)
 
 marriages_even_base <- get_marriages(pop_even_base, mar_even_base) |>
-  mutate(year = (dstart - 1200) / 12,
-         time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400)))
+  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400)))
 ```
 
 # Basic Demographic Information
@@ -132,6 +131,34 @@ asfr_sim |>
     summarize(tfr = sum(5 * socsim)) |>
     gt() |>
     cols_label(year = "Year", tfr = "TFR")
+```
+
+## Age at marriage
+
+```{r}
+#| label: fig-wife-age
+#| fig-cap: Distribution of wife's age at marriage
+ggplot(marriages_even_base, aes(x = wage))+
+  geom_histogram()+
+  labs(x = "wife's age at marriage")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-husband-age
+#| fig-cap: Distribution of husband's age at marriage
+ggplot(marriages_even_base, aes(x = hage))+
+  geom_histogram()+
+  labs(x = "husband's age at marriage")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-spouse-age-gap
+#| fig-cap: Distribution of age difference between partners
+  geom_histogram()+
+  labs(x = "husband's age minus wife's age")+
+  theme_bw()
 ```
 
 # Group Mixing Information

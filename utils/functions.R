@@ -48,20 +48,22 @@ get_marriages <- function(pop, mar) {
   
   husband <- pop |>
     filter(fem == 0) |>
-    select(pid, group) |>
-    rename(hpid = pid, hgroup = group)
+    select(pid, group, dob) |>
+    rename(hpid = pid, hgroup = group, hdob = dob)
   
   wife <- pop |>
     filter(fem == 1) |>
-    select(pid, group) |>
-    rename(wpid = pid, wgroup = group)
+    select(pid, group, dob) |>
+    rename(wpid = pid, wgroup = group, wdob = dob)
   
   marriages <- mar |>
     select(mid, wpid, hpid, dstart) |>
     left_join(husband) |>
     left_join(wife) |>
-    mutate(year = (dstart - 1200) / 12) |>
-    select(mid, year, hgroup, wgroup)
+    mutate(year = (dstart - 1200) / 12,
+           hage = (dstart - hdob) / 12,
+           wage = (dstart - wdob) / 12) |>
+    select(mid, year, hgroup, wgroup, hage, wage)
   
   return(marriages)
 }
