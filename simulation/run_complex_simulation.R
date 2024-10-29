@@ -206,24 +206,56 @@ presim_even.opop$fem <- sample(0:1, nrow(presim_even.opop), replace = T)
 presim_even.opop$dob <- sample(360:1200, nrow(presim_even.opop), replace = T)
 
 # sample between two groups 
-presim_uneven.opop <- presim_highly_uneven.opop <- presim_even.opop
+presim_uneven.opop <- presim_even.opop
 
 presim_even.opop$group <- sample(1:2, nrow(presim_even.opop), replace = T,
                             prob = c(0.5, 0.5))
 
 presim_uneven.opop$group <- sample(1:2, nrow(presim_uneven.opop), replace = T,
-                            prob = c(0.75, 0.25))
-
-presim_highly_uneven.opop$group <- sample(1:2, nrow(presim_highly_uneven.opop), replace = T,
-                            prob = c(0.9, 0.1))
+                            prob = c(0.8, 0.2))
 
 
+# Run baseline simulations ----------------------------------------------------
 
-# Run simulations ---------------------------------------------------------
+run_simulation("even_hypo_baseline", 
+               presim_even.opop, 
+               segments = rep(10, 30),
+               endogamy = rep(0.999, 30),
+               inheritance = rep("hypodescent", 30),
+               fert_multiplier = fert_multiplier)
 
-run_simulation("test", 
+run_simulation("even_hyper_baseline", 
+               presim_even.opop, 
+               segments = rep(10, 30),
+               endogamy = rep(0.999, 30),
+               inheritance = rep("hyperdescent", 30),
+               fert_multiplier = fert_multiplier)
+
+run_simulation("even_random_baseline", 
+               presim_even.opop, 
+               segments = rep(10, 30),
+               endogamy = rep(0.999, 30),
+               inheritance = rep("random", 30),
+               fert_multiplier = fert_multiplier)
+
+run_simulation("uneven_hypo_baseline", 
                presim_uneven.opop, 
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
                inheritance = rep("hypodescent", 30),
                fert_multiplier = fert_multiplier)
+
+run_simulation("uneven_hyper_baseline", 
+               presim_uneven.opop, 
+               segments = rep(10, 30),
+               endogamy = rep(0.999, 30),
+               inheritance = rep("hyperdescent", 30),
+               fert_multiplier = fert_multiplier)
+
+run_simulation("uneven_random_baseline", 
+               presim_uneven.opop, 
+               segments = rep(10, 30),
+               endogamy = rep(0.999, 30),
+               inheritance = rep("random", 30),
+               fert_multiplier = fert_multiplier)
+
