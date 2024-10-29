@@ -6,7 +6,7 @@
 segments 1
 input_file presim
 
-marriage_queues 1
+marriage_queues 2
 
 ***************************************************************************
 

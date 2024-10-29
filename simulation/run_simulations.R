@@ -33,7 +33,7 @@ create_fertility_rates <- function(file, multiplier) {
   write_delim(fert, file = file, col_names = FALSE, append =TRUE)
 }
 
-fert_multiplier <- 1.05
+fert_multiplier <- 1.09
 
 # Create starter pop ------------------------------------------------------
 

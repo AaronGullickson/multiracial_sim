@@ -5,38 +5,51 @@
 * Where X is the proportion who start a marriage search in the interval
 * and Y is the length of the interval in months
 
-* We are basically going to have people start partnering up at birth, ala
-* arranged marriages or something. This may seem odd, but makes sense for our
-* purposes. We want to keep all fertility in the maritality fertility rates so
-* that we can be sure how our endogamy parameters are affecting the results. So
-* by making people partner up well before fertility starts we can ensure that
-* the marital fertility rate is close to the overall fertility rate, making it
-* easier to tune the fertility rates to what we want. We dont really care if 
-* these are proper marriages or just partnerships of some sort. 
+* We are basically going to have people seek universal marriage at the age of 
+* 18, since all fertility needs to happen in marriage. This will cause the 
+* exogamy trends to somewhat more slowly affect the population than it might
+* otherwise, but is close enough for our purposes. NOTE: you have do two
+* sided marriage queues to get this stuff to work.
 
 marriage 1 F single
-111   0   0.9
-  
-marriage 1 M single
-111   0   0.9
+18    0   0.0
+55    0   0.9
+111   0   0.0001
   
 marriage 1 F widowed
-111   0   0.9
-  
-marriage 1 M widowed
-111   0   0.9
+18    0   0.0
+55    0   0.9
+111   0   0.0001
   
 marriage 2 F single
-111   0   0.9
-  
-marriage 2 M single
-111   0   0.9
+18    0   0.0
+55    0   0.9
+111   0   0.0001
   
 marriage 2 F widowed
-111   0   0.9
+18    0   0.0
+55    0   0.9
+111   0   0.0001
+
+marriage 1 M single
+18    0   0.0
+55    0   0.9
+111   0   0.0001
+  
+marriage 1 M widowed
+18    0   0.0
+55    0   0.9
+111   0   0.0001
+  
+marriage 2 M single
+18    0   0.0
+55    0   0.9
+111   0   0.0001
   
 marriage 2 M widowed
-111   0   0.9
+18    0   0.0
+55    0   0.9
+111   0   0.0001
 
 *** Divorce Rates ***
 *divorce - for now, no divorce
