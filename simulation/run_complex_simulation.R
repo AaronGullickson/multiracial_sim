@@ -36,6 +36,12 @@ create_fertility_rates <- function(file, multiplier) {
   write_delim(fert, file = file, col_names = FALSE, append =TRUE)
 }
 
+# for testing
+sim_name <- "test"
+pop_start <- presim_even.opop
+segments <- rep(10, 30)
+endogamy <- rep(0.999, 30)
+
 run_simulation <- function(sim_name, 
                            pop_start, 
                            segments, 
@@ -56,6 +62,13 @@ run_simulation <- function(sim_name,
               row.names = F, col.names = F)
   write.table(data.frame(), here(folder, "presim.omar"), 
               row.names = F, col.names = F)
+  
+  # create initial ancestry dataset
+  ancestry <- pop_start |>
+    as_tibble() |>
+    mutate(ancestry_group1 = as.numeric(group == 1),
+           ancestry_group2 = as.numeric(group == 2)) |>
+    select(pid, ancestry_group1, ancestry_group2)
   
   # rate file
   file_copy(here("simulation", "rates", "basic_rates"), 
@@ -79,18 +92,39 @@ run_simulation <- function(sim_name,
     socsim(folder, "run.sup", seed = seed)
     
     # make the result of last run the new presim
-    pop <- rsocsim::read_opop(folder, "run.sup", seed)
-    mar <- rsocsim::read_omar(folder, "run.sup", seed)
+    pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
+      as_tibble()
+    mar <- rsocsim::read_omar(folder, "run.sup", seed) |>
+      as_tibble()
     
-    # TODO: calculate ancestry of new kids and assign to a group
+    # deal with new kids' group and ancestry
+    new_kids <- pop |> filter(group == 3)
+    new_kids$ancestry_group1 <- ancestry$ancestry_group1[new_kids$mom]/2+
+      ancestry$ancestry_group1[new_kids$pop]/2
+    new_kids$ancestry_group2 <- ancestry$ancestry_group2[new_kids$mom]/2+
+      ancestry$ancestry_group2[new_kids$pop]/2
+    new_kids$group_mom <- pop$group[new_kids$mom]
+    new_kids$group_pop <- pop$group[new_kids$pop]
+    # for now one-drop them
+    new_kids <- new_kids |>
+      mutate(group = ifelse(group_mom == 2 | group_pop == 2, 2, 1))
+    pop$group[new_kids$pid] <- new_kids$group
+    
+    # add this to ancestry data for next generation
+    ancestry <- new_kids |>
+      select(pid, ancestry_group1, ancestry_group2) |>
+      bind_rows(ancestry)
     
     write.table(pop, here(folder, "presim.opop"), 
                 row.names = F, col.names = F)
     write.table(mar, here(folder, "presim.omar"), 
                 row.names = F, col.names = F)
-    
-    
-  }                       
+  }
+  
+  # write out final results
+  write_csv(pop, here(folder, "final_pop.csv"))
+  write_csv(mar, here(folder, "final_mar.csv"))
+  write_csv(ancestry, here(folder, "ancestry.csv"))
   
 }
 

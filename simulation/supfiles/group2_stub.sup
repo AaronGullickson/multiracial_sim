@@ -7,5 +7,6 @@ segments 1
 input_file presim
 
 marriage_queues 2
+child_inherits_group 3
 
 ***************************************************************************
