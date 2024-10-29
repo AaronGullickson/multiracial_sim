@@ -41,6 +41,7 @@ create_fertility_rates <- function(file, multiplier) {
 #pop_start <- presim_even.opop
 #segments <- rep(10, 30)
 #endogamy <- rep(0.999, 30)
+#inheritance <- rep("hypodescent", 30)
 
 run_simulation <- function(sim_name, 
                            pop_start, 
@@ -56,7 +57,6 @@ run_simulation <- function(sim_name,
   folder <- create_simulation_folder(simulation_name = sim_name, 
                                      basefolder = base_folder)
   
-  
   # presim files
   write.table(pop_start, here(folder, "presim.opop"), 
               row.names = F, col.names = F)
@@ -71,7 +71,7 @@ run_simulation <- function(sim_name,
            nearest_gen_locus = NA) |>
     select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
   
-  # rate file
+  # create rate file
   file_copy(here("simulation", "rates", "basic_rates"), 
             here(folder, "basic_rates"))
   # add fertility rates
@@ -90,64 +90,21 @@ run_simulation <- function(sim_name,
         append = TRUE)
     cat("run\n", file = here(folder, "run.sup"),
         append = TRUE)
+    
+    # run the simulation
     socsim(folder, "run.sup", seed = seed)
     
+    # get the new pop and mar data
     pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
       as_tibble()
     mar <- rsocsim::read_omar(folder, "run.sup", seed) |>
       as_tibble()
     
-    # deal with new kids' group and ancestry
-    moms <- ancestry |>
-      rename(mom = pid, 
-             group_mom = group,
-             ancestry_group1_mom = ancestry_group1, 
-             ancestry_group2_mom = ancestry_group2,
-             gen_locus_mom = nearest_gen_locus)
-    dads <- ancestry |>
-      rename(pop = pid, 
-             group_pop = group,
-             ancestry_group1_pop = ancestry_group1, 
-             ancestry_group2_pop = ancestry_group2,
-             gen_locus_pop = nearest_gen_locus)
-    new_kids <- pop |> filter(group == 3) |>
-      left_join(moms) |>
-      left_join(dads) |>
-      select(pid, 
-             starts_with("group"), 
-             starts_with("ancestry"), 
-             starts_with("gen_locus"))
-    
-    new_kids <- new_kids |>
-      mutate(ancestry_group1 = ancestry_group1_mom/2 + ancestry_group1_pop/2,
-             ancestry_group2 = ancestry_group2_mom/2 + ancestry_group2_pop/2,
-             gen_locus_mom = gen_locus_mom + 1,
-             gen_locus_pop = gen_locus_pop + 1,
-             nearest_gen_locus = case_when(
-               group_mom != group_pop ~ 1,
-               is.na(gen_locus_mom) & is.na(gen_locus_pop) ~ NA_integer_,
-               !is.na(gen_locus_mom) & 
-                 (is.na(gen_locus_pop) |
-                    gen_locus_mom <= gen_locus_pop) ~ gen_locus_mom,
-               TRUE ~ gen_locus_pop))
-    
-    # randomly assign group
-    new_kids <- new_kids |>
-      mutate(
-        group = case_when(
-          group_mom == 1 & group_pop == 1 ~ 1,
-          group_mom == 2 & group_pop == 2 ~ 2,
-          TRUE ~ 3))
-    new_kids$group[new_kids$group == 3] <- sample(1:2, replace = TRUE, 
-                                                  size = sum(new_kids$group == 3))
-    # one-drop them
-    #new_kids <- new_kids |>
-    #  mutate(group = ifelse(group_mom == 2 | group_pop == 2, 2, 1))
-    
+    # find the new kids and measure their ancestry, group, etc.
+    new_kids <- calculate_ancestry(pop, ancestry, inheritance[i])
     # assign back the new group to pop
     pop$group[new_kids$pid] <- new_kids$group
-    
-    # add this to ancestry data for next generation
+    # add new kids to ancestry data for next generation
     ancestry <- new_kids |>
       select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus) |>
       bind_rows(ancestry)
@@ -163,6 +120,68 @@ run_simulation <- function(sim_name,
   write_csv(pop, here(folder, "final_pop.csv"))
   write_csv(mar, here(folder, "final_mar.csv"))
   write_csv(ancestry, here(folder, "ancestry.csv"))
+  
+}
+
+
+calculate_ancestry <- function(pop, 
+                               ancestry, 
+                               inheritance_method = "random") {
+  
+  # get "moms" and "dads" for joining properly
+  moms <- ancestry |>
+    rename(mom = pid, 
+           group_mom = group,
+           ancestry_group1_mom = ancestry_group1, 
+           ancestry_group2_mom = ancestry_group2,
+           gen_locus_mom = nearest_gen_locus)
+  dads <- ancestry |>
+    rename(pop = pid, 
+           group_pop = group,
+           ancestry_group1_pop = ancestry_group1, 
+           ancestry_group2_pop = ancestry_group2,
+           gen_locus_pop = nearest_gen_locus)
+  
+  # create the new_kids object for all kids with group == 3
+  new_kids <- pop |> filter(group == 3) |>
+    left_join(moms) |>
+    left_join(dads) |>
+    select(pid, 
+           starts_with("group"), 
+           starts_with("ancestry"), 
+           starts_with("gen_locus")) |>
+    mutate(ancestry_group1 = ancestry_group1_mom/2 + ancestry_group1_pop/2,
+           ancestry_group2 = ancestry_group2_mom/2 + ancestry_group2_pop/2,
+           gen_locus_mom = gen_locus_mom + 1,
+           gen_locus_pop = gen_locus_pop + 1,
+           nearest_gen_locus = case_when(
+             group_mom != group_pop ~ 1,
+             is.na(gen_locus_mom) & is.na(gen_locus_pop) ~ NA_integer_,
+             !is.na(gen_locus_mom) & 
+               (is.na(gen_locus_pop) |
+                  gen_locus_mom <= gen_locus_pop) ~ gen_locus_mom,
+             TRUE ~ gen_locus_pop))
+  
+  # assign group to kid depending on method
+  if(inheritance_method == "hypodescent") {
+    new_kids <- new_kids |>
+      mutate(group = ifelse(group_mom == 2 | group_pop == 2, 2, 1))
+  } else if(inheritance_method == "hyperdescent") {
+    new_kids <- new_kids |>
+      mutate(group = ifelse(group_mom == 1 | group_pop == 1, 1, 2))
+  } else {
+    # randomly assign group
+    new_kids <- new_kids |>
+      mutate(
+        group = case_when(
+          group_mom == 1 & group_pop == 1 ~ 1,
+          group_mom == 2 & group_pop == 2 ~ 2,
+          TRUE ~ 3))
+    new_kids$group[new_kids$group == 3] <- sample(1:2, replace = TRUE, 
+                                                  size = sum(new_kids$group == 3))
+  }
+  
+  return(new_kids)
   
 }
 
@@ -205,4 +224,5 @@ run_simulation("test",
                presim_even.opop, 
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
+               inheritance = rep("random", 30),
                fert_multiplier = fert_multiplier)
