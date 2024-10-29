@@ -30,27 +30,6 @@ plot_pop_pyramid <- function(pop, date, age_width = 5) {
     theme_minimal()
 }
 
-get_marriages <- function(pop, mar) {
-
-  husband <- pop |>
-    filter(fem == 0) |>
-    select(pid, group) |>
-    rename(hpid = pid, hgroup = group)
-                                
-  wife <- pop |>
-    filter(fem == 1) |>
-    select(pid, group) |>
-    rename(wpid = pid, wgroup = group)
-                                
-  marriages <- mar |>
-    select(mid, wpid, hpid, dstart) |>
-    left_join(husband) |>
-    left_join(wife) |>
-    select(mid, dstart, hgroup, wgroup)
-  
-  return(marriages)
-}
-
 calculate_lor <- function(marriages) {
   marriages |>
     group_by(time_period) |>
@@ -61,6 +40,30 @@ calculate_lor <- function(marriages) {
               lor = log((n12 * n21) / (n11 * n22))) |>
     select(time_period, lor) |>
     filter(lor > -Inf)
+}
+
+# Data cleaning functions -------------------------------------------------
+
+get_marriages <- function(pop, mar) {
+  
+  husband <- pop |>
+    filter(fem == 0) |>
+    select(pid, group) |>
+    rename(hpid = pid, hgroup = group)
+  
+  wife <- pop |>
+    filter(fem == 1) |>
+    select(pid, group) |>
+    rename(wpid = pid, wgroup = group)
+  
+  marriages <- mar |>
+    select(mid, wpid, hpid, dstart) |>
+    left_join(husband) |>
+    left_join(wife) |>
+    mutate(year = (dstart - 1200) / 12) |>
+    select(mid, year, hgroup, wgroup)
+  
+  return(marriages)
 }
 
 # Genealogical functions --------------------------------------------------
@@ -128,27 +131,27 @@ get_all_ancestors <- function(id, parent_info) {
 
 # a function based on a pid value to collect all ancestors and calculate summary 
 # stats
-# get_ancestry_summary <- function(id, parent_info) {
-#   ancestors <- get_all_ancestors(id, parent_info)
-#   
-#   orig_ancestors <- ancestors |>
-#     filter(is.na(mom)) |>
-#     mutate(ancestry_fraction = 1/(2^(gen-1)),
-#            ancestry_group1 = ifelse(group == 1, ancestry_fraction, 0)) |>
-#     select(pid, fem, group, gen, starts_with("ancestry_"))
-# 
-#   ancestors_intermar <- ancestors |>
-#     filter(intermar)
-# 
-#   return(tibble(pid = id, 
-#                 ancestry_fraction = sum(orig_ancestors$ancestry_fraction),
-#                 ancestry_group1 = sum(orig_ancestors$ancestry_group1),
-#                 ancestry_group2 = 1 - ancestry_group1,
-#                 nearest_gen_locus = ifelse(nrow(ancestors_intermar) == 0, 
-#                                            NA, 
-#                                            min(ancestors_intermar$gen))))
-# 
-# }
+get_ancestry_summary <- function(id, parent_info) {
+   ancestors <- get_all_ancestors(id, parent_info)
+   
+   orig_ancestors <- ancestors |>
+     filter(is.na(mom)) |>
+     mutate(ancestry_fraction = 1/(2^(gen-1)),
+            ancestry_group1 = ifelse(group == 1, ancestry_fraction, 0)) |>
+     select(pid, fem, group, gen, starts_with("ancestry_"))
+ 
+   ancestors_intermar <- ancestors |>
+     filter(intermar)
+ 
+   return(tibble(pid = id, 
+                 ancestry_fraction = sum(orig_ancestors$ancestry_fraction),
+                 ancestry_group1 = sum(orig_ancestors$ancestry_group1),
+                 ancestry_group2 = 1 - ancestry_group1,
+                 nearest_gen_locus = ifelse(nrow(ancestors_intermar) == 0, 
+                                            NA, 
+                                            min(ancestors_intermar$gen))))
+ 
+}
 
 
 ## another approach to this is to get all the ancestors of everybody at once
