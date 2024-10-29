@@ -128,24 +128,82 @@ get_all_ancestors <- function(id, parent_info) {
 
 # a function based on a pid value to collect all ancestors and calculate summary 
 # stats
-get_ancestry_summary <- function(id, parent_info) {
-  ancestors <- get_all_ancestors(id, parent_info)
+# get_ancestry_summary <- function(id, parent_info) {
+#   ancestors <- get_all_ancestors(id, parent_info)
+#   
+#   orig_ancestors <- ancestors |>
+#     filter(is.na(mom)) |>
+#     mutate(ancestry_fraction = 1/(2^(gen-1)),
+#            ancestry_group1 = ifelse(group == 1, ancestry_fraction, 0)) |>
+#     select(pid, fem, group, gen, starts_with("ancestry_"))
+# 
+#   ancestors_intermar <- ancestors |>
+#     filter(intermar)
+# 
+#   return(tibble(pid = id, 
+#                 ancestry_fraction = sum(orig_ancestors$ancestry_fraction),
+#                 ancestry_group1 = sum(orig_ancestors$ancestry_group1),
+#                 ancestry_group2 = 1 - ancestry_group1,
+#                 nearest_gen_locus = ifelse(nrow(ancestors_intermar) == 0, 
+#                                            NA, 
+#                                            min(ancestors_intermar$gen))))
+# 
+# }
+
+
+## another approach to this is to get all the ancestors of everybody at once
+## this is faster but requires a lot of RAM because it generates a huge dataset
+get_ancestors <- function(pop) {
+  parent_info <- get_parent_info(pop)
+  current_ancestors <- parent_info |> filter(!is.na(mom))
+  gen <- 1
+  current_ancestors$gen <- gen
+  current_ancestors$pid_orig <- current_ancestors$pid
+  ancestors <- current_ancestors
+  while(nrow(current_ancestors) > 0) {
+    gen <- gen + 1
+    next_ancestors <- parent_info[c(current_ancestors$mom, current_ancestors$dad),]
+    next_ancestors$gen <- gen
+    next_ancestors$pid_orig <- rep(current_ancestors$pid_orig, 2)
+    ancestors <- ancestors |> bind_rows(next_ancestors)
+    current_ancestors <- next_ancestors |>
+      filter(!is.na(mom))
+  }
   
-  orig_ancestors <- ancestors |>
+  return(ancestors)
+}
+
+add_ancestry_info <- function(pop) {
+
+  ancestors <- get_ancestors(pop)
+  
+  # get OG ancestors ancestry breakdown
+  ancestry <- ancestors |> 
     filter(is.na(mom)) |>
     mutate(ancestry_fraction = 1/(2^(gen-1)),
-           ancestry_group1 = ifelse(group == 1, ancestry_fraction, 0)) |>
-    select(pid, fem, group, gen, starts_with("ancestry_"))
-
-  ancestors_intermar <- ancestors |>
-    filter(intermar)
-
-  return(tibble(pid = id, 
-                ancestry_fraction = sum(orig_ancestors$ancestry_fraction),
-                ancestry_group1 = sum(orig_ancestors$ancestry_group1),
-                ancestry_group2 = 1 - ancestry_group1,
-                nearest_gen_locus = ifelse(nrow(ancestors_intermar) == 0, 
-                                           NA, 
-                                           min(ancestors_intermar$gen))))
-
+           ancestry_group1 = ifelse(group == 1, ancestry_fraction, 0),
+           ancestry_group2 = ifelse(group == 2, ancestry_fraction, 0)) |>
+    group_by(pid_orig) |>
+    summarize(ancestry_fraction = sum(ancestry_fraction),
+              ancestry_group1 = sum(ancestry_group1),
+              ancestry_group2 = sum(ancestry_group2)) |>
+    ungroup() |>
+    mutate(mixedness = 1 - (ancestry_group1^2 + ancestry_group2^2)) |>
+    rename(pid = pid_orig)
+  
+  # get nearest generational locus
+  gen_locus <- ancestors |>
+    filter(intermar) |>
+    group_by(pid_orig) |>
+    summarize(n = n(),
+              nearest_gen_locus = ifelse(n == 0, NA, min(gen))) |>
+    ungroup() |>
+    rename(pid = pid_orig) |>
+    select(pid, nearest_gen_locus)
+  
+  pop <- pop |>
+    left_join(ancestry) |>
+    left_join(gen_locus)
+  
+  return(pop)
 }
