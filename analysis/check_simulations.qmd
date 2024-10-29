@@ -11,30 +11,39 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_folder <- "group2_even_baseline"
-sim_name <- "sim_results_group2_baseline.sup_42_"
-base_folder = here("simulation", "sims", sim_folder, sim_name)
+sim_folder <- "test"
+base_folder = here("simulation", "sims", sim_folder)
 
-pop_even_base <- read_table(here(base_folder, "result.opop"), 
-                            col_names = c("pid", "fem", "group", "nev", 
-                                          "dob", "mom", "dad", "nesibm", 
-                                          "nesibp", "lborn", "marid", 
-                                          "mstat", "dod", "fmult"))
-
-# have to add the junk variable due to trailing zeroes
-mar_even_base <- read_table(here(base_folder, "result.omar"),
-                            col_names = c("mid", "wpid", "hpid", "dstart", 
-                                          "dend", "rend", "wprior", "hprior", 
-                                          "junk"))
+pop <- read_csv(here(base_folder, "final_pop.csv"))
+mar <- read_csv(here(base_folder, "final_mar.csv"))
+ancestry <- read_csv(here(base_folder, "ancestry.csv"))
 ```
 
 ```{r}
 #| label: data-cleaning
 
-pop_even_base <- add_ancestry_info(pop_even_base)
+# get asfr before converting pop
+asfr <- rsocsim::estimate_fertility_rates(opop = pop,
+  final_sim_year = 300, #[Jan-Dec]
+  year_min = 0, # Closed [
+  year_max = 300, # Open )
+  year_group = 30, 
+  age_min_fert = 10, # Closed [
+  age_max_fert = 55, # Open )
+  age_group = 5) #[,)
 
-marriages_even_base <- get_marriages(pop_even_base, mar_even_base) |>
-  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400)))
+pop <- pop |>
+  left_join(ancestry) |>
+  mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
+         mom = ifelse(mom == 0, NA, mom),
+         dad = ifelse(pop == 0, NA, pop),
+         dob = (dob - 1200) / 12,
+         dod = (dod - 1200) / 12,
+         founder = is.na(mom) & is.na(dad)) |>
+  select(pid, sex, group, founder, dob, dod, mom, dad, 
+         ancestry_group1, ancestry_group2)
+
+mar <- get_marriages(pop, mar)
 ```
 
 # Basic Demographic Information
@@ -45,21 +54,21 @@ Lets start by plotting some population pyramids from the beginning of the time
 period until the end of the time period. 
 
 ```{r}
-#| label: fig-pop-pyramid-even-1200
+#| label: fig-pop-pyramid-start
 #| fig-cap: Population pyramid of the even population at beginning of the simulation
-plot_pop_pyramid(pop_even_base, 1200)
+plot_pop_pyramid(pop, 0)
 ```
 
 ```{r}
-#| label: fig-pop-pyramid-even-1800
-#| fig-cap: Population pyramid of the even population at 50 years.
-plot_pop_pyramid(pop_even_base, 1800)
+#| label: fig-pop-pyramid-50
+#| fig-cap: Population pyramid of the even population at 150 years.
+plot_pop_pyramid(pop, 50)
 ```
 
 ```{r}
-#| label: fig-pop-pyramid-even-4800
+#| label: fig-pop-pyramid-end
 #| fig-cap: Population pyramid of the even population at 300 years.
-plot_pop_pyramid(pop_even_base, 4800)
+plot_pop_pyramid(pop, 250)
 ```
 
 
@@ -68,15 +77,14 @@ plot_pop_pyramid(pop_even_base, 4800)
 ```{r}
 #| label: fig-pop-growth
 #| fig-cap: Overall size of the population from the beginning of the simulation to the end.
-year_range <- 1200:4800
+year_range <- 0:300
 
 total_pop <- map_vec(year_range, function(x) {
-  pop_even_base |> filter(dob <= x & (dod == 0 | dod > x)) |> nrow()
+  pop |> filter(dob <= x & (dod == 0 | dod > x)) |> nrow()
 })
 
 tibble(year_range, total_pop) |>
-  mutate(year = (year_range - 1200) / 12) |>
-  ggplot(aes(x = year, y = total_pop))+
+  ggplot(aes(x = year_range, y = total_pop))+
   geom_line()+
   labs(x = "years from start of simulation", y = "population size")+
   theme_bw()
@@ -103,21 +111,9 @@ total_pop_group |>
 ## Fertility Rates
 
 ```{r}
-#| label: calculate-asfr
-asfr_sim <- rsocsim::estimate_fertility_rates(opop = pop_even_base,
-  final_sim_year = 300, #[Jan-Dec]
-  year_min = 0, # Closed [
-  year_max = 300, # Open )
-  year_group = 30, 
-  age_min_fert = 10, # Closed [
-  age_max_fert = 55, # Open )
-  age_group = 5) #[,)
-```
-
-```{r}
 #| label: fig-asfr
 #| fig-cap: Age-specific fertility rates by 30 year interval
-ggplot(asfr_sim, aes(x = age, y = socsim, group = year, color = year))+
+ggplot(asfr, aes(x = age, y = socsim, group = year, color = year))+
   geom_line()+
   labs(x = "age", y = "age-specific fertility rate", color = "year interval")+
   theme_bw()
@@ -126,7 +122,7 @@ ggplot(asfr_sim, aes(x = age, y = socsim, group = year, color = year))+
 ```{r}
 #| label: tbl-tfr
 #| tbl-cap: Total fertility rate by 30 year interval
-asfr_sim |>
+asfr |>
   group_by(year) |>
     summarize(tfr = sum(5 * socsim)) |>
     gt() |>
@@ -138,7 +134,7 @@ asfr_sim |>
 ```{r}
 #| label: fig-wife-age
 #| fig-cap: Distribution of wife's age at marriage
-ggplot(marriages_even_base, aes(x = wage))+
+ggplot(mar, aes(x = wage))+
   geom_histogram()+
   labs(x = "wife's age at marriage")+
   theme_bw()
@@ -147,7 +143,7 @@ ggplot(marriages_even_base, aes(x = wage))+
 ```{r}
 #| label: fig-husband-age
 #| fig-cap: Distribution of husband's age at marriage
-ggplot(marriages_even_base, aes(x = hage))+
+ggplot(mar, aes(x = hage))+
   geom_histogram()+
   labs(x = "husband's age at marriage")+
   theme_bw()
@@ -156,6 +152,7 @@ ggplot(marriages_even_base, aes(x = hage))+
 ```{r}
 #| label: fig-spouse-age-gap
 #| fig-cap: Distribution of age difference between partners
+ggplot(mar, aes(x = (hage - wage)))+
   geom_histogram()+
   labs(x = "husband's age minus wife's age")+
   theme_bw()
@@ -168,7 +165,9 @@ ggplot(marriages_even_base, aes(x = hage))+
 ```{r}
 #| label: fig-exogamy
 #| fig-cap: Log odds ratio of exogamy between groups over time
-tab_lor <- calculate_lor(marriages_even_base)
+tab_lor <- mar |>
+  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400))) |>
+  calculate_lor()
 
 ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
   geom_line()+

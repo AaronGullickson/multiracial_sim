@@ -6,13 +6,11 @@
 plot_pop_pyramid <- function(pop, date, age_width = 5) {
   dat_pyramid <- pop |>
     filter(dob <= date & (dod == 0 | dod > date)) |>
-    mutate(age = floor((date - dob) / 12),
+    mutate(age = floor(date - dob),
            age_group = cut(age, seq(from = 0, 
                                     by = age_width, 
                                     length.out = ceiling(max(age) / age_width)+2), 
-                           right = FALSE),
-           #age_group = factor(floor(age / 5) * 5),
-           sex = factor(fem, levels = 0:1, labels = c("Male", "Female"))) |>
+                           right = FALSE)) |>
     select(sex, age, age_group) |> 
     group_by(sex, age_group) |>
     summarize(n = n()) |>
@@ -47,12 +45,12 @@ calculate_lor <- function(marriages) {
 get_marriages <- function(pop, mar) {
   
   husband <- pop |>
-    filter(fem == 0) |>
+    filter(sex == "Male") |>
     select(pid, group, dob) |>
     rename(hpid = pid, hgroup = group, hdob = dob)
   
   wife <- pop |>
-    filter(fem == 1) |>
+    filter(sex == "Female") |>
     select(pid, group, dob) |>
     rename(wpid = pid, wgroup = group, wdob = dob)
   
@@ -61,8 +59,8 @@ get_marriages <- function(pop, mar) {
     left_join(husband) |>
     left_join(wife) |>
     mutate(year = (dstart - 1200) / 12,
-           hage = (dstart - hdob) / 12,
-           wage = (dstart - wdob) / 12) |>
+           hage = year - hdob,
+           wage = year - wdob) |>
     select(mid, year, hgroup, wgroup, hage, wage)
   
   return(marriages)
