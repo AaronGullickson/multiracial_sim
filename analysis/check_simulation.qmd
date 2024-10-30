@@ -19,7 +19,7 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_folder = here("simulation", "sims", params$sim)
+sim_folder = here("data", "data_constructed", "sims", params$sim)
 
 pop <- read_csv(here(sim_folder, "final_pop.csv"))
 mar <- read_csv(here(sim_folder, "final_mar.csv"))

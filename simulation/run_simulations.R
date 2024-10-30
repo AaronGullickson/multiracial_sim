@@ -6,8 +6,13 @@ source(here("utils", "check_packages.R"))
 source(here("utils", "functions.R"))
 source(here("simulation", "simulation_functions.R"))
 
+base_folder = here("data", "data_constructed", "sims")
+# check to see if base folder exists, and if not, create it
+if(!dir_exists(base_folder)) {
+  dir_create(base_folder)
+}
 
-base_folder = here("simulation", "sims")
+
 seed <- 42
 
 fert_multiplier <- 1.09
@@ -50,67 +55,67 @@ run_simulation("even_hypo_baseline",
                inheritance = rep("hypodescent", 30),
                fert_multiplier = fert_multiplier)
 
-run_simulation("even_hyper_baseline", 
-               presim_even.opop, 
-               segments = rep(10, 30),
-               endogamy = rep(0.999, 30),
-               inheritance = rep("hyperdescent", 30),
-               fert_multiplier = fert_multiplier)
-
-run_simulation("even_random_baseline", 
-               presim_even.opop, 
-               segments = rep(10, 30),
-               endogamy = rep(0.999, 30),
-               inheritance = rep("random", 30),
-               fert_multiplier = fert_multiplier)
-
-run_simulation("uneven_hypo_baseline", 
-               presim_uneven.opop, 
-               segments = rep(10, 30),
-               endogamy = rep(0.999, 30),
-               inheritance = rep("hypodescent", 30),
-               fert_multiplier = fert_multiplier)
-
-run_simulation("uneven_hyper_baseline", 
-               presim_uneven.opop, 
-               segments = rep(10, 30),
-               endogamy = rep(0.999, 30),
-               inheritance = rep("hyperdescent", 30),
-               fert_multiplier = fert_multiplier)
-
-run_simulation("uneven_random_baseline", 
-               presim_uneven.opop, 
-               segments = rep(10, 30),
-               endogamy = rep(0.999, 30),
-               inheritance = rep("random", 30),
-               fert_multiplier = fert_multiplier)
-
-# Run full simulations ---------------------------------------------------
-
-# base off the uneven hypo
-pop_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline", 
-                                 "final_pop.csv"))
-mar_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline", 
-                                 "final_mar.csv"))
-ancestry_uneven_hypo <- read_csv(here("simulation", "sims", 
-                                      "uneven_hypo_baseline", "ancestry.csv"))
-
-# add 100 years of increasing exogamy but no change in hypodescent
-run_simulation("uneven_hypo_increase", 
-               pop_uneven_hypo, 
-               segments = c(rep(5, 20)),
-               endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
-               inheritance = rep("hypodescent", 20),
-               mar = mar_uneven_hypo,
-               ancestry = ancestry_uneven_hypo,
-               fert_multiplier = fert_multiplier)
-
-# same as above, but change to random
-run_simulation("uneven_hypo_increase_change", 
-               pop_uneven_hypo, 
-               segments = rep(5, 20),
-               endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
-               inheritance = rep("random", 20),
-               mar = mar_uneven_hypo,
-               ancestry = ancestry_uneven_hypo,
-               fert_multiplier = fert_multiplier)
+# run_simulation("even_hyper_baseline", 
+#                presim_even.opop, 
+#                segments = rep(10, 30),
+#                endogamy = rep(0.999, 30),
+#                inheritance = rep("hyperdescent", 30),
+#                fert_multiplier = fert_multiplier)
+# 
+# run_simulation("even_random_baseline", 
+#                presim_even.opop, 
+#                segments = rep(10, 30),
+#                endogamy = rep(0.999, 30),
+#                inheritance = rep("random", 30),
+#                fert_multiplier = fert_multiplier)
+# 
+# run_simulation("uneven_hypo_baseline", 
+#                presim_uneven.opop, 
+#                segments = rep(10, 30),
+#                endogamy = rep(0.999, 30),
+#                inheritance = rep("hypodescent", 30),
+#                fert_multiplier = fert_multiplier)
+# 
+# run_simulation("uneven_hyper_baseline", 
+#                presim_uneven.opop, 
+#                segments = rep(10, 30),
+#                endogamy = rep(0.999, 30),
+#                inheritance = rep("hyperdescent", 30),
+#                fert_multiplier = fert_multiplier)
+# 
+# run_simulation("uneven_random_baseline", 
+#                presim_uneven.opop, 
+#                segments = rep(10, 30),
+#                endogamy = rep(0.999, 30),
+#                inheritance = rep("random", 30),
+#                fert_multiplier = fert_multiplier)
+# 
+# # Run full simulations ---------------------------------------------------
+# 
+# # base off the uneven hypo
+# pop_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline", 
+#                                  "final_pop.csv"))
+# mar_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline", 
+#                                  "final_mar.csv"))
+# ancestry_uneven_hypo <- read_csv(here("simulation", "sims", 
+#                                       "uneven_hypo_baseline", "ancestry.csv"))
+# 
+# # add 100 years of increasing exogamy but no change in hypodescent
+# run_simulation("uneven_hypo_increase", 
+#                pop_uneven_hypo, 
+#                segments = c(rep(5, 20)),
+#                endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
+#                inheritance = rep("hypodescent", 20),
+#                mar = mar_uneven_hypo,
+#                ancestry = ancestry_uneven_hypo,
+#                fert_multiplier = fert_multiplier)
+# 
+# # same as above, but change to random
+# run_simulation("uneven_hypo_increase_change", 
+#                pop_uneven_hypo, 
+#                segments = rep(5, 20),
+#                endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
+#                inheritance = rep("random", 20),
+#                mar = mar_uneven_hypo,
+#                ancestry = ancestry_uneven_hypo,
+#                fert_multiplier = fert_multiplier)
