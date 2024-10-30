@@ -1,11 +1,15 @@
 ---
-title: "Check Simulation"
+title: "Simulation Diagnostics"
+params:
+  sim: "uneven_hypo_increase"
 execute: 
   echo: false
   warning: false
   message: false
   
 ---
+
+Diagnostics for **`r params$sim`** simulation.
 
 ```{r}
 #| label: load-libs-funcs
@@ -16,8 +20,8 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_name <- "uneven_hypo_increase"
-sim_folder = here("simulation", "sims", sim_name)
+#sim_name <- "uneven_hypo_increase"
+sim_folder = here("simulation", "sims", params$sim)
 
 pop <- read_csv(here(sim_folder, "final_pop.csv"))
 mar <- read_csv(here(sim_folder, "final_mar.csv"))
