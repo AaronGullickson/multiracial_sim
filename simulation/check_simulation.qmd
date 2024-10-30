@@ -297,6 +297,8 @@ pop |>
 
 
 ```{r}
+#| label: fig-unmixed
+#| fig-cap: Percent unmixed over time by group
 pop |>
   group_by(decade_birth, group) |>
   summarize(n = n(),
