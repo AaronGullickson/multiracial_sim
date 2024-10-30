@@ -19,4 +19,6 @@ _freeze
 # ignore anything in the constructed data directory
 data/data_constructed/*
 simulation/sims/*
+analysis/check_simulation.html
+analysis/check_simulation_files
 

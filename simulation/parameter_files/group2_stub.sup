@@ -1,17 +1,14 @@
 ***************************************************************************
-* Supervisory file for SOCSIM microsimulation for 2 Group baseline
-* simulation
+* Beginning of Supervisory file for SOCSIM microsimulation for 2 Group 
+* simulation. The actual segment information is specified programmatically.
+* All children inherit group 3 so that we can determine programmatically by 
+* R how to reassign them.
 ***************************************************************************
 
 segments 1
 input_file presim
 
 marriage_queues 2
+child_inherits_group 3
 
 ***************************************************************************
-
-* pre-sim for 300 years with very low exogamy to get stable populations
-duration 3600
-include basic_rates
-endogamy 0.999
-run

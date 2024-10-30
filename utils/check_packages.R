@@ -12,7 +12,8 @@ packages = c(
   "tidyverse","lubridate","broom", #tidyverse and friends
   "modelsummary","gt", # for table output
   "devtools", # for installing RSOCSIM
-  "fs" # for filesystem interaction
+  "fs", # for filesystem interaction
+  "future" # for how SOCSIM process is run
 )
 
 package.check <- lapply(packages, FUN = function(x) {

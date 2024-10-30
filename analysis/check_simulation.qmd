@@ -1,5 +1,10 @@
 ---
-title: "Check Simulations"
+title: "Check Simulation"
+execute: 
+  echo: false
+  warning: false
+  message: false
+  
 ---
 
 ```{r}
@@ -11,30 +16,41 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_folder <- "group2_even_baseline"
-sim_name <- "sim_results_group2_baseline.sup_42_"
-base_folder = here("simulation", "sims", sim_folder, sim_name)
+sim_name <- "uneven_hypo_increase"
+sim_folder = here("simulation", "sims", sim_name)
 
-pop_even_base <- read_table(here(base_folder, "result.opop"), 
-                            col_names = c("pid", "fem", "group", "nev", 
-                                          "dob", "mom", "dad", "nesibm", 
-                                          "nesibp", "lborn", "marid", 
-                                          "mstat", "dod", "fmult"))
-
-# have to add the junk variable due to trailing zeroes
-mar_even_base <- read_table(here(base_folder, "result.omar"),
-                            col_names = c("mid", "wpid", "hpid", "dstart", 
-                                          "dend", "rend", "wprior", "hprior", 
-                                          "junk"))
+pop <- read_csv(here(sim_folder, "final_pop.csv"))
+mar <- read_csv(here(sim_folder, "final_mar.csv"))
+ancestry <- read_csv(here(sim_folder, "ancestry.csv"))
 ```
 
 ```{r}
 #| label: data-cleaning
+last_year <- (max(pop$dob) - 1200) / 12
 
-pop_even_base <- add_ancestry_info(pop_even_base)
+# get asfr before converting pop
+asfr <- rsocsim::estimate_fertility_rates(opop = pop,
+  final_sim_year = last_year, #[Jan-Dec]
+  year_min = 0, # Closed [
+  year_max = last_year, # Open )
+  year_group = 30, 
+  age_min_fert = 10, # Closed [
+  age_max_fert = 55, # Open )
+  age_group = 5) #[,)
 
-marriages_even_base <- get_marriages(pop_even_base, mar_even_base) |>
-  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400)))
+pop <- pop |>
+  left_join(ancestry) |>
+  mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
+         mom = ifelse(mom == 0, NA, mom),
+         dad = ifelse(pop == 0, NA, pop),
+         dob = (dob - 1200) / 12,
+         dod = ifelse(dod == 0, NA, (dod - 1200) / 12),
+         founder = is.na(mom) & is.na(dad),
+         mixedness = 1 - (ancestry_group1^2+ancestry_group2^2)) |>
+  select(pid, sex, group, founder, dob, dod, mom, dad, 
+         ancestry_group1, ancestry_group2, nearest_gen_locus, mixedness)
+
+mar <- get_marriages(pop, mar)
 ```
 
 # Basic Demographic Information
@@ -45,21 +61,21 @@ Lets start by plotting some population pyramids from the beginning of the time
 period until the end of the time period. 
 
 ```{r}
-#| label: fig-pop-pyramid-even-1200
+#| label: fig-pop-pyramid-start
 #| fig-cap: Population pyramid of the even population at beginning of the simulation
-plot_pop_pyramid(pop_even_base, 1200)
+plot_pop_pyramid(pop, 0)
 ```
 
 ```{r}
-#| label: fig-pop-pyramid-even-1800
-#| fig-cap: Population pyramid of the even population at 50 years.
-plot_pop_pyramid(pop_even_base, 1800)
+#| label: fig-pop-pyramid-50
+#| fig-cap: Population pyramid of the even population at 150 years.
+plot_pop_pyramid(pop, 50)
 ```
 
 ```{r}
-#| label: fig-pop-pyramid-even-4800
+#| label: fig-pop-pyramid-end
 #| fig-cap: Population pyramid of the even population at 300 years.
-plot_pop_pyramid(pop_even_base, 4800)
+plot_pop_pyramid(pop, last_year)
 ```
 
 
@@ -68,15 +84,14 @@ plot_pop_pyramid(pop_even_base, 4800)
 ```{r}
 #| label: fig-pop-growth
 #| fig-cap: Overall size of the population from the beginning of the simulation to the end.
-year_range <- 1200:4800
+year_range <- 0:last_year
 
 total_pop <- map_vec(year_range, function(x) {
-  pop_even_base |> filter(dob <= x & (dod == 0 | dod > x)) |> nrow()
+  pop |> get_pop_alive(x) |> nrow()
 })
 
 tibble(year_range, total_pop) |>
-  mutate(year = (year_range - 1200) / 12) |>
-  ggplot(aes(x = year, y = total_pop))+
+  ggplot(aes(x = year_range, y = total_pop))+
   geom_line()+
   labs(x = "years from start of simulation", y = "population size")+
   theme_bw()
@@ -86,7 +101,8 @@ tibble(year_range, total_pop) |>
 #| label: fig-pop-growth-group
 #| fig-cap: Overall size of the population from the beginning of the simulation to the end, by group.
 total_pop_group <- map(year_range, function(x) {
-  pop_even_base |> filter(dob <= x & (dod == 0 | dod > x)) |> 
+  pop |> 
+    get_pop_alive(x) |> 
     group_by(group) |>
     summarize(year = x, n = n())
 }) |>
@@ -94,7 +110,7 @@ total_pop_group <- map(year_range, function(x) {
 
 total_pop_group |>
   mutate(group = factor(group)) |>
-  ggplot(aes(x = (year - 1200) / 12, y = n, group = group, color = group))+
+  ggplot(aes(x = year, y = n, group = group, color = group))+
   geom_line()+
   labs(x = "year from start of simulation", y = "population size")+
   theme_bw()
@@ -103,21 +119,9 @@ total_pop_group |>
 ## Fertility Rates
 
 ```{r}
-#| label: calculate-asfr
-asfr_sim <- rsocsim::estimate_fertility_rates(opop = pop_even_base,
-  final_sim_year = 300, #[Jan-Dec]
-  year_min = 0, # Closed [
-  year_max = 300, # Open )
-  year_group = 30, 
-  age_min_fert = 10, # Closed [
-  age_max_fert = 55, # Open )
-  age_group = 5) #[,)
-```
-
-```{r}
 #| label: fig-asfr
 #| fig-cap: Age-specific fertility rates by 30 year interval
-ggplot(asfr_sim, aes(x = age, y = socsim, group = year, color = year))+
+ggplot(asfr, aes(x = age, y = socsim, group = year, color = year))+
   geom_line()+
   labs(x = "age", y = "age-specific fertility rate", color = "year interval")+
   theme_bw()
@@ -126,7 +130,7 @@ ggplot(asfr_sim, aes(x = age, y = socsim, group = year, color = year))+
 ```{r}
 #| label: tbl-tfr
 #| tbl-cap: Total fertility rate by 30 year interval
-asfr_sim |>
+asfr |>
   group_by(year) |>
     summarize(tfr = sum(5 * socsim)) |>
     gt() |>
@@ -138,7 +142,7 @@ asfr_sim |>
 ```{r}
 #| label: fig-wife-age
 #| fig-cap: Distribution of wife's age at marriage
-ggplot(marriages_even_base, aes(x = wage))+
+ggplot(mar, aes(x = wage))+
   geom_histogram()+
   labs(x = "wife's age at marriage")+
   theme_bw()
@@ -147,7 +151,7 @@ ggplot(marriages_even_base, aes(x = wage))+
 ```{r}
 #| label: fig-husband-age
 #| fig-cap: Distribution of husband's age at marriage
-ggplot(marriages_even_base, aes(x = hage))+
+ggplot(mar, aes(x = hage))+
   geom_histogram()+
   labs(x = "husband's age at marriage")+
   theme_bw()
@@ -156,6 +160,7 @@ ggplot(marriages_even_base, aes(x = hage))+
 ```{r}
 #| label: fig-spouse-age-gap
 #| fig-cap: Distribution of age difference between partners
+ggplot(mar, aes(x = (hage - wage)))+
   geom_histogram()+
   labs(x = "husband's age minus wife's age")+
   theme_bw()
@@ -168,7 +173,9 @@ ggplot(marriages_even_base, aes(x = hage))+
 ```{r}
 #| label: fig-exogamy
 #| fig-cap: Log odds ratio of exogamy between groups over time
-tab_lor <- calculate_lor(marriages_even_base)
+tab_lor <- mar |>
+  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = last_year))) |>
+  calculate_lor()
 
 ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
   geom_line()+
@@ -181,24 +188,28 @@ ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
 
 ```{r}
 #| label: get_ancestry
-parent_info <- get_parent_info(pop_even_base)
-descendants <- pop_even_base |> filter(!is.na(mom))
-ancestry_summary <- map(descendants$pid, get_ancestry_summary, parent_info) |>
-  bind_rows()
+#| eval: false
 
-pop_ancestry <- pop_even_base |>
-  filter(mom > 0) |>
-  mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
-         dob = (dob - 1200) / 12, 
-         dod = (dod - 1200) /12) |>
-  select(pid, sex, group, dob, dod, starts_with("ancestry_"), 
-         nearest_gen_locus, mixedness)
+# this just checks to make sure the ancestry data is measured the same by
+# both methods, but is not run by default as it takes a long time.
+parent_info <- get_parent_info(pop)
+descendants <- pop |> filter(!founder)
+ancestry_summary <- map(descendants$pid, get_ancestry_summary, parent_info) |>
+  bind_rows() 
+
+temp <- descendants |>
+  full_join(ancestry_summary, by = "pid")
+
+table(temp$nearest_gen_locus.x, temp$nearest_gen_locus.y, exclude = NULL)
+
+ggplot(temp, aes(x = ancestry_group1.x, y = ancestry_group1.y))+
+  geom_jitter(alpha = 0.05)
 ```
 
 ```{r}
 #| label: fig-mean-gen-locus
 #| fig-cap: Mean generational locus of mixing by decade of birth
-pop_ancestry |>
+pop |>
   mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(nearest_gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
@@ -212,7 +223,7 @@ pop_ancestry |>
 ```{r}
 #| label: fig-mean-mixedness
 #| fig-cap: Mean level of mixedness by decade of birth
-pop_ancestry |>
+pop |>
   mutate(decade = floor(dob / 10) * 10) |>
   group_by(decade) |>
   summarize(mixedness = mean(mixedness)) |>
@@ -227,9 +238,9 @@ pop_ancestry |>
 #| label: fig-mixedness-locus
 #| fig-cap: Distribution of mixedness by nearest generational locus. Red dots indicate exact fraction if mixing only happened ion the nearest generational locus, while blue dots indicate actual mean of mixedness by generational locus.
 
-max_gen <- max(pop_ancestry$nearest_gen_locus, na.rm = TRUE)
+max_gen <- max(pop$nearest_gen_locus, na.rm = TRUE)
 
-fractions <- pop_ancestry |>
+fractions <- pop |>
   filter(!is.na(nearest_gen_locus)) |>
   group_by(nearest_gen_locus) |>
   summarize(mixedness_actual = mean(mixedness)) |>
@@ -237,7 +248,7 @@ fractions <- pop_ancestry |>
   # theoretical mixedness if only one event
   mutate(mixedness_theoretical = 1-(2^(2*nearest_gen_locus)-2^(nearest_gen_locus+1)+2)/(2^(2*nearest_gen_locus)))
 
-pop_ancestry |>
+pop |>
   filter(!is.na(nearest_gen_locus)) |>
   ggplot(aes(x = nearest_gen_locus, y = mixedness))+
   scale_x_continuous(breaks = 1:max_gen)+
@@ -250,8 +261,9 @@ pop_ancestry |>
 ```{r}
 #| label: fig-nearest-locus-trend
 #| fig-cap: Share of each generational locus over time
-pop_ancestry |>
+pop |>
   mutate(decade = floor(dob / 10) * 10) |>
+  filter(decade >= 0) |>
   group_by(decade) |>
   summarize(n = n(),
             punmixed = sum(is.na(nearest_gen_locus)) / n, 
@@ -271,5 +283,26 @@ pop_ancestry |>
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
        color = "generational locus")+
+  theme_bw()
+```
+
+
+```{r}
+pop |>
+  mutate(decade = floor(dob / 10) * 10) |>
+  filter(decade >= 0) |>
+  group_by(decade, group) |>
+  summarize(n = n(),
+            p_unmixed = sum(is.na(nearest_gen_locus)) / n) |>
+  ungroup() |>
+  mutate(group = factor(group)) |>
+  select(decade, group, p_unmixed) |>
+  ggplot(aes(x = decade, y = p_unmixed, group = group, color = group))+
+  geom_line()+
+  geom_point()+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth (at decade intervals)", 
+       y = "percent unmixed",
+       color = "group")+
   theme_bw()
 ```
