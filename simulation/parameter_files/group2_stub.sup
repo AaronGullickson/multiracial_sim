@@ -1,6 +1,8 @@
 ***************************************************************************
-* Supervisory file for SOCSIM microsimulation for 2 Group baseline
-* simulation
+* Beginning of Supervisory file for SOCSIM microsimulation for 2 Group 
+* simulation. The actual segment information is specified programmatically.
+* All children inherit group 3 so that we can determine programmatically by 
+* R how to reassign them.
 ***************************************************************************
 
 segments 1

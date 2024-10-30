@@ -17,7 +17,7 @@ options(scipen = 999)
 # this function helps tune the 2000 US fertility rates with a simple 
 # multiplier to get a roughly stationary population
 create_fertility_rates <- function(file, multiplier) {
-  fert <- read_table(here("simulation", "rates", "fertility_rates"), 
+  fert <- read_table(here("simulation", "parameter_files", "fertility_rates"), 
                      col_names = c("age", "not_sure", "rate"),
                      col_types = cols(age = "i", 
                                       not_sure = "i",
@@ -126,7 +126,7 @@ run_simulation <- function(sim_name,
   }
   
   # create rate file
-  file_copy(here("simulation", "rates", "basic_rates"), 
+  file_copy(here("simulation", "parameter_files", "basic_rates"), 
             here(folder, "basic_rates"))
   # add fertility rates
   create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
@@ -134,7 +134,7 @@ run_simulation <- function(sim_name,
   for(i in 1:length(segments)) {
     
     # update sup file
-    file_copy(here("simulation", "supfiles", "group2_stub.sup"), 
+    file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
               here(folder, "run.sup"), overwrite = TRUE)
     cat("\nduration", segments[i]*12, "\n", file = here(folder, "run.sup"),
         append = TRUE)
