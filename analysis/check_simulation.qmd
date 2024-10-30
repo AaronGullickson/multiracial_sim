@@ -16,7 +16,7 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_folder <- "test"
+sim_folder <- "uneven_hypo_increase"
 base_folder = here("simulation", "sims", sim_folder)
 
 pop <- read_csv(here(base_folder, "final_pop.csv"))
@@ -26,12 +26,13 @@ ancestry <- read_csv(here(base_folder, "ancestry.csv"))
 
 ```{r}
 #| label: data-cleaning
+last_year <- (max(pop$dob) - 1200) / 12
 
 # get asfr before converting pop
 asfr <- rsocsim::estimate_fertility_rates(opop = pop,
-  final_sim_year = 300, #[Jan-Dec]
+  final_sim_year = last_year, #[Jan-Dec]
   year_min = 0, # Closed [
-  year_max = 300, # Open )
+  year_max = last_year, # Open )
   year_group = 30, 
   age_min_fert = 10, # Closed [
   age_max_fert = 55, # Open )
@@ -74,7 +75,7 @@ plot_pop_pyramid(pop, 50)
 ```{r}
 #| label: fig-pop-pyramid-end
 #| fig-cap: Population pyramid of the even population at 300 years.
-plot_pop_pyramid(pop, 300)
+plot_pop_pyramid(pop, last_year)
 ```
 
 
@@ -83,7 +84,7 @@ plot_pop_pyramid(pop, 300)
 ```{r}
 #| label: fig-pop-growth
 #| fig-cap: Overall size of the population from the beginning of the simulation to the end.
-year_range <- 0:300
+year_range <- 0:last_year
 
 total_pop <- map_vec(year_range, function(x) {
   pop |> get_pop_alive(x) |> nrow()
@@ -173,7 +174,7 @@ ggplot(mar, aes(x = (hage - wage)))+
 #| label: fig-exogamy
 #| fig-cap: Log odds ratio of exogamy between groups over time
 tab_lor <- mar |>
-  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = 400))) |>
+  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = last_year))) |>
   calculate_lor()
 
 ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
