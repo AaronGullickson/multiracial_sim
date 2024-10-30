@@ -37,17 +37,21 @@ create_fertility_rates <- function(file, multiplier) {
 }
 
 # for testing
-#sim_name <- "test"
-#pop_start <- presim_even.opop
-#segments <- rep(10, 30)
-#endogamy <- rep(0.999, 30)
-#inheritance <- rep("hypodescent", 30)
+sim_name <- "test"
+pop_start <- pop_uneven_hypo
+mar <- mar_uneven_hypo
+ancestry <- ancestry_uneven_hypo
+segments <- rep(5, 20)
+endogamy <- seq(from = 0.989, by = -0.005, length.out = 20)
+inheritance <- rep("hypodescent", 20)
 
 run_simulation <- function(sim_name, 
-                           pop_start, 
+                           pop_start,
                            segments, 
                            endogamy,
                            inheritance = NULL,
+                           mar = NULL,
+                           ancestry = NULL,
                            fert_multiplier = 1) {
 
   # do some checks
@@ -68,6 +72,11 @@ run_simulation <- function(sim_name,
     message("No inheritance rules specified, defaulting to random")
     inheritance <- rep("random", length(segments))
   }
+  
+  if(is.null(mar)) {
+    # start with an empty data frame for mar
+    mar <- data.frame()
+  }
    
   # set up the directory for output 
   if(dir_exists(here(base_folder, sim_name))) {
@@ -80,16 +89,18 @@ run_simulation <- function(sim_name,
   # presim files
   write.table(pop_start, here(folder, "presim.opop"), 
               row.names = F, col.names = F)
-  write.table(data.frame(), here(folder, "presim.omar"), 
+  write.table(mar, here(folder, "presim.omar"), 
               row.names = F, col.names = F)
   
-  # create initial ancestry dataset
-  ancestry <- pop_start |>
-    as_tibble() |>
-    mutate(ancestry_group1 = as.numeric(group == 1),
-           ancestry_group2 = as.numeric(group == 2),
-           nearest_gen_locus = NA) |>
-    select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
+  # create initial ancestry dataset if it does not exist
+  if(is.null(ancestry)) {
+    ancestry <- pop_start |>
+      as_tibble() |>
+      mutate(ancestry_group1 = as.numeric(group == 1),
+             ancestry_group2 = as.numeric(group == 2),
+             nearest_gen_locus = NA) |>
+      select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
+  }
   
   # create rate file
   file_copy(here("simulation", "rates", "basic_rates"), 
@@ -281,20 +292,30 @@ run_simulation("uneven_random_baseline",
 
 # Run full simulations ---------------------------------------------------
 
+# base off the uneven hypo
+pop_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline", 
+                                 "final_pop.csv"))
+mar_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline", 
+                                 "final_mar.csv"))
+ancestry_uneven_hypo <- read_csv(here("simulation", "sims", 
+                                      "uneven_hypo_baseline", "ancestry.csv"))
+
 # add 100 years of increasing exogamy but no change in hypodescent
 run_simulation("uneven_hypo_increase", 
-               presim_uneven.opop, 
-               segments = c(rep(10, 30), rep(5, 20)),
-               endogamy = c(rep(0.999, 30), 
-                            seq(from = 0.989, by = -0.005, length.out = 20)),
-               inheritance = rep("hypodescent", 50),
+               pop_uneven_hypo, 
+               segments = c(rep(5, 20)),
+               endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
+               inheritance = rep("hypodescent", 20),
+               mar = mar_uneven_hypo,
+               ancestry = ancestry_uneven_hypo,
                fert_multiplier = fert_multiplier)
 
 # same as above, but change to random
 run_simulation("uneven_hypo_increase_change", 
-               presim_uneven.opop, 
-               segments = c(rep(10, 30), rep(5, 20)),
-               endogamy = c(rep(0.999, 30), 
-                            seq(from = 0.989, by = -0.005, length.out = 20)),
-               inheritance = c(rep("hypodescent", 30), rep("random", 20)),
+               pop_uneven_hypo, 
+               segments = rep(5, 20),
+               endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
+               inheritance = rep("random", 20),
+               mar = mar_uneven_hypo,
+               ancestry = ancestry_uneven_hypo,
                fert_multiplier = fert_multiplier)
