@@ -16,12 +16,12 @@ source(here("utils", "functions.R"))
 
 ```{r}
 #| label: load-data
-sim_folder <- "uneven_hypo_increase"
-base_folder = here("simulation", "sims", sim_folder)
+sim_name <- "uneven_hypo_increase"
+sim_folder = here("simulation", "sims", sim_name)
 
-pop <- read_csv(here(base_folder, "final_pop.csv"))
-mar <- read_csv(here(base_folder, "final_mar.csv"))
-ancestry <- read_csv(here(base_folder, "ancestry.csv"))
+pop <- read_csv(here(sim_folder, "final_pop.csv"))
+mar <- read_csv(here(sim_folder, "final_mar.csv"))
+ancestry <- read_csv(here(sim_folder, "ancestry.csv"))
 ```
 
 ```{r}
