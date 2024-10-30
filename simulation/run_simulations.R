@@ -93,12 +93,12 @@ run_simulation("uneven_random_baseline",
 # Run full simulations ---------------------------------------------------
 
 # base off the uneven hypo
-pop_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline",
+pop_uneven_hypo <- read_csv(here(base_folder, "uneven_hypo_baseline",
                                  "final_pop.csv"))
-mar_uneven_hypo <- read_csv(here("simulation", "sims", "uneven_hypo_baseline",
+mar_uneven_hypo <- read_csv(here(base_folder, "uneven_hypo_baseline",
                                  "final_mar.csv"))
-ancestry_uneven_hypo <- read_csv(here("simulation", "sims",
-                                      "uneven_hypo_baseline", "ancestry.csv"))
+ancestry_uneven_hypo <- read_csv(here(base_folder, "uneven_hypo_baseline", 
+                                      "ancestry.csv"))
 
 # add 100 years of increasing exogamy but no change in hypodescent
 run_simulation("uneven_hypo_increase",
