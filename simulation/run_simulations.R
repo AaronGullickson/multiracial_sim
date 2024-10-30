@@ -36,15 +36,38 @@ create_fertility_rates <- function(file, multiplier) {
   write_delim(fert, file = file, col_names = FALSE, append =TRUE)
 }
 
-# for testing
-sim_name <- "test"
-pop_start <- pop_uneven_hypo
-mar <- mar_uneven_hypo
-ancestry <- ancestry_uneven_hypo
-segments <- rep(5, 20)
-endogamy <- seq(from = 0.989, by = -0.005, length.out = 20)
-inheritance <- rep("hypodescent", 20)
-
+#######
+# This function is the big one that runs the full simulation. This simulation
+# runs a number of years of socsim equal to each value in the segments vector
+# and then assigns ancestry information and group to any new children produced
+# by that simulation before continuing on with the simulation. This makes it 
+# fast to measure ancestry and flexible and extensivel in terms of handling 
+# how group is assigned. 
+# sim_name - the name to call this simulation. This will be the name of the 
+#            folder.
+# pop_start - the population data.frame to start the simulation with. This can
+#             be the result of a previous simulation, but if so the mar and 
+#             ancestry files must also be provided to get correct results.
+# segments - A vector where each value gives the number of years to sim for 
+#            each segment. Segments must be 15 years or less in order to 
+#            correctly assign children to group before they start partnering.
+# endogamy - A vector of the same length as segments that gives the endogamy
+#            parameter to use for each segment (between 0 and 1).
+# inheritance - A vector of the same length that gives the inheritance rule 
+#               to use when assigning children to groups. See the 
+#               calculate_ancestry function for details. If left NULL, it will
+#               default to random (50/50) assignment of mixed children to groups.
+# mar - A marriage dataset to use for the start of the simulation. This can be left
+#       null for simulations starting from scratch, but should be specified 
+#       by the final mar file from a previous sim if starting from a previous
+#       sim.
+# ancestry - An ancestry dataset to use for the start of a simulation. This can
+#            be left null for simulations starting from scratch, but should be 
+#            specified by the final ancestry file from a previous sim if 
+#            starting from a previous sim.
+# fert_multiplier - A multiplier to apply to base fertility rates to dictate
+#                   the overall growth rate of the population.
+######
 run_simulation <- function(sim_name, 
                            pop_start,
                            segments, 
@@ -155,7 +178,22 @@ run_simulation <- function(sim_name,
   
 }
 
-
+####
+# This function is used internally by run_simulation to measure ancestry of
+# new children produced in each segment and to assign their group. New ancestry
+# measures can be added and tracked here. This cannot be used on the final pop
+# file produced by the simulation. 
+# pop - the pop dataset for the current simulation. Anyone with a group ==3 will
+#       be new children and get stuff measured and group determined.
+# ancestry - the ancestry dataset for the current simulation.
+# inheritance_method - A character string determining the way group is  
+#                      inherited by children. 
+# The current methods of inheritance are:
+# * random - a 50/50 draw from groups 1 and 2 for each child of mixed parents.
+# * hypodescent - If the mother OR father is a member of group 2, the child is 
+#                 assigned to group 2, and otherwise 1.
+# * hyperdescent - If the mother OR father is a member of group 1, the child is 
+#                  assigned to group 1, and otherwise 2.
 calculate_ancestry <- function(pop, 
                                ancestry, 
                                inheritance_method = "random") {
