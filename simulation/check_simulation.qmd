@@ -52,10 +52,13 @@ pop <- pop |>
          mom = ifelse(mom == 0, NA, mom),
          dad = ifelse(pop == 0, NA, pop),
          dob = (dob - 1200) / 12,
+         decade_birth = floor(dob / 10) * 10 + 5,
+         decade_birth = ifelse(decade_birth < 0 | decade_birth > last_year,
+                               NA, decade_birth),
          dod = ifelse(dod == 0, NA, (dod - 1200) / 12),
          founder = is.na(mom) & is.na(dad),
          mixedness = 1 - (ancestry_group1^2+ancestry_group2^2)) |>
-  select(pid, sex, group, founder, dob, dod, mom, dad, 
+  select(pid, sex, group, founder, dob, decade_birth, dod, mom, dad, 
          ancestry_group1, ancestry_group2, nearest_gen_locus, mixedness)
 
 mar <- get_marriages(pop, mar)
@@ -218,13 +221,13 @@ ggplot(temp, aes(x = ancestry_group1.x, y = ancestry_group1.y))+
 #| label: fig-mean-gen-locus
 #| fig-cap: Mean generational locus of mixing by decade of birth
 pop |>
-  mutate(decade = floor(dob / 10) * 10) |>
-  group_by(decade) |>
+  group_by(decade_birth) |>
   summarize(nearest_gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
-  ggplot(aes(x = decade, y = nearest_gen_locus))+
+  ggplot(aes(x = decade_birth, y = nearest_gen_locus))+
   geom_point()+
   geom_line()+
-  labs(x = "year", y = "mean nearest generational locus")+
+  labs(x = "year of birth (in decade intervals)", 
+       y = "mean nearest generational locus")+
   theme_bw()
 ```
 
@@ -232,13 +235,13 @@ pop |>
 #| label: fig-mean-mixedness
 #| fig-cap: Mean level of mixedness by decade of birth
 pop |>
-  mutate(decade = floor(dob / 10) * 10) |>
-  group_by(decade) |>
+  group_by(decade_birth) |>
   summarize(mixedness = mean(mixedness)) |>
-  ggplot(aes(x = decade, y = mixedness))+
+  ggplot(aes(x = decade_birth, y = mixedness))+
   geom_point()+
   geom_line()+
-  labs(x = "year", y = "mean level of mixedness")+
+  labs(x = "year of birth (in decade intervals)", 
+       y = "mean level of mixedness")+
   theme_bw()
 ```
 
@@ -270,21 +273,19 @@ pop |>
 #| label: fig-nearest-locus-trend
 #| fig-cap: Share of each generational locus over time
 pop |>
-  mutate(decade = floor(dob / 10) * 10) |>
-  filter(decade >= 0) |>
-  group_by(decade) |>
+  group_by(decade_birth) |>
   summarize(n = n(),
             punmixed = sum(is.na(nearest_gen_locus)) / n, 
             p1 = sum(nearest_gen_locus == 1, na.rm = TRUE) / n,
             p2 = sum(nearest_gen_locus == 2, na.rm = TRUE) / n,
             p3 = sum(nearest_gen_locus == 3, na.rm = TRUE) / n,
             p4plus = sum(nearest_gen_locus >= 4, na.rm = TRUE) / n) |>
-  select(decade, starts_with("p")) |>
+  select(decade_birth, starts_with("p")) |>
   pivot_longer(cols = starts_with("p"), names_to = "group", values_to = "prop") |>
   mutate(group = factor(group, levels = c("p1", "p2", "p3", "p4plus", "punmixed"),
                         labels = c("1st gen (biracial)", "2nd gen", "3rd gen", 
                                    "4th+ gen", "Unmixed"))) |>
-  ggplot(aes(x = decade+5, y = prop, group = group, color = group))+
+  ggplot(aes(x = decade_birth, y = prop, group = group, color = group))+
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
@@ -297,15 +298,13 @@ pop |>
 
 ```{r}
 pop |>
-  mutate(decade = floor(dob / 10) * 10) |>
-  filter(decade >= 0) |>
-  group_by(decade, group) |>
+  group_by(decade_birth, group) |>
   summarize(n = n(),
             p_unmixed = sum(is.na(nearest_gen_locus)) / n) |>
   ungroup() |>
   mutate(group = factor(group)) |>
-  select(decade, group, p_unmixed) |>
-  ggplot(aes(x = decade, y = p_unmixed, group = group, color = group))+
+  select(decade_birth, group, p_unmixed) |>
+  ggplot(aes(x = decade_birth, y = p_unmixed, group = group, color = group))+
   geom_line()+
   geom_point()+
   scale_y_continuous(labels = scales::percent)+
