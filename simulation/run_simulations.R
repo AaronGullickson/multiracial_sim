@@ -47,9 +47,29 @@ run_simulation <- function(sim_name,
                            pop_start, 
                            segments, 
                            endogamy,
-                           inheritance,
-                           fert_multiplier) {
+                           inheritance = NULL,
+                           fert_multiplier = 1) {
+
+  # do some checks
+  if(max(segments) > 15) {
+    stop("All segments must be 15 years or less or group assignment will not work correctly")
+  }
   
+  if(length(segments) != length(endogamy)) {
+    stop("The length of the segments argument and the endogamy argument must be the same.")
+  }
+  
+  if(!is.null(inheritance) & (length(segments) != length(inheritance))) {
+    stop("If inheritance rules are specified, the argument must be the same length as segments")
+  }
+  
+  # check for null values on arguments and address
+  if(is.null(inheritance)) {
+    message("No inheritance rules specified, defaulting to random")
+    inheritance <- rep("random", length(segments))
+  }
+   
+  # set up the directory for output 
   if(dir_exists(here(base_folder, sim_name))) {
     dir_delete(here(base_folder, sim_name))
   }
