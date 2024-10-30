@@ -215,7 +215,7 @@ presim_uneven.opop$group <- sample(1:2, nrow(presim_uneven.opop), replace = T,
                             prob = c(0.8, 0.2))
 
 
-# Run baseline simulations ----------------------------------------------------
+# Run baseline simulations ---------------------------------------------------
 
 run_simulation("even_hypo_baseline", 
                presim_even.opop, 
@@ -259,3 +259,22 @@ run_simulation("uneven_random_baseline",
                inheritance = rep("random", 30),
                fert_multiplier = fert_multiplier)
 
+# Run full simulations ---------------------------------------------------
+
+# add 100 years of increasing exogamy but no change in hypodescent
+run_simulation("uneven_hypo_increase", 
+               presim_uneven.opop, 
+               segments = c(rep(10, 30), rep(5, 20)),
+               endogamy = c(rep(0.999, 30), 
+                            seq(from = 0.989, by = -0.005, length.out = 20)),
+               inheritance = rep("hypodescent", 50),
+               fert_multiplier = fert_multiplier)
+
+# same as above, but change to random
+run_simulation("uneven_hypo_increase_change", 
+               presim_uneven.opop, 
+               segments = c(rep(10, 30), rep(5, 20)),
+               endogamy = c(rep(0.999, 30), 
+                            seq(from = 0.989, by = -0.005, length.out = 20)),
+               inheritance = c(rep("hypodescent", 30), rep("random", 20)),
+               fert_multiplier = fert_multiplier)
