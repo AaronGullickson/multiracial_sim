@@ -13,7 +13,8 @@ packages = c(
   "modelsummary","gt", # for table output
   "devtools", # for installing RSOCSIM
   "fs", # for filesystem interaction
-  "future" # for how SOCSIM process is run
+  "future", # for how SOCSIM process is run
+  "quarto" # for automating parameterized reports
 )
 
 package.check <- lapply(packages, FUN = function(x) {

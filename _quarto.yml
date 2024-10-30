@@ -3,9 +3,10 @@ project:
   output-dir: _products
   execute-dir: project
   pre-render: 
-    - utils/check_packages.R       # install required packages
-    - utils/remove_artifacts.ts    # remove previously constructed files
-    - simulation/run_simulations.R # run the simulations
+    - utils/check_packages.R                # install required packages
+    - utils/remove_artifacts.ts             # remove previously constructed files
+    - simulation/run_simulations.R          # run the simulations
+    - simulation/build_diagnostic_reports.R # build diagnostic reports
   render:
     # if analysis is split into multiple docs, add them here
     - analysis/organize_data.qmd

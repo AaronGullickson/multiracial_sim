@@ -2,6 +2,12 @@
 title: "Simulation Diagnostics"
 params:
   sim: "even_hypo_baseline"
+format:
+  html:
+    code-fold: true
+    embed-resources: true
+    toc: true
+    theme: flatly
 execute: 
   echo: false
   warning: false
