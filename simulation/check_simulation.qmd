@@ -325,8 +325,32 @@ pop |>
 ```
 
 ```{r}
+#| label: fig-gen-locus-dist-100
+#| fig-cap: Distribution of generational locus after 200 years
+pop |>
+  get_pop_alive(200) |>
+  ggplot(aes(x = nearest_gen_locus, y = after_stat(prop)))+
+  geom_bar()+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "nearest generational locus", y = NULL)+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-gen-locus-dist-end
+#| fig-cap: Distribution of generational locus at the end of the simulation
+pop |>
+  get_pop_alive(last_year) |>
+  ggplot(aes(x = nearest_gen_locus, y = after_stat(prop)))+
+  geom_bar()+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "nearest generational locus", y = NULL)+
+  theme_bw()
+```
+
+```{r}
 #| label: fig-mean-mixedness
-#| fig-cap: Mean level of mixedness by decade of birth
+#| fig-cap: Mean level of mixedness by decade of birth. Mixedness is measured by Simpson's diversity index and is maximized at 0.5.
 pop |>
   group_by(decade_birth) |>
   summarize(mixedness = mean(mixedness)) |>
@@ -359,6 +383,7 @@ pop |>
   geom_jitter(alpha = 0.01)+
   geom_point(data = fractions, (aes(y = mixedness_actual)), color = "blue", size = 2)+
   geom_point(data = fractions, (aes(y = mixedness_theoretical)), color = "red", size = 2)+
+  labs(x = "nearest generational locus")+
   theme_bw()
 ```
 
