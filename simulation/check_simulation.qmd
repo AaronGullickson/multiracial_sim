@@ -193,7 +193,7 @@ asfr |>
     cols_label(year = "Year", tfr = "TFR")
 ```
 
-## Age at marriage
+## Age at Marriage
 
 ```{r}
 #| label: fig-wife-age
