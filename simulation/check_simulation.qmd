@@ -61,7 +61,10 @@ pop <- pop |>
   select(pid, sex, group, founder, dob, decade_birth, dod, mom, dad, 
          ancestry_group1, ancestry_group2, nearest_gen_locus, mixedness)
 
-mar <- get_marriages(pop, mar)
+mar <- get_marriages(pop, mar) |>
+  mutate(decade_mar = floor(year / 10) * 10 + 5,
+         decade_mar = ifelse(decade_mar < 0 | decade_mar > last_year,
+                             NA, decade_mar))
 ```
 
 # Basic Demographic Information
@@ -168,7 +171,6 @@ total_pop_group |>
   labs(x = "year from start of simulation", y = "share")+
   theme_bw()
 ```
-```
 
 ## Fertility Rates
 
@@ -225,18 +227,66 @@ ggplot(mar, aes(x = (hage - wage)))+
 ## Intermarriage Trends
 
 ```{r}
-#| label: fig-exogamy
+#| label: fig-exogamy-lor
 #| fig-cap: Log odds ratio of exogamy between groups over time
 tab_lor <- mar |>
-  mutate(time_period = cut(year, breaks = seq(from = 0, by = 20, to = last_year))) |>
   calculate_lor()
 
-ggplot(tab_lor, aes(x = time_period, y = lor, group = 1))+
-  geom_line()+
+ggplot(tab_lor, aes(x = decade_mar, y = lor, group = 1))+
   geom_point()+
-  labs(x = "time period", y = "log odds ratio of intermarriage")+
+  geom_smooth(se = FALSE)+
+  labs(x = "year (in decade intervals)", y = "log odds ratio of intermarriage")+
   theme_bw()
 ```
+
+```{r}
+#| label: fig-exog-prop
+#| fig-cap: Percent of marriages that are group exogamous over time
+mar |>
+  mutate(exogamous = hgroup != wgroup) |>
+  group_by(decade_mar) |>
+  summarize(prop_exog = mean(exogamous)) |>
+  ungroup() |>
+  ggplot(aes(x = decade_mar, y = prop_exog))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year (in decade intervals)", 
+       y = "percent of unions that are group exogamous")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-exog-prop-group
+#| fig-cap: Percent of marriages involving a member of a given group that are group exogamous over time
+exog_group1 <- mar |>
+  mutate(exogamous = hgroup != wgroup) |>
+  filter(hgroup == 1 | wgroup == 1) |>
+  group_by(decade_mar) |>
+  summarize(prop_exog = mean(exogamous)) |>
+  ungroup() |>
+  mutate(group = 1)
+
+exog_group <- mar |>
+  mutate(exogamous = hgroup != wgroup) |>
+  filter(hgroup == 2 | wgroup == 2) |>
+  group_by(decade_mar) |>
+  summarize(prop_exog = mean(exogamous)) |>
+  ungroup() |>
+  mutate(group = 2) |>
+  bind_rows(exog_group1) |>
+  mutate(group = factor(group))
+
+exog_group |>
+  ggplot(aes(x = decade_mar, y = prop_exog, color = group, group = group))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year (in decade intervals)", 
+       y = "percent of unions that are group exogamous")+
+  theme_bw()
+```
+
 
 ## Ancestry Information
 

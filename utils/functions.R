@@ -35,14 +35,15 @@ plot_pop_pyramid <- function(pop, date, age_width = 5) {
 
 calculate_lor <- function(marriages) {
   marriages |>
-    group_by(time_period) |>
+    group_by(decade_mar) |>
     summarize(n12 = sum(hgroup == 1 & wgroup ==2),
               n21 = sum(hgroup == 2 & wgroup ==1),
               n11 = sum(hgroup == 1 & wgroup ==1),
               n22 = sum(hgroup == 2 & wgroup ==2),
               lor = log((n12 * n21) / (n11 * n22))) |>
-    select(time_period, lor) |>
-    filter(lor > -Inf)
+    select(decade_mar, lor)
+  #|>
+   # filter(lor > -Inf)
 }
 
 # Data cleaning functions -------------------------------------------------
