@@ -44,7 +44,17 @@ asfr <- rsocsim::estimate_fertility_rates(opop = pop,
   year_group = 30, 
   age_min_fert = 10, # Closed [
   age_max_fert = 55, # Open )
-  age_group = 5) #[,)
+  age_group = 5) |> #[,)
+  rename(fert_rate = socsim)
+
+asmr <- rsocsim::estimate_mortality_rates(opop = pop,
+  final_sim_year = last_year, #[Jan-Dec]
+  year_min = 0, # Closed [
+  year_max = last_year, # Open )
+  year_group = 30, 
+  age_max_mort = 100, # Open )
+  age_group = 5) |> #[,)
+  rename(mort_rate = socsim) 
 
 pop <- pop |>
   left_join(ancestry) |>
@@ -177,7 +187,7 @@ total_pop_group |>
 ```{r}
 #| label: fig-asfr
 #| fig-cap: Age-specific fertility rates by 30 year interval
-ggplot(asfr, aes(x = age, y = socsim, group = year, color = year))+
+ggplot(asfr, aes(x = age, y = fert_rate, group = year, color = year))+
   geom_line()+
   labs(x = "age", y = "age-specific fertility rate", color = "year interval")+
   theme_bw()
@@ -188,9 +198,37 @@ ggplot(asfr, aes(x = age, y = socsim, group = year, color = year))+
 #| tbl-cap: Total fertility rate by 30 year interval
 asfr |>
   group_by(year) |>
-    summarize(tfr = sum(5 * socsim)) |>
+    summarize(tfr = sum(5 * fert_rate)) |>
     gt() |>
     cols_label(year = "Year", tfr = "TFR")
+```
+
+## Mortality Rates
+
+```{r}
+#| label: fig-asmr
+#| fig-cap: Age-specific mortality rates by 30 year interval
+ggplot(asmr, aes(x = age, y = mort_rate, group = year, color = year))+
+  geom_line()+
+  scale_y_log10()+
+  facet_wrap(~sex)+
+  labs(x = "age", y = "age-specific mortality rate", color = "year interval")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-life-expectancy
+#| fig-cap: Period life expectancy at birth by sex and time
+life_exp <- asmr |> group_split(year, sex) |> map_vec(get_life_expectancy)
+tibble(year = factor(rep(levels(asmr$year), each = 2), 
+                     levels = levels(asmr$year)), 
+       sex = rep(unique(asmr$sex), times = length(levels(asmr$year))), 
+       life_exp) |>
+  ggplot(aes(x = year, y = life_exp, group = sex, color = sex))+
+  geom_line()+
+  geom_point()+
+  labs(x = "time period", y = "period life expectancy at birth")+
+  theme_bw()
 ```
 
 ## Age at Marriage

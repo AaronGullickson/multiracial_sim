@@ -33,6 +33,35 @@ plot_pop_pyramid <- function(pop, date, age_width = 5) {
     theme_minimal()
 }
 
+get_life_expectancy <- function(rates) {
+  
+  # get it started
+  life_table <- rates |>
+    rename(nmx = mort_rate) |>
+    mutate(x = as.numeric(str_extract_all(age, "\\d+", simplify = TRUE)[,1]),
+           n = as.numeric(str_extract_all(age, "\\d+", simplify = TRUE)[,2])-x,
+           nax = n / 2) |>
+    select(x, n, nax, nmx)
+    
+  #add open-ended row
+  life_table <- life_table |>
+    bind_rows(tibble(x = life_table$x[nrow(life_table)] + 
+                       life_table$n[nrow(life_table)],
+                     n = NA,
+                     nax = 1/life_table$nmx[nrow(life_table)],
+                     nmx = life_table$nmx[nrow(life_table)]))
+  
+  # now do the rest
+  life_table <- life_table |>
+    mutate(nqx = c(1 - exp(-nmx[-nrow(life_table)] * n[-nrow(life_table)]), 1),
+           lx_end = cumprod(1-nqx),
+           lx_start = c(1, lx_end[-nrow(life_table)]),
+           ndx = lx_start-lx_end,
+           nLx = ifelse(is.na(n), ndx * nax, lx_end * n + ndx * nax))
+  
+  return(sum(life_table$nLx))
+}
+
 calculate_lor <- function(marriages) {
   marriages |>
     group_by(decade_mar) |>
