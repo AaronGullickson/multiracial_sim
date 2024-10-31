@@ -73,19 +73,19 @@ period until the end of the time period.
 
 ```{r}
 #| label: fig-pop-pyramid-start
-#| fig-cap: Population pyramid of the even population at beginning of the simulation
+#| fig-cap: Population pyramid of the population at beginning of the simulation
 plot_pop_pyramid(pop, 0)
 ```
 
 ```{r}
 #| label: fig-pop-pyramid-50
-#| fig-cap: Population pyramid of the even population at 150 years.
+#| fig-cap: Population pyramid of the population 150 years into the simulation.
 plot_pop_pyramid(pop, 50)
 ```
 
 ```{r}
 #| label: fig-pop-pyramid-end
-#| fig-cap: Population pyramid of the even population at 300 years.
+#| fig-cap: Population pyramid of the population at the end of the simulation.
 plot_pop_pyramid(pop, last_year)
 ```
 
@@ -93,38 +93,81 @@ plot_pop_pyramid(pop, last_year)
 ## Total Population Growth
 
 ```{r}
+#| label: get-total-pop-values
+
+# by group
+total_pop_group <- map(0:last_year, function(x) {
+  pop |> 
+    get_pop_alive(x) |> 
+    group_by(group) |>
+    summarize(year = x, population = n())
+}) |>
+  bind_rows()
+
+# total
+total_pop <- total_pop_group |>
+  group_by(year) |>
+  summarize(population = sum(population))
+
+# add share to pop by group
+total_pop_group <- total_pop |>
+  rename(pop_total = population) |>
+  right_join(total_pop_group) |>
+  mutate(share = population / pop_total,
+         group = factor(group)) |>
+  select(year, group, population, share)
+```
+
+
+```{r}
 #| label: fig-pop-growth
 #| fig-cap: Overall size of the population from the beginning of the simulation to the end.
-year_range <- 0:last_year
 
-total_pop <- map_vec(year_range, function(x) {
-  pop |> get_pop_alive(x) |> nrow()
-})
-
-tibble(year_range, total_pop) |>
-  ggplot(aes(x = year_range, y = total_pop))+
+total_pop |>
+  ggplot(aes(x = year, y = population))+
   geom_line()+
   labs(x = "years from start of simulation", y = "population size")+
+  theme_bw()
+```
+```{r}
+#| label: fig-pop-growth-rate
+#| fig-cap: Annual population growth rates at 10 year intervals
+# growth rates at 10 year intervals
+indices <- seq(from = 1, by =10, length.out = floor(last_year / 10) + 1)
+growth_rate <- (log(total_pop$population[indices[-1]]) -
+                  log(total_pop$population[indices[-length(indices)]])) / 10
+
+tibble(year = total_pop$year[indices[-1]] - 5, growth_rate) |>
+  ggplot(aes(x = year, y = growth_rate))+
+  geom_line()+
+  geom_point()+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year (midpoint of decade)", y = "annual population growth rate")+
   theme_bw()
 ```
 
 ```{r}
 #| label: fig-pop-growth-group
 #| fig-cap: Overall size of the population from the beginning of the simulation to the end, by group.
-total_pop_group <- map(year_range, function(x) {
-  pop |> 
-    get_pop_alive(x) |> 
-    group_by(group) |>
-    summarize(year = x, n = n())
-}) |>
-  bind_rows()
 
 total_pop_group |>
-  mutate(group = factor(group)) |>
-  ggplot(aes(x = year, y = n, group = group, color = group))+
+  ggplot(aes(x = year, y = population, group = group, color = group))+
   geom_line()+
   labs(x = "year from start of simulation", y = "population size")+
   theme_bw()
+```
+
+```{r}
+#| label: fig-pop-share-group
+#| fig-cap: Group share of the population from the beginning of the simulation to the end.
+
+total_pop_group |>
+  ggplot(aes(x = year, y = share, group = group, fill = group))+
+  geom_area(color = "black")+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year from start of simulation", y = "share")+
+  theme_bw()
+```
 ```
 
 ## Fertility Rates
