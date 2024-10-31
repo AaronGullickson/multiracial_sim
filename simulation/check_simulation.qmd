@@ -194,13 +194,17 @@ ggplot(asfr, aes(x = age, y = fert_rate, group = year, color = year))+
 ```
 
 ```{r}
-#| label: tbl-tfr
-#| tbl-cap: Total fertility rate by 30 year interval
+#| label: fig-tfr
+#| fig-cap: Total fertility rate by 30 year interval
 asfr |>
   group_by(year) |>
-    summarize(tfr = sum(5 * fert_rate)) |>
-    gt() |>
-    cols_label(year = "Year", tfr = "TFR")
+  summarize(tfr = sum(5 * fert_rate)) |>
+  ungroup() |>
+  ggplot(aes(x = year, y = tfr, group = 1))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  labs(x = "time period", y = "total fertility rate")+
+  theme_bw()
 ```
 
 ## Mortality Rates
