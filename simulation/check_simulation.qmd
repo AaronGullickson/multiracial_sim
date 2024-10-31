@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "even_hypo_baseline"
+  sim: "uneven_hypo_increase"
 format:
   html:
     code-fold: true
@@ -41,20 +41,22 @@ asfr <- rsocsim::estimate_fertility_rates(opop = pop,
   final_sim_year = last_year, #[Jan-Dec]
   year_min = 0, # Closed [
   year_max = last_year, # Open )
-  year_group = 30, 
+  year_group = 25, 
   age_min_fert = 10, # Closed [
   age_max_fert = 55, # Open )
   age_group = 5) |> #[,)
-  rename(fert_rate = socsim)
+  rename(fert_rate = socsim) |>
+  filter(!is.na(year))
 
 asmr <- rsocsim::estimate_mortality_rates(opop = pop,
   final_sim_year = last_year, #[Jan-Dec]
   year_min = 0, # Closed [
   year_max = last_year, # Open )
-  year_group = 30, 
+  year_group = 25, 
   age_max_mort = 100, # Open )
   age_group = 5) |> #[,)
-  rename(mort_rate = socsim) 
+  rename(mort_rate = socsim) |>
+  filter(!is.na(year))
 
 pop <- pop |>
   left_join(ancestry) |>
