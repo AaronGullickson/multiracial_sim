@@ -52,42 +52,42 @@ run_simulation("even_hypo_baseline",
                presim_even.opop, 
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep("hypodescent", 30),
+               inheritance = rep(1, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("even_hyper_baseline",
                presim_even.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep("hyperdescent", 30),
+               inheritance = rep(0, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("even_random_baseline",
                presim_even.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep("random", 30),
+               inheritance = rep(0.5, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("uneven_hypo_baseline",
                presim_uneven.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep("hypodescent", 30),
+               inheritance = rep(1, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("uneven_hyper_baseline",
                presim_uneven.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep("hyperdescent", 30),
+               inheritance = rep(0, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("uneven_random_baseline",
                presim_uneven.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep("random", 30),
+               inheritance = rep(0.5, 30),
                fert_multiplier = fert_multiplier)
 
 # Run full simulations ---------------------------------------------------
@@ -105,7 +105,7 @@ run_simulation("uneven_hypo_increase",
                pop_uneven_hypo,
                segments = c(rep(5, 20)),
                endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
-               inheritance = rep("hypodescent", 20),
+               inheritance = rep(1, 20),
                mar = mar_uneven_hypo,
                ancestry = ancestry_uneven_hypo,
                fert_multiplier = fert_multiplier)
@@ -115,7 +115,7 @@ run_simulation("uneven_hypo_increase_change",
                pop_uneven_hypo,
                segments = rep(5, 20),
                endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
-               inheritance = rep("random", 20),
+               inheritance = rep(0.5, 20),
                mar = mar_uneven_hypo,
                ancestry = ancestry_uneven_hypo,
                fert_multiplier = fert_multiplier)

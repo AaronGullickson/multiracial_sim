@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "uneven_hypo_increase"
+  sim: "even_hyper_baseline"
 format:
   html:
     code-fold: true

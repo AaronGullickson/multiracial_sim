@@ -18,7 +18,7 @@
 #            correctly assign children to group before they start partnering.
 # endogamy - A vector of the same length as segments that gives the endogamy
 #            parameter to use for each segment (between 0 and 1).
-# inheritance - A vector of the same length that gives the inheritance rule 
+# inheritance - A vector of the same length that gives the inheritance value
 #               to use when assigning children to groups. See the 
 #               calculate_ancestry function for details. If left NULL, it will
 #               default to random (50/50) assignment of mixed children to groups.
@@ -58,7 +58,7 @@ run_simulation <- function(sim_name,
   # check for null values on arguments and address
   if(is.null(inheritance)) {
     message("No inheritance rules specified, defaulting to random")
-    inheritance <- rep("random", length(segments))
+    inheritance <- rep(0.5, length(segments))
   }
   
   if(is.null(mar)) {
@@ -151,17 +151,13 @@ run_simulation <- function(sim_name,
 # pop - the pop dataset for the current simulation. Anyone with a group ==3 will
 #       be new children and get stuff measured and group determined.
 # ancestry - the ancestry dataset for the current simulation.
-# inheritance_method - A character string determining the way group is  
-#                      inherited by children. 
-# The current methods of inheritance are:
-# * random - a 50/50 draw from groups 1 and 2 for each child of mixed parents.
-# * hypodescent - If the mother OR father is a member of group 2, the child is 
-#                 assigned to group 2, and otherwise 1.
-# * hyperdescent - If the mother OR father is a member of group 1, the child is 
-#                  assigned to group 1, and otherwise 2.
+# inheritance - a numeric between 0 and 1 indicating the probability of a kid
+#               of mixed parentage being assigned to group 2. A value of 1 
+#               indicates strict hypodescent and 0 indicates strict 
+#               hyperdescent. 0.5 indicates a coin toss. 
 calculate_ancestry <- function(pop, 
                                ancestry, 
-                               inheritance_method = "random") {
+                               inheritance = 0.5) {
   
   # get "moms" and "dads" for joining properly
   moms <- ancestry |>
@@ -197,24 +193,18 @@ calculate_ancestry <- function(pop,
                   gen_locus_mom <= gen_locus_pop) ~ gen_locus_mom,
              TRUE ~ gen_locus_pop))
   
-  # assign group to kid depending on method
-  if(inheritance_method == "hypodescent") {
-    new_kids <- new_kids |>
-      mutate(group = ifelse(group_mom == 2 | group_pop == 2, 2, 1))
-  } else if(inheritance_method == "hyperdescent") {
-    new_kids <- new_kids |>
-      mutate(group = ifelse(group_mom == 1 | group_pop == 1, 1, 2))
-  } else {
-    # randomly assign group
-    new_kids <- new_kids |>
-      mutate(
-        group = case_when(
-          group_mom == 1 & group_pop == 1 ~ 1,
-          group_mom == 2 & group_pop == 2 ~ 2,
-          TRUE ~ 3))
-    new_kids$group[new_kids$group == 3] <- sample(1:2, replace = TRUE, 
-                                                  size = sum(new_kids$group == 3))
-  }
+  # assign group to kid
+  new_kids <- new_kids |>
+    mutate(
+      group = case_when(
+        group_mom == 1 & group_pop == 1 ~ 1,
+        group_mom == 2 & group_pop == 2 ~ 2,
+        TRUE ~ 3))
+  new_kids$group[new_kids$group == 3] <- sample(1:2, 
+                                                replace = TRUE, 
+                                                prob = c(1-inheritance, 
+                                                         inheritance),
+                                                size = sum(new_kids$group == 3))
   
   return(new_kids)
   
