@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "even_hyper_baseline"
+  sim: "even_hypo_baseline"
 format:
   html:
     code-fold: true
@@ -475,5 +475,58 @@ pop |>
   labs(x = "year of birth (at decade intervals)", 
        y = "percent unmixed",
        color = "group")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-mixedness-group-time
+#| fig-cap: Mean mixedness by group over time
+pop |>
+  group_by(decade_birth, group) |>
+  summarize(mixedness = mean(mixedness)) |>
+  ungroup() |>
+  mutate(group = factor(group)) |>
+  ggplot(aes(x = decade_birth, y = mixedness, group = group, 
+             color = group))+
+  geom_point()+
+  geom_line()+
+  labs(x = "year of birth (in decade intervals)",
+       y = "mean mixedness")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-ancestry1-group-time
+#| fig-cap: Mean percent of ancestry from group 1 by group over time
+pop |>
+  group_by(decade_birth, group) |>
+  summarize(ancestry_group1 = mean(ancestry_group1)) |>
+  ungroup() |>
+  mutate(group = factor(group)) |>
+  ggplot(aes(x = decade_birth, y = ancestry_group1, group = group, 
+             color = group))+
+  geom_point()+
+  geom_line()+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth (in decade intervals)",
+       y = "Mean group 1 ancestry percentage")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-ancestry2-group-time
+#| fig-cap: Mean percent of ancestry from group 2 by group over time
+pop |>
+  group_by(decade_birth, group) |>
+  summarize(ancestry_group2 = mean(ancestry_group2)) |>
+  ungroup() |>
+  mutate(group = factor(group)) |>
+  ggplot(aes(x = decade_birth, y = ancestry_group2, group = group, 
+             color = group))+
+  geom_point()+
+  geom_line()+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth (in decade intervals)",
+       y = "Mean group 2 ancestry percentage")+
   theme_bw()
 ```
