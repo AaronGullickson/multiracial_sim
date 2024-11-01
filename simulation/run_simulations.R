@@ -52,14 +52,14 @@ run_simulation("even_hypo_baseline",
                presim_even.opop, 
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep(1, 30),
+               inheritance = rep(0.95, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("even_hyper_baseline",
                presim_even.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep(0, 30),
+               inheritance = rep(0.05, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("even_random_baseline",
@@ -73,14 +73,14 @@ run_simulation("uneven_hypo_baseline",
                presim_uneven.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep(1, 30),
+               inheritance = rep(0.95, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("uneven_hyper_baseline",
                presim_uneven.opop,
                segments = rep(10, 30),
                endogamy = rep(0.999, 30),
-               inheritance = rep(0, 30),
+               inheritance = rep(0.05, 30),
                fert_multiplier = fert_multiplier)
 
 run_simulation("uneven_random_baseline",
@@ -105,7 +105,7 @@ run_simulation("uneven_hypo_increase",
                pop_uneven_hypo,
                segments = c(rep(5, 20)),
                endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
-               inheritance = rep(1, 20),
+               inheritance = rep(0.95, 20),
                mar = mar_uneven_hypo,
                ancestry = ancestry_uneven_hypo,
                fert_multiplier = fert_multiplier)
@@ -115,7 +115,7 @@ run_simulation("uneven_hypo_increase_change",
                pop_uneven_hypo,
                segments = rep(5, 20),
                endogamy = seq(from = 0.989, by = -0.005, length.out = 20),
-               inheritance = rep(0.5, 20),
+               inheritance = seq(from = 0.95, to = 0.5, length.out = 21)[-1],
                mar = mar_uneven_hypo,
                ancestry = ancestry_uneven_hypo,
                fert_multiplier = fert_multiplier)
