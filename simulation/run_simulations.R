@@ -24,6 +24,9 @@ seed <- 42
 
 sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
 
+# de-authorize googlesheets4 so it won't ask about authorization
+googlesheets4::gs4_deauth()
+
 # Create starter pop ------------------------------------------------------
 
 # Set size of initial population
