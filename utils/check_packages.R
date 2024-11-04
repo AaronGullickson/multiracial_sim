@@ -14,7 +14,8 @@ packages = c(
   "devtools", # for installing RSOCSIM
   "fs", # for filesystem interaction
   "future", # for how SOCSIM process is run
-  "quarto" # for automating parameterized reports
+  "quarto", # for automating parameterized reports
+  "googlesheets4" # for using google sheets to track simulation parameters
 )
 
 package.check <- lapply(packages, FUN = function(x) {

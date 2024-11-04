@@ -1,7 +1,8 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "even_hypo_baseline"
+  sim: "uneven_hypo_baseline"
+  sheet_id: "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
 format:
   html:
     code-fold: true
@@ -17,10 +18,16 @@ execute:
 Diagnostics for **`r params$sim`** simulation.
 
 ```{r}
+#| label: report-date-time
+timestamp()
+```
+
+```{r}
 #| label: load-libs-funcs
 library(here)
 source(here("utils", "check_packages.R"))
 source(here("utils", "functions.R"))
+source(here("simulation", "simulation_functions.R"))
 ```
 
 ```{r}
@@ -77,6 +84,44 @@ mar <- get_marriages(pop, mar) |>
   mutate(decade_mar = floor(year / 10) * 10 + 5,
          decade_mar = ifelse(decade_mar < 0 | decade_mar > last_year,
                              NA, decade_mar))
+```
+
+# Simulation Parameters
+
+```{r}
+#| label: get-sim-parameters
+
+googlesheets4::gs4_deauth()
+
+sim_params <- get_sim_parameters(params$sim, params$sheet_id)
+```
+
+```{r}
+#| label: tbl-start-parameters
+#| tbl-cap: Constant simulation parameters
+sim_params$start |> 
+  gt() |> 
+  cols_label(group1_prop = "Group 1 percent", 
+             starting_sim = "Sim to build from", 
+             fert_multiplier = "Fertility multiplier") |> 
+  cols_align("right", starting_sim) |>
+  fmt_percent(group1_prop, decimals = 0) |> 
+  sub_missing(starting_sim, missing_text = "none")
+```
+
+```{r}
+#| label: tbl-segment-parameters
+#| tbl-cap: Segment-specific simulation parameters
+sim_params$segments |>
+  mutate(index = 1:nrow(sim_params$segments),
+         total_years = cumsum(segment_length)) |>
+  select(index, total_years, segment_length, endogamy, inheritance) |>
+  gt() |>
+  cols_label(index = "Index",
+             total_years = "Total years",
+             segment_length = "Length of segment",
+             endogamy = "Endogamy parameter",
+             inheritance = "Inheritance parameter")
 ```
 
 # Basic Demographic Information
