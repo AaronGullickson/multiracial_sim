@@ -3,6 +3,7 @@
 .Rproj.user
 .Rhistory
 .Rdata
+.Renviron
 .DS_Store
 # Other junk files
 desktop.ini
