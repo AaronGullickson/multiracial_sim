@@ -78,6 +78,7 @@ for(sim_name in sim_names) {
                  pop_start = pop_start,
                  mar = mar_start,
                  ancestry = ancestry_start,
+                 fert_multiplier = sim_param$start$fert_multiplier,
                  segments = sim_param$segments$segment_length,
                  endogamy = sim_param$segments$endogamy,
                  inheritance = sim_param$segments$inheritance)
