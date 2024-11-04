@@ -2,6 +2,7 @@
 title: "Simulation Diagnostics"
 params:
   sim: "uneven_hypo_baseline"
+  sheet_id: "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
 format:
   html:
     code-fold: true
@@ -87,7 +88,7 @@ mar <- get_marriages(pop, mar) |>
 
 googlesheets4::gs4_deauth()
 
-sim_params <- get_sim_parameters(params$sim)
+sim_params <- get_sim_parameters(params$sim, params$sheet_id)
 ```
 
 ```{r}

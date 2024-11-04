@@ -235,8 +235,7 @@ create_fertility_rates <- function(file, multiplier) {
 }
 
 # get the simulation parameters from google sheets
-get_sim_parameters <- function(sim_name,
-                               sheet_id = "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs") {
+get_sim_parameters <- function(sim_name, sheet_id) {
   sim_start <- googlesheets4::range_read(sheet_id, 
                                          range = paste(sim_name, "A2:C3", 
                                                        sep="!"))

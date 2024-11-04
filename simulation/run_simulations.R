@@ -21,6 +21,9 @@ if(!dir_exists(output_path)) {
 
 seed <- 42
 
+# sheet id to read from on google sheets
+sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
+
 # de-authorize googlesheets4 so it won't ask about authorization
 googlesheets4::gs4_deauth()
 
@@ -51,7 +54,7 @@ sim_names <- googlesheets4::sheet_names(sheet_id)
 for(sim_name in sim_names) {
   
   # read data from googlesheets
-  sim_param <- get_sim_parameters(sim_name)
+  sim_param <- get_sim_parameters(sim_name, sheet_id)
   
   # get starting pop stuff
   if(is.na(sim_param$start$starting_sim)) {
@@ -91,7 +94,7 @@ for(sim_name in sim_names) {
   quarto_render(input = here("simulation", "check_simulation.qmd"), 
                 output_format = "html",
                 output_file = report_name,
-                execute_params = list(sim = sim_name))
+                execute_params = list(sim = sim_name, sheet_id = sheet_id))
   # annoyingly, it will not put them where they belong, so lets move the report
   # manually over to products
   file_move(here("simulation", report_name), output_path)
