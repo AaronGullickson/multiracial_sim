@@ -61,52 +61,63 @@ sim_names <- googlesheets4::sheet_names(sheet_id)
 
 for(sim_name in sim_names) {
   
-  # read data from googlesheets
-  sim_param <- get_sim_parameters(sim_name, sheet_id)
-  
-  # get starting pop stuff
-  if(is.na(sim_param$start$starting_sim)) {
-    pop_start <- presim_opop |>
-      mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-                            prob = c(sim_param$start$group1_prop, 
-                                     1 - sim_param$start$group1_prop)))
-    mar_start <- NULL
-    ancestry_start <- NULL
-  } else {
-    pop_start <- read_csv(here(base_folder, 
-                               sim_param$start$starting_sim, 
-                               "final_pop.csv"))
-    mar_start <- read_csv(here(base_folder, 
-                               sim_param$start$starting_sim,
-                               "final_mar.csv"))
-    ancestry_start <- read_csv(here(base_folder, 
-                                    sim_param$start$starting_sim, 
-                                    "ancestry.csv"))
-  }
-  
-  # run the simulation
-  run_simulation(sim_name, 
-                 pop_start = pop_start,
-                 mar = mar_start,
-                 ancestry = ancestry_start,
-                 fert_multiplier = sim_param$start$fert_multiplier,
-                 segments = sim_param$segments$segment_length,
-                 endogamy = sim_param$segments$endogamy,
-                 inheritance = sim_param$segments$inheritance)
-  
-  # now create the report
-  # annoyingly, I have to set the working directory here to get it to work. 
-  # setting execute_dir argument does not work.
-  setwd(here("simulation"))
-  report_name <- paste("diagnostics_", sim_name, ".html", sep="")
-  quarto_render(input = here("simulation", "check_simulation.qmd"), 
-                output_format = "html",
-                output_file = report_name,
-                execute_params = list(sim = sim_name, sheet_id = sheet_id))
-  # annoyingly, it will not put them where they belong, so lets move the report
-  # manually over to products
-  file_move(here("simulation", report_name), output_path)
-  # set working directory back
-  setwd(here(""))
-  
+  tryCatch(
+    expr = {
+      # read data from googlesheets
+      sim_param <- get_sim_parameters(sim_name, sheet_id)
+      
+      # get starting pop stuff
+      if(is.na(sim_param$start$starting_sim)) {
+        pop_start <- presim_opop |>
+          mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+                                prob = c(sim_param$start$group1_prop, 
+                                         1 - sim_param$start$group1_prop)))
+        mar_start <- NULL
+        ancestry_start <- NULL
+      } else {
+        pop_start <- read_csv(here(base_folder, 
+                                   sim_param$start$starting_sim, 
+                                   "final_pop.csv"))
+        mar_start <- read_csv(here(base_folder, 
+                                   sim_param$start$starting_sim,
+                                   "final_mar.csv"))
+        ancestry_start <- read_csv(here(base_folder, 
+                                        sim_param$start$starting_sim, 
+                                        "ancestry.csv"))
+      }
+      
+      # run the simulation
+      run_simulation(sim_name, 
+                     pop_start = pop_start,
+                     mar = mar_start,
+                     ancestry = ancestry_start,
+                     fert_multiplier = sim_param$start$fert_multiplier,
+                     segments = sim_param$segments$segment_length,
+                     endogamy = sim_param$segments$endogamy,
+                     inheritance = sim_param$segments$inheritance)
+      
+      # now create the report
+      # annoyingly, I have to set the working directory here to get it to work. 
+      # setting execute_dir argument does not work.
+      setwd(here("simulation"))
+      report_name <- paste("diagnostics_", sim_name, ".html", sep="")
+      quarto_render(input = here("simulation", "check_simulation.qmd"), 
+                    output_format = "html",
+                    output_file = report_name,
+                    execute_params = list(sim = sim_name, sheet_id = sheet_id))
+      # annoyingly, it will not put them where they belong, so lets move the report
+      # manually over to products
+      file_move(here("simulation", report_name), output_path)
+      # set working directory back
+      setwd(here(""))
+    }, 
+    error = function(err) {
+      #if we hit an error here, report the error in a file.log and 
+      #move on to the next simulation
+      if(!dir_exists(here(base_folder, sim_name))) {
+        dir_create(here(base_folder, sim_name))
+      }
+      cat(paste(err, sep="\n"), 
+          file = here(base_folder, sim_name, "error.log"))
+    })
 }
