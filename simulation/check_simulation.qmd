@@ -18,6 +18,11 @@ execute:
 Diagnostics for **`r params$sim`** simulation.
 
 ```{r}
+#| label: report-date-time
+timestamp()
+```
+
+```{r}
 #| label: load-libs-funcs
 library(here)
 source(here("utils", "check_packages.R"))
