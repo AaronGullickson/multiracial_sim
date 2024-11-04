@@ -25,8 +25,9 @@ if(!dir_exists(output_path)) {
   dir_create(output_path)
 }
 
-
-seed <- 42
+# lets randomize the seed each time this is run to see how much results vary
+seed <- sample(1:100, 1)
+set.seed(seed)
 
 # sheet id to read from on google sheets
 sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
