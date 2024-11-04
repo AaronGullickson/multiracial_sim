@@ -1,3 +1,9 @@
+# This script will read in simulation parameter data from an external
+# google sheet located here:
+# https://docs.google.com/spreadsheets/d/18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs/edit?gid=654203504#gid=654203504
+# Each simulation is tracked on a different tab in the overall file. 
+# The script will run each simulation and the diagnostic report and place the 
+# output in the data_constructed and _products directory, respectively.
 
 # Load libraries and basics ----------------------------------------------
 
@@ -18,6 +24,7 @@ output_path <- here("_products", "sim_diagnostics")
 if(!dir_exists(output_path)) {
   dir_create(output_path)
 }
+
 
 seed <- 42
 
