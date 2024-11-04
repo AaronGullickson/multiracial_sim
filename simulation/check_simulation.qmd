@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "uneven_hypo_baseline"
+  sim: "even_hypo_baseline"
   sheet_id: "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
 format:
   html:
@@ -68,6 +68,7 @@ asmr <- rsocsim::estimate_mortality_rates(opop = pop,
 pop <- pop |>
   left_join(ancestry) |>
   mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
+         group = factor(group),
          mom = ifelse(mom == 0, NA, mom),
          dad = ifelse(pop == 0, NA, pop),
          dob = (dob - 1200) / 12,
@@ -173,8 +174,7 @@ total_pop <- total_pop_group |>
 total_pop_group <- total_pop |>
   rename(pop_total = population) |>
   right_join(total_pop_group) |>
-  mutate(share = population / pop_total,
-         group = factor(group)) |>
+  mutate(share = population / pop_total) |>
   select(year, group, population, share)
 ```
 
@@ -414,6 +414,21 @@ pop |>
 ```
 
 ```{r}
+#| label: fig-mean-gen-locus-group
+#| fig-cap: Mean generational locus of mixing by decade of birth and group
+pop |>
+  group_by(group, decade_birth) |>
+  summarize(nearest_gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
+  ggplot(aes(x = decade_birth, y = nearest_gen_locus, 
+             color = group, group = group))+
+  geom_point()+
+  geom_line()+
+  labs(x = "year of birth (in decade intervals)", 
+       y = "mean nearest generational locus")+
+  theme_bw()
+```
+
+```{r}
 #| label: fig-gen-locus-dist-100
 #| fig-cap: Distribution of generational locus after 200 years
 pop |>
@@ -452,6 +467,21 @@ pop |>
 ```
 
 ```{r}
+#| label: fig-mean-mixedness-group
+#| fig-cap: Mean level of mixedness by decade of birth and group. Mixedness is measured by Simpson's diversity index and is maximized at 0.5.
+pop |>
+  group_by(group, decade_birth) |>
+  summarize(mixedness = mean(mixedness)) |>
+  ggplot(aes(x = decade_birth, y = mixedness, 
+             group = group, color = group))+
+  geom_point()+
+  geom_line()+
+  labs(x = "year of birth (in decade intervals)", 
+       y = "mean level of mixedness")+
+  theme_bw()
+```
+
+```{r}
 #| label: fig-mixedness-locus
 #| fig-cap: Distribution of mixedness by nearest generational locus. Red dots indicate exact fraction if mixing only happened ion the nearest generational locus, while blue dots indicate actual mean of mixedness by generational locus.
 
@@ -470,8 +500,38 @@ pop |>
   ggplot(aes(x = nearest_gen_locus, y = mixedness))+
   scale_x_continuous(breaks = 1:max_gen)+
   geom_jitter(alpha = 0.01)+
-  geom_point(data = fractions, (aes(y = mixedness_actual)), color = "blue", size = 2)+
-  geom_point(data = fractions, (aes(y = mixedness_theoretical)), color = "red", size = 2)+
+  geom_point(data = fractions, (aes(y = mixedness_actual)), 
+             color = "blue", size = 2)+
+  geom_point(data = fractions, (aes(y = mixedness_theoretical)), 
+             color = "red", size = 2)+
+  labs(x = "nearest generational locus")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-mixedness-locus-group
+#| fig-cap: Distribution of mixedness by nearest generational locus, separately for each group. Red dots indicate exact fraction if mixing only happened ion the nearest generational locus, while blue dots indicate actual mean of mixedness by generational locus.
+
+max_gen <- max(pop$nearest_gen_locus, na.rm = TRUE)
+
+fractions <- pop |>
+  filter(!is.na(nearest_gen_locus)) |>
+  group_by(nearest_gen_locus, group) |>
+  summarize(mixedness_actual = mean(mixedness)) |>
+  ungroup() |>
+  # theoretical mixedness if only one event
+  mutate(mixedness_theoretical = 1-(2^(2*nearest_gen_locus)-2^(nearest_gen_locus+1)+2)/(2^(2*nearest_gen_locus)))
+
+pop |>
+  filter(!is.na(nearest_gen_locus)) |>
+  ggplot(aes(x = nearest_gen_locus, y = mixedness))+
+  scale_x_continuous(breaks = 1:max_gen)+
+  geom_jitter(alpha = 0.01)+
+  geom_point(data = fractions, (aes(y = mixedness_actual)), 
+             color = "blue", size = 2)+
+  geom_point(data = fractions, (aes(y = mixedness_theoretical)), 
+             color = "red", size = 2)+
+  facet_wrap(~group)+
   labs(x = "nearest generational locus")+
   theme_bw()
 ```
@@ -487,15 +547,69 @@ pop |>
             p2 = sum(nearest_gen_locus == 2, na.rm = TRUE) / n,
             p3 = sum(nearest_gen_locus == 3, na.rm = TRUE) / n,
             p4plus = sum(nearest_gen_locus >= 4, na.rm = TRUE) / n) |>
+  ungroup() |>
   select(decade_birth, starts_with("p")) |>
-  pivot_longer(cols = starts_with("p"), names_to = "group", values_to = "prop") |>
-  mutate(group = factor(group, levels = c("p1", "p2", "p3", "p4plus", "punmixed"),
+  pivot_longer(cols = starts_with("p"), names_to = "gen", values_to = "prop") |>
+  mutate(gen = factor(gen, levels = c("p1", "p2", "p3", "p4plus", "punmixed"),
                         labels = c("1st gen (biracial)", "2nd gen", "3rd gen", 
                                    "4th+ gen", "Unmixed"))) |>
-  ggplot(aes(x = decade_birth, y = prop, group = group, color = group))+
+  ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth (at decade intervals)", 
+       y = "share of population",
+       color = "generational locus")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-nearest-locus-trend-group
+#| fig-cap: Share of each generational locus over time and by group
+pop |>
+  group_by(decade_birth, group) |>
+  summarize(n = n(),
+            punmixed = sum(is.na(nearest_gen_locus)) / n, 
+            p1 = sum(nearest_gen_locus == 1, na.rm = TRUE) / n,
+            p2 = sum(nearest_gen_locus == 2, na.rm = TRUE) / n,
+            p3 = sum(nearest_gen_locus == 3, na.rm = TRUE) / n,
+            p4plus = sum(nearest_gen_locus >= 4, na.rm = TRUE) / n) |>
+  ungroup() |>
+  select(decade_birth, starts_with("p"), group) |>
+  pivot_longer(cols = starts_with("p"), names_to = "gen", values_to = "prop") |>
+  mutate(gen = factor(gen, levels = c("p1", "p2", "p3", "p4plus", "punmixed"),
+                        labels = c("1st gen (biracial)", "2nd gen", "3rd gen", 
+                                   "4th+ gen", "Unmixed"))) |>
+  ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
+  geom_point(alpha = 0.3)+
+  geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
+  scale_y_continuous(labels = scales::percent)+
+  facet_wrap(~group)+
+  labs(x = "year of birth (at decade intervals)", 
+       y = "share of population",
+       color = "generational locus")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-nearest-locus-trend-group-first-three
+#| fig-cap: Share of each generational locus over time and by group, focusing on first three generations
+pop |>
+  group_by(decade_birth, group) |>
+  summarize(n = n(),
+            p1 = sum(nearest_gen_locus == 1, na.rm = TRUE) / n,
+            p2 = sum(nearest_gen_locus == 2, na.rm = TRUE) / n,
+            p3 = sum(nearest_gen_locus == 3, na.rm = TRUE) / n) |>
+  ungroup() |>
+  select(decade_birth, starts_with("p"), group) |>
+  pivot_longer(cols = starts_with("p"), names_to = "gen", values_to = "prop") |>
+  mutate(gen = factor(gen, levels = c("p1", "p2", "p3"),
+                        labels = c("1st gen (biracial)", "2nd gen", "3rd gen"))) |>
+  ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
+  geom_point(alpha = 0.3)+
+  geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
+  scale_y_continuous(labels = scales::percent)+
+  facet_wrap(~group)+
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
        color = "generational locus")+
@@ -524,30 +638,12 @@ pop |>
 ```
 
 ```{r}
-#| label: fig-mixedness-group-time
-#| fig-cap: Mean mixedness by group over time
-pop |>
-  group_by(decade_birth, group) |>
-  summarize(mixedness = mean(mixedness)) |>
-  ungroup() |>
-  mutate(group = factor(group)) |>
-  ggplot(aes(x = decade_birth, y = mixedness, group = group, 
-             color = group))+
-  geom_point()+
-  geom_line()+
-  labs(x = "year of birth (in decade intervals)",
-       y = "mean mixedness")+
-  theme_bw()
-```
-
-```{r}
 #| label: fig-ancestry1-group-time
 #| fig-cap: Mean percent of ancestry from group 1 by group over time
 pop |>
   group_by(decade_birth, group) |>
   summarize(ancestry_group1 = mean(ancestry_group1)) |>
   ungroup() |>
-  mutate(group = factor(group)) |>
   ggplot(aes(x = decade_birth, y = ancestry_group1, group = group, 
              color = group))+
   geom_point()+
@@ -565,7 +661,6 @@ pop |>
   group_by(decade_birth, group) |>
   summarize(ancestry_group2 = mean(ancestry_group2)) |>
   ungroup() |>
-  mutate(group = factor(group)) |>
   ggplot(aes(x = decade_birth, y = ancestry_group2, group = group, 
              color = group))+
   geom_point()+
