@@ -19,10 +19,7 @@ if(!dir_exists(output_path)) {
   dir_create(output_path)
 }
 
-
 seed <- 42
-
-sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
 
 # de-authorize googlesheets4 so it won't ask about authorization
 googlesheets4::gs4_deauth()
@@ -54,29 +51,25 @@ sim_names <- googlesheets4::sheet_names(sheet_id)
 for(sim_name in sim_names) {
   
   # read data from googlesheets
-  sim_start <- googlesheets4::range_read(sheet_id, 
-                                         range = paste(sim_name, "A2:C3", 
-                                                       sep="!"))
-  
-  sim_segments <- googlesheets4::range_read(sheet_id, 
-                                            range = paste(sim_name, "A6:C1000", 
-                                                          sep="!")) |>
-    filter(!is.na(segment_length))
+  sim_param <- get_sim_parameters(sim_name)
   
   # get starting pop stuff
-  if(is.na(sim_start$starting_sim)) {
+  if(is.na(sim_param$start$starting_sim)) {
     pop_start <- presim_opop |>
       mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-                            prob = c(sim_start$group1_prop, 
-                                     1 - sim_start$group1_prop)))
+                            prob = c(sim_param$start$group1_prop, 
+                                     1 - sim_param$start$group1_prop)))
     mar_start <- NULL
     ancestry_start <- NULL
   } else {
-    pop_start <- read_csv(here(base_folder, sim_start$starting_sim, 
+    pop_start <- read_csv(here(base_folder, 
+                               sim_param$start$starting_sim, 
                                "final_pop.csv"))
-    mar_start <- read_csv(here(base_folder, sim_start$starting_sim,
+    mar_start <- read_csv(here(base_folder, 
+                               sim_param$start$starting_sim,
                                "final_mar.csv"))
-    ancestry_start <- read_csv(here(base_folder, sim_start$starting_sim, 
+    ancestry_start <- read_csv(here(base_folder, 
+                                    sim_param$start$starting_sim, 
                                     "ancestry.csv"))
   }
   
@@ -85,9 +78,9 @@ for(sim_name in sim_names) {
                  pop_start = pop_start,
                  mar = mar_start,
                  ancestry = ancestry_start,
-                 segments = sim_segments$segment_length,
-                 endogamy = sim_segments$endogamy,
-                 inheritance = sim_segments$inheritance)
+                 segments = sim_param$segments$segment_length,
+                 endogamy = sim_param$segments$endogamy,
+                 inheritance = sim_param$segments$inheritance)
   
   # now create the report
   # annoyingly, I have to set the working directory here to get it to work. 

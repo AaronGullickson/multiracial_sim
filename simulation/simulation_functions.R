@@ -233,3 +233,18 @@ create_fertility_rates <- function(file, multiplier) {
   cat("\n\nbirth 2 F married 0\n", file = file, append = TRUE)
   write_delim(fert, file = file, col_names = FALSE, append =TRUE)
 }
+
+# get the simulation parameters from google sheets
+get_sim_parameters <- function(sim_name,
+                               sheet_id = "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs") {
+  sim_start <- googlesheets4::range_read(sheet_id, 
+                                         range = paste(sim_name, "A2:C3", 
+                                                       sep="!"))
+  
+  sim_segments <- googlesheets4::range_read(sheet_id, 
+                                            range = paste(sim_name, "A6:C1000", 
+                                                          sep="!")) |>
+    filter(!is.na(segment_length))
+  
+  return(list(start = sim_start, segments = sim_segments))
+}
