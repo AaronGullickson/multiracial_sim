@@ -77,6 +77,27 @@ calculate_lor <- function(marriages) {
 
 # Data cleaning functions -------------------------------------------------
 
+code_population <- function(pop, ancestry) {
+  
+  last_year <- (max(pop$dob) - 1200) / 12
+  
+  pop |>
+    left_join(ancestry) |>
+    mutate(sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
+           group = factor(group),
+           mom = ifelse(mom == 0, NA, mom),
+           dad = ifelse(pop == 0, NA, pop),
+           dob = (dob - 1200) / 12,
+           decade_birth = floor(dob / 10) * 10 + 5,
+           decade_birth = ifelse(decade_birth < 0 | decade_birth > last_year,
+                                 NA, decade_birth),
+           dod = ifelse(dod == 0, NA, (dod - 1200) / 12),
+           founder = is.na(mom) & is.na(dad),
+           mixedness = 1 - (ancestry_group1^2+ancestry_group2^2)) |>
+    select(pid, sex, group, founder, dob, decade_birth, dod, mom, dad, 
+           ancestry_group1, ancestry_group2, nearest_gen_locus, mixedness)
+}
+
 get_marriages <- function(pop, mar) {
   
   husband <- pop |>
