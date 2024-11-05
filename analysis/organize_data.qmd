@@ -8,8 +8,72 @@ title: "Organize Data Notebook"
 library(here)
 source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
+source(here("simulation","simulation_functions.R"))
 ```
 
-This quarto doc is used to organize the data.
+```{r}
+#| label: define-constants
+
+sim_folder = here("data", "data_constructed", "sims")
+sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
+googlesheets4::gs4_deauth()
+```
 
 
+```{r}
+#| label: organize-intermarriage-benchmark-data
+
+
+# even scenario
+intermar_even <- get_sim_parameters("even_intermar_benchmark", 
+                                    sheet_id)$segments |>
+  mutate(year_end = cumsum(segment_length),
+         time_period = cut(year_end, breaks = c(0, year_end))) |>
+  select(year_end, time_period, endogamy)
+
+pop <- read_csv(here(sim_folder, "even_intermar_benchmark", "final_pop.csv"))
+mar <- read_csv(here(sim_folder, "even_intermar_benchmark", "final_mar.csv"))
+ancestry <- read_csv(here(sim_folder, "even_intermar_benchmark", 
+                          "ancestry.csv"))
+
+pop <- code_population(pop, ancestry)
+mar <- get_marriages(pop, mar) |>
+  mutate(decade_mar = cut(year, breaks = c(0, intermar_even$year_end)))
+
+intermar_even <- calculate_lor(mar) |>
+  rename(time_period = decade_mar) |>
+  full_join(intermar_even) |>
+  mutate(group_share = "even") |>
+  select(time_period, group_share, endogamy, lor)
+
+# uneven scenario
+intermar_uneven <- get_sim_parameters("uneven_intermar_benchmark", 
+                                    sheet_id)$segments |>
+  mutate(year_end = cumsum(segment_length),
+         time_period = cut(year_end, breaks = c(0, year_end))) |>
+  select(year_end, time_period, endogamy)
+
+pop <- read_csv(here(sim_folder, "uneven_intermar_benchmark", "final_pop.csv"))
+mar <- read_csv(here(sim_folder, "uneven_intermar_benchmark", "final_mar.csv"))
+ancestry <- read_csv(here(sim_folder, "uneven_intermar_benchmark", 
+                          "ancestry.csv"))
+
+pop <- code_population(pop, ancestry)
+mar <- get_marriages(pop, mar) |>
+  mutate(decade_mar = cut(year, breaks = c(0, intermar_uneven$year_end)))
+
+intermar <- calculate_lor(mar) |>
+  rename(time_period = decade_mar) |>
+  full_join(intermar_uneven) |>
+  mutate(group_share = "uneven") |>
+  select(time_period, group_share, endogamy, lor) |>
+  bind_rows(intermar_even) |>
+  mutate(lor = ifelse(lor == -Inf, NA, lor))
+```
+
+```{r}
+#| label: save-data
+
+save(intermar, 
+     file = here("data", "data_constructed", "analytical_data.RData"))
+```

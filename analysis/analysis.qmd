@@ -10,4 +10,20 @@ source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
 ```
 
-This quarto doc is used to analyze the data.
+```{r}
+#| label: load-data
+
+load(here("data", "data_constructed", "analytical_data.RData"))
+```
+
+```{r}
+#| label: fig-intermar-endogamy-compare
+#| fig-cap: Relationship between endogamy parameter and resulting log odds ratio of intergroup marriage
+
+ggplot(intermar, aes(x = endogamy, y = lor, 
+                     group = group_share, color = group_share))+
+  geom_point(alpha = 0.5)+
+  geom_smooth(se = FALSE, alpha = 0.5)+
+  theme_bw()
+```
+
