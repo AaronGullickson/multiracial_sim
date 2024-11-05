@@ -23,7 +23,6 @@ googlesheets4::gs4_deauth()
 ```{r}
 #| label: organize-intermarriage-benchmark-data
 
-
 # even scenario
 intermar_even <- get_sim_parameters("even_intermar_benchmark", 
                                     sheet_id)$segments |>
