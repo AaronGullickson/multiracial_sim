@@ -16,14 +16,130 @@ source(here("utils","functions.R"))
 load(here("data", "data_constructed", "analytical_data.RData"))
 ```
 
+# Intermarriage benchmarks
+
 ```{r}
 #| label: fig-intermar-endogamy-compare
-#| fig-cap: Relationship between endogamy parameter and resulting log odds ratio of intergroup marriage
+#| fig-cap: Relationship between endogamy parameter and resulting log odds ratio of intergroup marriage, based on benchmark simulations where each endogamy parameter was allowed to operate for a 15 year period. The even benchmark was for a population evenly split between groups while the uneven benchmark applied to a population that was split 80/20 by group.
 
 ggplot(intermar, aes(x = endogamy, y = lor, 
                      group = group_share, color = group_share))+
   geom_point(alpha = 0.5)+
   geom_smooth(se = FALSE, alpha = 0.5)+
+  labs(x = "endogamy parameter", y = "log odds ratio of intermarriage")+
   theme_bw()
 ```
 
+@fig-intermar-endogamy-compare plots the endogamy parameter of each simulation period in the benchmark tests versus the actual log odds ratio of group intermarriage in that same period. It is clear that the endogamy parameter is not acting how it is described in the documentation. That documentation says:
+
+> A value of endogamy between 0 and 1 is taken as the probability that a potential spouse who is a member of a different group from that of ego will be rejected. A value of 1 therefore implies endogamy while a value of 0 implies that group membership will not matter with respect to marriage. A value of endogamy between -1 and 0 is taken as the negative of the probability that a potential spouse from the same group will be rejected. A value of -1 therefore enforces complete exogamy – all suitors of ego’s own group will be rejected with probability 1.
+
+However, this is not what we see in @fig-intermar-endogamy-compare. The value of zero does lead to an expected log odds ratio of zero. However, we also reach that log odds ratio of zero when the endogamy parameter is 0.5. Values between 0 and 0.5 are producing *positive* log odds ratios, indicating greater preference for exogamy than endogamy. The negative values operate in the correct direction where more negative values indicate less negative odds ratios, but they should start in the positive, but only reach zero at -0.5. In fact, if we take `1+endogamy` for the negative endogamy values, they fit perfectly with the other points, as shown
+
+```{r}
+#| label: fig-endogamy-test
+#| fig-cap: Relationship between endogamy parameter and log odds ratio when negative endogamy values have been converted by taking 1+endogamy
+intermar |>
+  mutate(was_negative = endogamy < 0,
+         endogamy = ifelse(was_negative, 1+endogamy, endogamy)) |>
+  filter(endogamy > 0) |>
+  ggplot(aes(x = endogamy, y = lor))+
+  geom_point(alpha = 0.5, aes(color = was_negative))+
+  geom_smooth(se = FALSE, alpha = 0.5)+
+  labs(x = "endogamy parameter", y = "log odds ratio of intermarriage")+
+  theme_bw()
+```
+
+This is odd and deserves a check in with the SOCSIM crew about what is happening. However, so long as we recognize that the range of preferences for endogamy over exogamy is between 0.5 and 1, we can work with it. 
+
+@fig-intermar-endogamy-compare importantly also showed that group size does not affect the result, so we can be pretty confident that we can set the endogamy parameter to get a pretty specific log odds ratio, regardless of the group share issue. In order to do that, I want to construct a model that can fit the relationship between endogamy and the log odds ratio in the 0.5 to 1 endogamy range.
+
+```{r}
+#| label: fig-endogamy-parameter-curve
+#| fig-cap: relationship between log odds ratio and endogamy parameter for cases where endogamy parameter is between 0.5 and 1. 
+#| 
+intermar_restrict <- intermar |> filter(endogamy >= 0.5)
+
+ggplot(intermar_restrict, aes(x = lor, y = endogamy))+
+  geom_point()+
+  labs(x = "log odds ratio", y = "endogamy parameter")+
+  theme_bw()
+```
+
+@fig-endogamy-parameter-curve shows that relationship. This is clearly a somewhat nonlinear curve with an asymptote at 1. I consider two different transformations of this curve to allow better fitting:
+
+* logit transformation
+* probit transformation 
+
+Because we also want to be sure that we accurately predict the 0.5 value at a log odds ratio of zero, I also fit the model with no intercept value. Finally, I also tested models where instead of just a linear fit, I added a squared log odds ratio to account for any additional non-linearity. 
+
+```{r}
+#| label: tbl-model-endogamy
+#| tbl-cap: Models predicting endogamy parameter by log odds ratio for endogamy parameters between 0.5 and 1. 
+
+model_logit <- lm(I(log(endogamy/(1-endogamy))) ~ -1+lor, 
+                  data = intermar_restrict)
+model_logit_sq <- update(model_logit, .~.+I(lor^2))
+
+model_probit <- update(model_logit, I(qnorm(endogamy))~.)
+model_probit_sq <- update(model_logit_sq, I(qnorm(endogamy))~.)
+
+modelsummary(list(model_logit, model_logit_sq, model_probit, model_probit_sq),
+             output = "gt",
+             fmt = 4,
+             coef_rename = c("lor" = "log odds ratio", 
+                             "I(lor^2)" = "log odds ratio sq."),
+             gof_map = c("nobs", "r.squared")) |>
+  tab_spanner(label = "logit", columns = 2:3) |>
+  tab_spanner(label = "probit", columns = 4:5)
+```
+
+@tbl-model-endogamy shows the four models. The probit models perform somewhat better than the logit models and the squared parameter does add marginally to the $R^2$ value. Lets also compare how well they each fit the data graphically. @fig-fit-endogamy-parameter shows this fit. Its clear from the figure that the curve of the logit models is too steep and that the probit models fit better. The probit model with the squared term fits the data slightly better. 
+
+```{r}
+#| label: fig-fit-endogamy-parameter
+#| fig-cap: Fit of the models to the endogamy parameter
+#| 
+pred_logit <- tibble(lor = intermar_restrict$lor, 
+                     fitted =predict(model_logit, 
+                                     newdata = intermar_restrict),
+                     model = "logit, linear") |>
+  mutate(endogamy = exp(fitted)/(1+exp(fitted)))
+pred_logit_sq <- tibble(lor = intermar_restrict$lor, 
+                        fitted =predict(model_logit_sq, 
+                                        newdata = intermar_restrict),
+                        model = "logit, squared") |>
+  mutate(endogamy = exp(fitted)/(1+exp(fitted)))
+pred_probit <- tibble(lor = intermar_restrict$lor, 
+                      fitted =predict(model_probit, 
+                                      newdata = intermar_restrict),
+                      model = "probit, linear") |>
+  mutate(endogamy = pnorm(fitted))
+pred_probit_sq <- tibble(lor = intermar_restrict$lor, 
+                         fitted =predict(model_probit_sq, 
+                                         newdata = intermar_restrict),
+                         model = "probit, squared") |>
+  mutate(endogamy = pnorm(fitted))
+
+pred <- bind_rows(pred_logit, pred_logit_sq, pred_probit, pred_probit_sq)
+
+ggplot(pred, aes(x = lor, y = endogamy))+
+  geom_line(aes(group = model, color = model), size = 1.1, alpha = 0.7)+
+  geom_point(data = intermar_restrict, alpha = 0.3)+
+  theme_bw()
+```
+
+
+Based on these results, we can use the following formula to convert a given desired log odds ratio ($lor$) into the required endogamy parameter:
+
+$$\texttt{endogamy} = \phi(-0.303611 * lor + 0.009237*lor^2)$$
+
+Where $\phi$ is the cumulative distribution function for the standard normal distribution. In *R*, we can use the following function. 
+
+```{r}
+#| label: endogamy-function
+
+get_endogamy <- function(lor) {
+  return(pnorm(-0.303611 * lor + 0.009237 * lor^2))
+}
+```
