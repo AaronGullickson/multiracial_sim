@@ -67,7 +67,7 @@ sim_names <- googlesheets4::sheet_names(sheet_id)
 
 for(sim_name in sim_names) {
   
-  if(sim_name(ends_with("IGNORE"))) {
+  if(str_detect(sim_name, "IGNORE$")) {
     next
   }
   
