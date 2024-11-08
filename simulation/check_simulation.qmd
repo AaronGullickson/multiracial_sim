@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "even_hypo_baseline"
+  sim: "uneven_intermar_benchmark"
   sheet_id: "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
 format:
   html:
@@ -15,8 +15,6 @@ execute:
   message: false
 ---
 
-Diagnostics for **`r params$sim`** simulation.
-
 ```{r}
 #| label: report-date-time
 timestamp()
@@ -28,6 +26,14 @@ library(here)
 source(here("utils", "check_packages.R"))
 source(here("utils", "functions.R"))
 source(here("simulation", "simulation_functions.R"))
+```
+
+```{r}
+#| label: get-sim-parameters
+
+googlesheets4::gs4_deauth()
+
+sim_params <- get_sim_parameters(params$sim, params$sheet_id)
 ```
 
 ```{r}
@@ -73,15 +79,10 @@ mar <- get_marriages(pop, mar) |>
                              NA, decade_mar))
 ```
 
+Diagnostics for **`r params$sim`** simulation - `r sim_params$desc`.
+
+
 # Simulation Parameters
-
-```{r}
-#| label: get-sim-parameters
-
-googlesheets4::gs4_deauth()
-
-sim_params <- get_sim_parameters(params$sim, params$sheet_id)
-```
 
 ```{r}
 #| label: tbl-start-parameters
