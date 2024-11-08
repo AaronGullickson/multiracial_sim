@@ -44,7 +44,7 @@ googlesheets4::gs4_deauth()
 # Create starter pop ------------------------------------------------------
 
 # Set size of initial population
-size_opop <-  30000
+size_opop <-  50000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim_opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
