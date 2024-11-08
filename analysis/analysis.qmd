@@ -89,7 +89,7 @@ modelsummary(list(model_logit, model_logit_sq, model_probit, model_probit_sq),
              fmt = 4,
              coef_rename = c("lor" = "log odds ratio", 
                              "I(lor^2)" = "log odds ratio sq."),
-             gof_map = c("nobs", "r.squared")) |>
+             gof_map = c("nobs", "r.squared", "bic")) |>
   tab_spanner(label = "logit", columns = 2:3) |>
   tab_spanner(label = "probit", columns = 4:5)
 ```
@@ -132,7 +132,7 @@ ggplot(pred, aes(x = lor, y = endogamy))+
 
 Based on these results, we can use the following formula to convert a given desired log odds ratio ($lor$) into the required endogamy parameter:
 
-$$\texttt{endogamy} = \phi(-0.303611 * lor + 0.009237*lor^2)$$
+$$\texttt{endogamy} = \phi(-0.361217 * lor - 0.004035*lor^2)$$
 
 Where $\phi$ is the cumulative distribution function for the standard normal distribution. In *R*, we can use the following function. 
 
@@ -140,6 +140,6 @@ Where $\phi$ is the cumulative distribution function for the standard normal dis
 #| label: endogamy-function
 
 get_endogamy <- function(lor) {
-  return(pnorm(-0.303611 * lor + 0.009237 * lor^2))
+  return(pnorm(-0.361217 * lor - 0.004035 * lor^2))
 }
 ```
