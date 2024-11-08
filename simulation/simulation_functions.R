@@ -252,3 +252,69 @@ get_sim_parameters <- function(sim_name, sheet_id) {
   
   return(list(desc = sim_desc$desc[1], start = sim_start, segments = sim_segments))
 }
+
+# a function to write new simulation parameters to the google sheet
+create_new_simulation <- function(sheet_id,
+                                  sim_name,
+                                  description,
+                                  group1_prop = 0.5,
+                                  starting_sim = "",
+                                  fert_multiplier = 1,
+                                  segment_length,
+                                  endogamy,
+                                  inheritance,
+                                  overwrite = FALSE) {
+  
+  existing_sim_names <- googlesheets4::sheet_names(sheet_id)
+  if(!overwrite & sim_name %in% existing_sim_names) {
+    stop(paste(sim_name, "is an already existing sim name in the sheet"))
+  }
+  
+  if(starting_sim != "" & !(starting_sim %in% existing_sim_names)) {
+    stop("Specified starting sim does not currently exist in the sheet")
+  }
+  
+  if(length(segment_length) != length(endogamy)) {
+    stop("segment_length and endogamy arguments must be the same length")
+  }
+  
+  if(length(segment_length) != length(inheritance)) {
+    stop("segment_length and inheritance arguments must be the same length")
+  }
+  
+  sim_start <- tibble(group1_prop, starting_sim, fert_multiplier)
+  
+  sim_segments <- tibble(segment_length, endogamy, inheritance)
+  
+  if(sim_name %in% existing_sim_names) {
+    # blank out this sheet - this is a bit crude, feels like there must
+    # be a better way to do it
+    googlesheets4::range_write(sheet_id,
+                               tibble(x = rep("", 1000), 
+                                      y = rep("", 1000), 
+                                      z = rep("", 1000)),
+                               range = paste(sim_name, "A1", sep="!"),
+                               col_names = FALSE)
+  } else {
+    googlesheets4::sheet_add(sheet_id, sim_name) 
+  }
+  googlesheets4::range_write(sheet_id,
+                             tibble(x = "description", y = description),
+                             range = paste(sim_name, "A1", sep="!"),
+                             col_names = FALSE)
+  googlesheets4::range_write(sheet_id, sim_start, 
+                             range = paste(sim_name, "A4", sep="!"))
+  googlesheets4::range_write(sheet_id, sim_segments, 
+                             range = paste(sim_name, "A8", sep="!"))
+  
+  # add comments
+  googlesheets4::range_write(sheet_id,
+                             tibble(x = "# starting simulation parameters"),
+                             range = paste(sim_name, "A3", sep="!"),
+                             col_names = FALSE)
+  googlesheets4::range_write(sheet_id,
+                             tibble(x = "# segment parameters"),
+                             range = paste(sim_name, "A7", sep="!"),
+                             col_names = FALSE)
+  
+}
