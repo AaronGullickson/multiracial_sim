@@ -34,14 +34,14 @@
 #                   the overall growth rate of the population.
 ######
 
-#sim_name <- "test"
-#pop_start <- presim_opop
-#segments <- rep(10, 3)
-#endogamy <- rep(0.95, 3)
-#inheritance <- rep(0.5, 3)
-#pop_start <- presim_opop |>
-#  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-#                        prob = c(0.5, 0.5)))
+sim_name <- "test"
+pop_start <- presim_opop
+segments <- rep(10, 3)
+endogamy <- rep(0.95, 3)
+inheritance <- rep(0.5, 3)
+pop_start <- presim_opop |>
+  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+                        prob = c(0.5, 0.5)))
 
 run_simulation <- function(sim_name, 
                            pop_start,
@@ -53,9 +53,9 @@ run_simulation <- function(sim_name,
                            fert_multiplier = 1) {
   
   # do some checks
-  if(max(segments) > 15) {
-    stop("All segments must be 15 years or less or group assignment will not work correctly")
-  }
+  #if(max(segments) > 15) {
+  #  stop("All segments must be 15 years or less or group assignment will not work correctly")
+  #}
   
   if(length(segments) != length(endogamy)) {
     stop("The length of the segments argument and the endogamy argument must be the same.")
@@ -106,6 +106,9 @@ run_simulation <- function(sim_name,
   # add fertility rates
   create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
   
+  # starting month
+  month <- 1200
+  
   for(i in 1:length(segments)) {
     
     len_years <- segments[i]
@@ -122,6 +125,9 @@ run_simulation <- function(sim_name,
           append = TRUE)
       cat("run\n", file = here(folder, "run.sup"),
           append = TRUE)
+      
+      # update final month, we always go one year at a time
+      month <- month + 12
       
       # run the simulation - future is needed not to screw up other sims without
       # restarting R
@@ -142,6 +148,19 @@ run_simulation <- function(sim_name,
         select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus) |>
         bind_rows(ancestry)
       
+      # create new marriages
+      new_marriages <- get_married(pop, mar, month)
+      
+      # add new marriages
+      mar <- mar |>
+        bind_rows(new_marriages)
+      
+      # re-assign marriage values in the pop file
+      pop$marid[new_marriages$wpid] <- new_marriages$mid
+      pop$mstat[new_marriages$wpid] <- 4
+      pop$marid[new_marriages$hpid] <- new_marriages$mid
+      pop$mstat[new_marriages$hpid] <- 4
+      
       # make the result of last run the new presim
       write.table(pop, here(folder, "presim.opop"), 
                   row.names = F, col.names = F)
@@ -157,6 +176,70 @@ run_simulation <- function(sim_name,
   write_csv(mar, here(folder, "final_mar.csv"))
   write_csv(ancestry, here(folder, "ancestry.csv"))
   
+}
+
+get_married <- function(pop, mar, month_final) {
+  
+  # get singles
+  singles <- pop |>
+    filter(mstat != 4 & dod == 0) |>
+    mutate(age = (month_final - dob) / 12,
+           sex = factor(fem, levels = 0:1, labels = c("Male", "Female"))) |>
+    select(pid, sex, group, age, marid) |>
+    rename(prior = marid)
+  
+  matches <- match_partners(singles)
+  
+  # clean up a bit and return
+  matches |>
+    mutate(mid = max(mar$mid)+1:nrow(matches),
+           dstart = month_final,
+           dend = 0,
+           rend = 16) |>
+    select(mid, wpid, hpid, dstart, dend, rend, wprior, hprior)
+  
+}
+
+match_partners <- function(singles) {
+  
+  # break singles into men and women
+  single_women <- singles |>
+    filter(sex == "Female") |>
+    rename(wpid = pid, group_w = group, age_w = age, wprior = prior) |>
+    select(wpid, group_w, age_w, wprior)
+  single_men <- singles |>
+    filter(sex == "Male") |>
+    rename(hpid = pid, group_h = group, age_h = age, hprior = prior) |>
+    select(hpid, group_h, age_h, hprior)
+  
+  ## TODO: track parents and grandparents to avoid incest
+  
+  # speed dating!
+  matches <- single_women |>
+    # women do the choosing
+    group_by(wpid) |>
+    group_split() |> 
+    map(function(x) {
+      # sample 50 partners for each woman
+      slice_sample(single_men, n = 50) |> 
+        bind_cols(x) |>
+        # calculate covariates and odds ratios using Dem Research article numbers
+        mutate(age_diff = age_h - age_w,
+               exogamy = group_h != group_w,
+               or = exp(0.072 * age_diff - 0.014 * age_diff^2 -2 * exogamy)) |>
+        # we don't need the actual probabilities because weights will be 
+        # standardized in slice_sample which amounts to the same thing
+        # pick a partner!
+        slice_sample(n = 1, weight_by = or)
+    }) |> 
+    bind_rows() |>
+    # some men will be chosen multiple times (lucky!), get rid of duplicates
+    # try again, ladies!
+    filter(!duplicated(hpid))
+  
+  # now clean it up a bit too match the mar dataset
+  
+  return(matches)
 }
 
 ####
