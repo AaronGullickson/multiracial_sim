@@ -33,6 +33,16 @@
 # fert_multiplier - A multiplier to apply to base fertility rates to dictate
 #                   the overall growth rate of the population.
 ######
+
+#sim_name <- "test"
+#pop_start <- presim_opop
+#segments <- rep(10, 3)
+#endogamy <- rep(0.95, 3)
+#inheritance <- rep(0.5, 3)
+#pop_start <- presim_opop |>
+#  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+#                        prob = c(0.5, 0.5)))
+
 run_simulation <- function(sim_name, 
                            pop_start,
                            segments, 
@@ -98,42 +108,48 @@ run_simulation <- function(sim_name,
   
   for(i in 1:length(segments)) {
     
-    # update sup file
-    file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
-              here(folder, "run.sup"), overwrite = TRUE)
-    cat("\nduration", segments[i]*12, "\n", file = here(folder, "run.sup"),
-        append = TRUE)
-    cat("include basic_rates\n", file = here(folder, "run.sup"),
-        append = TRUE)
-    cat("endogamy", endogamy[i], "\n", file = here(folder, "run.sup"),
-        append = TRUE)
-    cat("run\n", file = here(folder, "run.sup"),
-        append = TRUE)
-    
-    # run the simulation - future is needed not to screw up other sims without
-    # restarting R
-    socsim(folder, "run.sup", seed = seed, process_method = "future")
-    
-    # get the new pop and mar data
-    pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
-      as_tibble()
-    mar <- rsocsim::read_omar(folder, "run.sup", seed) |>
-      as_tibble()
-    
-    # find the new kids and measure their ancestry, group, etc.
-    new_kids <- calculate_ancestry(pop, ancestry, inheritance[i])
-    # assign back the new group to pop
-    pop$group[new_kids$pid] <- new_kids$group
-    # add new kids to ancestry data for next generation
-    ancestry <- new_kids |>
-      select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus) |>
-      bind_rows(ancestry)
-    
-    # make the result of last run the new presim
-    write.table(pop, here(folder, "presim.opop"), 
-                row.names = F, col.names = F)
-    write.table(mar, here(folder, "presim.omar"), 
-                row.names = F, col.names = F)
+    len_years <- segments[i]
+    year <- 0
+    while(year < len_years) {
+      # update sup file
+      file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
+                here(folder, "run.sup"), overwrite = TRUE)
+      cat("\nduration", 12, "\n", file = here(folder, "run.sup"),
+      append = TRUE)
+      cat("include basic_rates\n", file = here(folder, "run.sup"),
+          append = TRUE)
+      cat("endogamy", endogamy[i], "\n", file = here(folder, "run.sup"),
+          append = TRUE)
+      cat("run\n", file = here(folder, "run.sup"),
+          append = TRUE)
+      
+      # run the simulation - future is needed not to screw up other sims without
+      # restarting R
+      socsim(folder, "run.sup", seed = seed, process_method = "future")
+      
+      # get the new pop and mar data
+      pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
+        as_tibble()
+      mar <- rsocsim::read_omar(folder, "run.sup", seed) |>
+        as_tibble()
+      
+      # find the new kids and measure their ancestry, group, etc.
+      new_kids <- calculate_ancestry(pop, ancestry, inheritance[i])
+      # assign back the new group to pop
+      pop$group[new_kids$pid] <- new_kids$group
+      # add new kids to ancestry data for next generation
+      ancestry <- new_kids |>
+        select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus) |>
+        bind_rows(ancestry)
+      
+      # make the result of last run the new presim
+      write.table(pop, here(folder, "presim.opop"), 
+                  row.names = F, col.names = F)
+      write.table(mar, here(folder, "presim.omar"), 
+                  row.names = F, col.names = F)
+      
+      year <- year + 1
+    }
   }
   
   # write out final results
