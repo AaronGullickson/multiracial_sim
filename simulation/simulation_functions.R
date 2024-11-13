@@ -33,16 +33,6 @@
 # fert_multiplier - A multiplier to apply to base fertility rates to dictate
 #                   the overall growth rate of the population.
 ######
-
-sim_name <- "test"
-pop_start <- presim_opop
-segments <- rep(10, 3)
-endogamy <- rep(0.95, 3)
-inheritance <- rep(0.5, 3)
-pop_start <- presim_opop |>
-  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-                        prob = c(0.5, 0.5)))
-
 run_simulation <- function(sim_name, 
                            pop_start,
                            segments, 
@@ -51,11 +41,6 @@ run_simulation <- function(sim_name,
                            mar = NULL,
                            ancestry = NULL,
                            fert_multiplier = 1) {
-  
-  # do some checks
-  #if(max(segments) > 15) {
-  #  stop("All segments must be 15 years or less or group assignment will not work correctly")
-  #}
   
   if(length(segments) != length(endogamy)) {
     stop("The length of the segments argument and the endogamy argument must be the same.")
@@ -72,8 +57,12 @@ run_simulation <- function(sim_name,
   }
   
   if(is.null(mar)) {
-    # start with an empty data frame for mar
-    mar <- data.frame()
+    # start with a big marriage party!
+    mar <- get_married(pop_start, 1200)
+    pop_start$marid[mar$wpid] <- mar$mid
+    pop_start$mstat[mar$wpid] <- 4
+    pop_start$marid[mar$hpid] <- mar$mid
+    pop_start$mstat[mar$hpid] <- 4
   }
   
   # set up the directory for output 
@@ -149,7 +138,7 @@ run_simulation <- function(sim_name,
         bind_rows(ancestry)
       
       # create new marriages
-      new_marriages <- get_married(pop, mar, month)
+      new_marriages <- get_married(pop, month)
       
       # add new marriages
       mar <- mar |>
@@ -178,29 +167,15 @@ run_simulation <- function(sim_name,
   
 }
 
-get_married <- function(pop, mar, month_final) {
+get_married <- function(pop, month_current) {
   
   # get singles
   singles <- pop |>
     filter(mstat != 4 & dod == 0) |>
-    mutate(age = (month_final - dob) / 12,
+    mutate(age = (month_current - dob) / 12,
            sex = factor(fem, levels = 0:1, labels = c("Male", "Female"))) |>
     select(pid, sex, group, age, marid) |>
     rename(prior = marid)
-  
-  matches <- match_partners(singles)
-  
-  # clean up a bit and return
-  matches |>
-    mutate(mid = max(mar$mid)+1:nrow(matches),
-           dstart = month_final,
-           dend = 0,
-           rend = 16) |>
-    select(mid, wpid, hpid, dstart, dend, rend, wprior, hprior)
-  
-}
-
-match_partners <- function(singles) {
   
   # break singles into men and women
   single_women <- singles |>
@@ -226,7 +201,7 @@ match_partners <- function(singles) {
         # calculate covariates and odds ratios using Dem Research article numbers
         mutate(age_diff = age_h - age_w,
                exogamy = group_h != group_w,
-               or = exp(0.072 * age_diff - 0.014 * age_diff^2 -2 * exogamy)) |>
+               or = exp(0.072 * age_diff - 0.014 * age_diff^2 -3.1 * exogamy)) |>
         # we don't need the actual probabilities because weights will be 
         # standardized in slice_sample which amounts to the same thing
         # pick a partner!
@@ -237,9 +212,16 @@ match_partners <- function(singles) {
     # try again, ladies!
     filter(!duplicated(hpid))
   
-  # now clean it up a bit too match the mar dataset
+  # clean up a bit and return
+  matches <- matches |>
+    mutate(mid = max(mar$mid)+1:nrow(matches),
+           dstart = month_current,
+           dend = 0,
+           rend = 16) |>
+    select(mid, wpid, hpid, dstart, dend, rend, wprior, hprior)
   
   return(matches)
+  
 }
 
 ####
