@@ -174,6 +174,8 @@ get_married <- function(pop, month_current, mid_max) {
     filter(mstat != 4 & dod == 0) |>
     mutate(age = (month_current - dob) / 12,
            sex = factor(fem, levels = 0:1, labels = c("Male", "Female"))) |>
+    # restrict age at which people get married
+    filter(age >= 18 & age <= 60) |>
     select(pid, sex, group, age, marid) |>
     rename(prior = marid)
   
