@@ -42,6 +42,8 @@ run_simulation <- function(sim_name,
                            ancestry = NULL,
                            fert_multiplier = 1) {
   
+  ## some checks ##
+  
   if(length(segments) != length(endogamy)) {
     stop("The length of the segments argument and the endogamy argument must be the same.")
   }
@@ -50,7 +52,8 @@ run_simulation <- function(sim_name,
     stop("If inheritance rules are specified, the argument must be the same length as segments")
   }
   
-  # check for null values on arguments and address
+  ##  check for null values on arguments and address ##
+  
   if(is.null(inheritance)) {
     message("No inheritance rules specified, defaulting to random")
     inheritance <- rep(0.5, length(segments))
@@ -64,6 +67,17 @@ run_simulation <- function(sim_name,
     pop_start$marid[mar$hpid] <- mar$mid
     pop_start$mstat[mar$hpid] <- 4
   }
+  
+  if(is.null(ancestry)) {
+    ancestry <- pop_start |>
+      as_tibble() |>
+      mutate(ancestry_group1 = as.numeric(group == 1),
+             ancestry_group2 = as.numeric(group == 2),
+             nearest_gen_locus = NA) |>
+      select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
+  }
+  
+  ## file management ##
   
   # set up the directory for output 
   if(dir_exists(here(base_folder, sim_name))) {
@@ -79,23 +93,17 @@ run_simulation <- function(sim_name,
   write.table(mar, here(folder, "presim.omar"), 
               row.names = F, col.names = F)
   
-  # create initial ancestry dataset if it does not exist
-  if(is.null(ancestry)) {
-    ancestry <- pop_start |>
-      as_tibble() |>
-      mutate(ancestry_group1 = as.numeric(group == 1),
-             ancestry_group2 = as.numeric(group == 2),
-             nearest_gen_locus = NA) |>
-      select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
-  }
-  
   # create rate file
   file_copy(here("simulation", "parameter_files", "basic_rates"), 
             here(folder, "basic_rates"))
   # add fertility rates
   create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
   
-  # starting month
+  ## start the sim ##
+  
+  # starting month, so we can track the overall time in the sim
+  # we assume we are always starting at 1200 based on presim population
+  # but might be better to determine this programmatically if possible
   month <- 1200
   
   for(i in 1:length(segments)) {
