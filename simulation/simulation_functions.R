@@ -309,13 +309,14 @@ calculate_ancestry <- function(pop,
   new_kids <- new_kids |>
     mutate(
       group = case_when(
-        group_mom == 1 & group_pop == 1 ~ 1,
-        group_mom == 2 & group_pop == 2 ~ 2,
-        TRUE ~ 4))
-  new_kids$group[new_kids$group == 4] <- sample(1:3, 
-                                                replace = TRUE, 
-                                                prob = inheritance,
-                                                size = sum(new_kids$group == 4))
+        group_mom == group_pop ~ group_mom,
+        TRUE ~ NA_integer_))
+  new_kids$group  <- ifelse(!is.na(new_kids$group),
+                            new_kids$group,
+                            sample(1:3, 
+                                   replace = TRUE, 
+                                   prob = inheritance,
+                                   size = sum(is.na(new_kids$group))))
   
   return(new_kids)
   
