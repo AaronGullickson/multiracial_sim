@@ -286,7 +286,7 @@ calculate_ancestry <- function(pop,
            gen_locus_pop = nearest_gen_locus)
   
   # create the new_kids object for all kids with group == 3
-  new_kids <- pop |> filter(group == 3) |>
+  new_kids <- pop |> filter(group == 4) |>
     left_join(moms) |>
     left_join(dads) |>
     select(pid, 
@@ -311,11 +311,11 @@ calculate_ancestry <- function(pop,
       group = case_when(
         group_mom == 1 & group_pop == 1 ~ 1,
         group_mom == 2 & group_pop == 2 ~ 2,
-        TRUE ~ 3))
-  new_kids$group[new_kids$group == 3] <- sample(1:3, 
+        TRUE ~ 4))
+  new_kids$group[new_kids$group == 4] <- sample(1:3, 
                                                 replace = TRUE, 
                                                 prob = inheritance,
-                                                size = sum(new_kids$group == 3))
+                                                size = sum(new_kids$group == 4))
   
   return(new_kids)
   
