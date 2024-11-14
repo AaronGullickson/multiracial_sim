@@ -58,7 +58,7 @@ run_simulation <- function(sim_name,
   
   if(is.null(mar)) {
     # start with a big marriage party!
-    mar <- get_married(pop_start, 1200)
+    mar <- get_married(pop_start, 1200, 0)
     pop_start$marid[mar$wpid] <- mar$mid
     pop_start$mstat[mar$wpid] <- 4
     pop_start$marid[mar$hpid] <- mar$mid
@@ -138,7 +138,7 @@ run_simulation <- function(sim_name,
         bind_rows(ancestry)
       
       # create new marriages
-      new_marriages <- get_married(pop, month)
+      new_marriages <- get_married(pop, month, max(mar$mid))
       
       # add new marriages
       mar <- mar |>
@@ -167,7 +167,7 @@ run_simulation <- function(sim_name,
   
 }
 
-get_married <- function(pop, month_current) {
+get_married <- function(pop, month_current, mid_max) {
   
   # get singles
   singles <- pop |>
@@ -201,7 +201,7 @@ get_married <- function(pop, month_current) {
         # calculate covariates and odds ratios using Dem Research article numbers
         mutate(age_diff = age_h - age_w,
                exogamy = group_h != group_w,
-               or = exp(0.072 * age_diff - 0.014 * age_diff^2 -3.1 * exogamy)) |>
+               or = exp(0.072 * age_diff - 0.014 * age_diff^2 -5 * exogamy)) |>
         # we don't need the actual probabilities because weights will be 
         # standardized in slice_sample which amounts to the same thing
         # pick a partner!
@@ -214,7 +214,7 @@ get_married <- function(pop, month_current) {
   
   # clean up a bit and return
   matches <- matches |>
-    mutate(mid = max(mar$mid)+1:nrow(matches),
+    mutate(mid = mid_max+1:nrow(matches),
            dstart = month_current,
            dend = 0,
            rend = 16) |>
