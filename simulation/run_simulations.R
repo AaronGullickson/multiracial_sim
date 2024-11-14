@@ -66,10 +66,10 @@ presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = T)
 sim_name <- "test"
 pop_start <- presim_opop |>
   mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-                        prob = c(0.8, 0.2)))
+                        prob = c(0.5, 0.5)))
 segment_df <- tribble(
   ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_group1, ~inherit_group2,
-  100, -1, -1, -1, 0.6, 0.3
+  100, -1, -1, -1, 0.2, 0.2
 )
 fert_multiplier <- 1.05
 mar <- NULL
