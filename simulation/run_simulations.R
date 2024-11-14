@@ -36,7 +36,7 @@ seed <- sample(1:100, 1)
 set.seed(seed)
 
 # sheet id to read from on google sheets
-sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
+sheet_id <- "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 
 # de-authorize googlesheets4 so it won't ask about authorization
 googlesheets4::gs4_deauth()
@@ -60,6 +60,25 @@ presim_opop$fem <- sample(0:1, nrow(presim_opop), replace = T)
 # Add random dates of birth (max age around 70)
 presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = T)
 
+
+# Test simulations --------------------------------------------------------
+
+sim_name <- "test"
+pop_start <- presim_opop |>
+  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+                        prob = c(0.8, 0.2)))
+segment_df <- tribble(
+  ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_group1, ~inherit_group2,
+  100, -1, -1, -1, 0.6, 0.3
+)
+fert_multiplier <- 1.05
+mar <- NULL
+ancestry <- NULL
+
+run_simulation("test", 
+               pop_start, 
+               segment_df,
+               fert_multiplier = fert_multiplier)
 
 # Run simulations from googlesheets ---------------------------------------
 

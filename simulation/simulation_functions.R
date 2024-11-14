@@ -35,33 +35,21 @@
 ######
 run_simulation <- function(sim_name, 
                            pop_start,
-                           segments, 
-                           endogamy,
-                           inheritance = NULL,
+                           segment_df, 
                            mar = NULL,
                            ancestry = NULL,
                            fert_multiplier = 1) {
   
-  ## some checks ##
-  
-  if(length(segments) != length(endogamy)) {
-    stop("The length of the segments argument and the endogamy argument must be the same.")
-  }
-  
-  if(!is.null(inheritance) & (length(segments) != length(inheritance))) {
-    stop("If inheritance rules are specified, the argument must be the same length as segments")
-  }
-  
-  ##  check for null values on arguments and address ##
-  
-  if(is.null(inheritance)) {
-    message("No inheritance rules specified, defaulting to random")
-    inheritance <- rep(0.5, length(segments))
-  }
+  ##  Create some additional things where necessary ##
   
   if(is.null(mar)) {
     # start with a big marriage party!
-    mar <- get_married(pop_start, 1200, 0)
+    # use the log odds for the first segment
+    lodds <- segment_df |> 
+      slice(1) |> 
+      select(starts_with("lodds")) |>
+      unlist(use.names = TRUE)
+    mar <- get_married(pop_start, lodds, 1200, 0)
     pop_start$marid[mar$wpid] <- mar$mid
     pop_start$mstat[mar$wpid] <- 4
     pop_start$marid[mar$hpid] <- mar$mid
@@ -75,6 +63,15 @@ run_simulation <- function(sim_name,
              ancestry_group2 = as.numeric(group == 2),
              nearest_gen_locus = NA) |>
       select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
+  }
+  
+  segment_df <- segment_df |>
+    mutate(inherit_group3 = 1-(inherit_group1+inherit_group2))
+  
+  ## some checks ##
+  
+  if(any(segment_df$inherit_group3 < 0)) {
+    stop("some inheritance proportions sum to more than 1")
   }
   
   ## file management ##
@@ -106,19 +103,27 @@ run_simulation <- function(sim_name,
   # but might be better to determine this programmatically if possible
   month <- 1200
   
-  for(i in 1:length(segments)) {
+  for(i in 1:nrow(segment_df)) {
     
-    len_years <- segments[i]
+    # get segment specific parameters
+    inheritance <- segment_df |> 
+      slice(i) |> 
+      select(starts_with("inherit_")) |>
+      unlist(use.names = FALSE)
+    
+    lodds <- segment_df |> 
+      slice(i) |> 
+      select(starts_with("lodds")) |>
+      unlist(use.names = TRUE)
+    
     year <- 0
-    while(year < len_years) {
+    while(year < segment_df$segment_length[i]) {
       # update sup file
       file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
                 here(folder, "run.sup"), overwrite = TRUE)
       cat("\nduration", 12, "\n", file = here(folder, "run.sup"),
       append = TRUE)
       cat("include basic_rates\n", file = here(folder, "run.sup"),
-          append = TRUE)
-      cat("endogamy", endogamy[i], "\n", file = here(folder, "run.sup"),
           append = TRUE)
       cat("run\n", file = here(folder, "run.sup"),
           append = TRUE)
@@ -137,7 +142,7 @@ run_simulation <- function(sim_name,
         as_tibble()
       
       # find the new kids and measure their ancestry, group, etc.
-      new_kids <- calculate_ancestry(pop, ancestry, inheritance[i])
+      new_kids <- calculate_ancestry(pop, ancestry, inheritance)
       # assign back the new group to pop
       pop$group[new_kids$pid] <- new_kids$group
       # add new kids to ancestry data for next generation
@@ -146,7 +151,7 @@ run_simulation <- function(sim_name,
         bind_rows(ancestry)
       
       # create new marriages
-      new_marriages <- get_married(pop, month, max(mar$mid))
+      new_marriages <- get_married(pop, lodds, month, max(mar$mid))
       
       # add new marriages
       mar <- mar |>
@@ -175,7 +180,7 @@ run_simulation <- function(sim_name,
   
 }
 
-get_married <- function(pop, month_current, mid_max) {
+get_married <- function(pop, lodds, month_current, mid_max) {
   
   # get singles
   singles <- pop |>
@@ -211,7 +216,23 @@ get_married <- function(pop, month_current, mid_max) {
         # calculate covariates and odds ratios using Dem Research article numbers
         mutate(age_diff = age_h - age_w,
                exogamy = group_h != group_w,
-               or = exp(0.072 * age_diff - 0.014 * age_diff^2 -5 * exogamy)) |>
+               exogamy_param = case_when(
+                 (group_h == 1 & group_w == 2) | 
+                   (group_h == 2 & group_w == 1) ~ lodds["lodds12"],
+                 (group_h == 1 & group_w == 3) | 
+                   (group_h == 3 & group_w == 1) ~ lodds["lodds13"],
+                 (group_h == 2 & group_w == 3) | 
+                   (group_h == 3 & group_w == 2) ~ lodds["lodds23"],
+                 TRUE ~ 0),
+               # deal with missing values - should be no exogamy. Would be nice
+               # if we could just put negative infinity here. That works for 
+               # cases of exogamy because -Inf * 1 = -Inf, but for cases of 
+               # non-exogamy -Inf * 0 = NaN!
+               exogamy_param = ifelse(!is.na(exogamy_param), 
+                                      exogamy_param,
+                                      ifelse(exogamy, -Inf, 0)),
+               or = exp(0.072 * age_diff - 0.014 * age_diff^2 +
+                          exogamy_param * exogamy)) |>
         # we don't need the actual probabilities because weights will be 
         # standardized in slice_sample which amounts to the same thing
         # pick a partner!
@@ -248,7 +269,7 @@ get_married <- function(pop, month_current, mid_max) {
 #               hyperdescent. 0.5 indicates a coin toss. 
 calculate_ancestry <- function(pop, 
                                ancestry, 
-                               inheritance = 0.5) {
+                               inheritance) {
   
   # get "moms" and "dads" for joining properly
   moms <- ancestry |>
@@ -291,10 +312,9 @@ calculate_ancestry <- function(pop,
         group_mom == 1 & group_pop == 1 ~ 1,
         group_mom == 2 & group_pop == 2 ~ 2,
         TRUE ~ 3))
-  new_kids$group[new_kids$group == 3] <- sample(1:2, 
+  new_kids$group[new_kids$group == 3] <- sample(1:3, 
                                                 replace = TRUE, 
-                                                prob = c(1-inheritance, 
-                                                         inheritance),
+                                                prob = inheritance,
                                                 size = sum(new_kids$group == 3))
   
   return(new_kids)
