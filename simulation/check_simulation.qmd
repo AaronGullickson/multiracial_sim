@@ -106,8 +106,7 @@ sim_params$segments |>
   select(total_years, segment_length, starts_with("lodds"), 
          starts_with("inherit_")) |>
   gt() |>
-  cols_label(index = "Index",
-             total_years = "Total years",
+  cols_label(total_years = "Total years",
              segment_length = "Length of segment",
              lodds12 = "G1-G2",
              lodds13 = "G1-G3",
