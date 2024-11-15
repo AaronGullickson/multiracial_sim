@@ -90,9 +90,7 @@ run_simulation <- function(sim_name,
   ## start the sim ##
   
   # starting month, so we can track the overall time in the sim
-  # we assume we are always starting at 1200 based on presim population
-  # but might be better to determine this programmatically if possible
-  month <- 1200
+  month <- max(pop_start$dob)
   
   for(i in 1:nrow(segment_df)) {
     
