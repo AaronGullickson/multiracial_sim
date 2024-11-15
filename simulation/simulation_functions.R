@@ -64,16 +64,7 @@ run_simulation <- function(sim_name,
              nearest_gen_locus = NA) |>
       select(pid, group, ancestry_group1, ancestry_group2, nearest_gen_locus)
   }
-  
-  segment_df <- segment_df |>
-    mutate(inherit_group3 = 1-(inherit_group1+inherit_group2))
-  
-  ## some checks ##
-  
-  if(any(segment_df$inherit_group3 < 0)) {
-    stop("some inheritance proportions sum to more than 1")
-  }
-  
+    
   ## file management ##
   
   # set up the directory for output 
@@ -109,7 +100,7 @@ run_simulation <- function(sim_name,
     inheritance <- segment_df |> 
       slice(i) |> 
       select(starts_with("inherit_")) |>
-      unlist(use.names = FALSE)
+      unlist(use.names = TRUE)
     
     lodds <- segment_df |> 
       slice(i) |> 
@@ -305,18 +296,29 @@ calculate_ancestry <- function(pop,
                   gen_locus_mom <= gen_locus_pop) ~ gen_locus_mom,
              TRUE ~ gen_locus_pop))
   
-  # assign group to kid
+  # assign groups to kid, because each kid will need to be sampled
+  # at different probabilities, we need to split and map this
   new_kids <- new_kids |>
-    mutate(
-      group = case_when(
-        group_mom == group_pop ~ group_mom,
-        TRUE ~ NA_integer_))
-  new_kids$group  <- ifelse(!is.na(new_kids$group),
-                            new_kids$group,
-                            sample(1:3, 
-                                   replace = TRUE, 
-                                   prob = inheritance,
-                                   size = sum(is.na(new_kids$group))))
+    group_by(pid) |>
+    group_split() |>
+    map(function(x) {
+      if(x$group_mom == x$group_pop) {
+        x$group <- x$group_mom
+      } else {
+        # calculate probability weights for the sampling
+        lor <- c(
+          inheritance["inherit_g1_intercept"]+
+            inheritance["inherit_g1_slope"] * x$ancestry_group1,
+          inheritance["inherit_g2_intercept"]+
+            inheritance["inherit_g2_slope"] * x$ancestry_group1,
+          0)
+        probs <- exp(lor)/sum(exp(lor))  
+        # now sample a group
+        x$group <- sample(1:3, 1, prob = probs)
+      }
+      return(x)
+    }) |>
+    bind_rows()
   
   return(new_kids)
   

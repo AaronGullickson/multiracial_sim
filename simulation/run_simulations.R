@@ -68,8 +68,8 @@ pop_start <- presim_opop |>
   mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
                         prob = c(0.5, 0.5)))
 segment_df <- tribble(
-  ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_group1, ~inherit_group2,
-  100, -1, -1, -1, 0.2, 0.2
+  ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_g1_intercept, ~inherit_g1_slope, ~inherit_g2_intercept, ~inherit_g2_slope,
+  100, -1, -1, -1, -7, 10, 3, -10
 )
 fert_multiplier <- 1.05
 mar <- NULL
