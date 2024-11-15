@@ -290,6 +290,17 @@ ggplot(mar, aes(x = wage))+
 ```
 
 ```{r}
+#| label: fig-wife-age-group
+#| fig-cap: Distribution of wife's age at marriage separately by whether the marriage is group exogamous
+mar |>
+  mutate(exogamy = hgroup != wgroup) |>
+  ggplot(aes(x = wage, fill = exogamy))+
+  geom_density()+
+  labs(x = "wife's age at marriage")+
+  theme_bw()
+```
+
+```{r}
 #| label: fig-husband-age
 #| fig-cap: Distribution of husband's age at marriage
 ggplot(mar, aes(x = hage))+
@@ -299,10 +310,32 @@ ggplot(mar, aes(x = hage))+
 ```
 
 ```{r}
+#| label: fig-husband-age-group
+#| fig-cap: Distribution of husband's age at marriage separately by whether the marriage is group exogamous
+mar |>
+  mutate(exogamy = hgroup != wgroup) |>
+  ggplot(aes(x = hage, fill = exogamy))+
+  geom_density()+
+  labs(x = "husband's age at marriage")+
+  theme_bw()
+```
+
+```{r}
 #| label: fig-spouse-age-gap
 #| fig-cap: Distribution of age difference between partners
 ggplot(mar, aes(x = (hage - wage)))+
   geom_histogram()+
+  labs(x = "husband's age minus wife's age")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-spouse-age-gap-group
+#| fig-cap: Distribution of age difference between partners separately by whether the marriage is exogamous
+mar |>
+  mutate(exogamy = hgroup != wgroup) |>
+  ggplot(aes(x = (hage - wage), fill = exogamy))+
+  geom_density()+
   labs(x = "husband's age minus wife's age")+
   theme_bw()
 ```
