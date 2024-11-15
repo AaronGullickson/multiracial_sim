@@ -22,4 +22,5 @@ data/data_constructed/*
 simulation/sims/*
 analysis/check_simulation.html
 analysis/check_simulation_files
+simulation/inheritance_shiny/rsconnect/*
 
