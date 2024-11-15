@@ -7,9 +7,9 @@
 
 # only run this script when we are rendering the entire project
 # comment out to source this script interactively
-#if (!nzchar(Sys.getenv("QUARTO_PROJECT_RENDER_ALL"))) {
-#  quit()
-#}
+if (!nzchar(Sys.getenv("QUARTO_PROJECT_RENDER_ALL"))) {
+  quit()
+}
 
 # Load libraries and basics ----------------------------------------------
 
