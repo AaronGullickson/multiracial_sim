@@ -7,9 +7,9 @@
 
 # only run this script when we are rendering the entire project
 # comment out to source this script interactively
-if (!nzchar(Sys.getenv("QUARTO_PROJECT_RENDER_ALL"))) {
-  quit()
-}
+#if (!nzchar(Sys.getenv("QUARTO_PROJECT_RENDER_ALL"))) {
+#  quit()
+#}
 
 # Load libraries and basics ----------------------------------------------
 
@@ -63,22 +63,22 @@ presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = T)
 
 # Test simulations --------------------------------------------------------
 
-sim_name <- "test"
-pop_start <- presim_opop |>
-  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-                        prob = c(0.5, 0.5)))
-segment_df <- tribble(
-  ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_g1_intercept, ~inherit_g1_slope, ~inherit_g2_intercept, ~inherit_g2_slope,
-  100, -1, -1, -1, -7, 10, 3, -10
-)
-fert_multiplier <- 1.05
-mar <- NULL
-ancestry <- NULL
-
-run_simulation("test", 
-               pop_start, 
-               segment_df,
-               fert_multiplier = fert_multiplier)
+#sim_name <- "test"
+#pop_start <- presim_opop |>
+#  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+#                        prob = c(0.5, 0.5)))
+#segment_df <- tribble(
+#  ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_g1_intercept, ~inherit_g1_slope, ~inherit_g2_intercept, ~inherit_g2_slope,
+#  100, -1, -1, -1, -7, 10, 3, -10
+#)
+#fert_multiplier <- 1.05
+#mar <- NULL
+#ancestry <- NULL
+#
+#run_simulation("test", 
+#               pop_start, 
+#               segment_df,
+#               fert_multiplier = fert_multiplier)
 
 # Run simulations from googlesheets ---------------------------------------
 
@@ -118,12 +118,10 @@ for(sim_name in sim_names) {
       # run the simulation
       run_simulation(sim_name, 
                      pop_start = pop_start,
+                     segment_df = sim_param$segments,
                      mar = mar_start,
                      ancestry = ancestry_start,
-                     fert_multiplier = sim_param$start$fert_multiplier,
-                     segments = sim_param$segments$segment_length,
-                     endogamy = sim_param$segments$endogamy,
-                     inheritance = sim_param$segments$inheritance)
+                     fert_multiplier = sim_param$start$fert_multiplier)
       
       # now create the report
       # annoyingly, I have to set the working directory here to get it to work. 

@@ -360,7 +360,7 @@ get_sim_parameters <- function(sim_name, sheet_id) {
                                                        sep="!"))
   
   sim_segments <- googlesheets4::range_read(sheet_id, 
-                                            range = paste(sim_name, "A8:C1000", 
+                                            range = paste(sim_name, "A8:H1000", 
                                                           sep="!")) |>
     filter(!is.na(segment_length))
   
