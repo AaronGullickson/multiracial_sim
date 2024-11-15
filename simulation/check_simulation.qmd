@@ -103,13 +103,22 @@ sim_params$start |>
 sim_params$segments |>
   mutate(index = 1:nrow(sim_params$segments),
          total_years = cumsum(segment_length)) |>
-  select(index, total_years, segment_length, endogamy, inheritance) |>
+  select(total_years, segment_length, starts_with("lodds"), 
+         starts_with("inherit_")) |>
   gt() |>
   cols_label(index = "Index",
              total_years = "Total years",
              segment_length = "Length of segment",
-             endogamy = "Endogamy parameter",
-             inheritance = "Inheritance parameter")
+             lodds12 = "G1-G2",
+             lodds13 = "G1-G3",
+             lodds23 = "G2-G3",
+             inherit_g1_intercept = "G1 Intercept",
+             inherit_g1_slope = "G1 Slope",
+             inherit_g2_intercept = "G2 Intercept",
+             inherit_g2_slope = "G2 Slope") |>
+  tab_spanner(label = "Log Odds", columns = starts_with("lodds")) |>
+  tab_spanner(label = "Inheritance Parameters", 
+              columns = starts_with("inherit_"))
 ```
 
 # Basic Demographic Information
