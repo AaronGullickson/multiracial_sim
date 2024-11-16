@@ -752,3 +752,24 @@ pop |>
        y = "Mean group 2 ancestry percentage")+
   theme_bw()
 ```
+
+```{r}
+#| label: fig-ancestry-rules
+#| fig-cap: Probability of being assigned to a given group among first generation biracial individuals as a function of proportion of ancestry from group 1
+pop |>
+  filter(nearest_gen_locus == 1) |>
+  group_by(ancestry_group1) |>
+  summarize(prop_group1 = mean(group == 1),
+            prop_group2 = mean(group == 2),
+            prop_group3 = mean(group == 3)) |>
+  pivot_longer(cols = starts_with("prop_"), names_prefix = "prop_") |>
+  ggplot(aes(x = ancestry_group1, y = value, group = name, color = name))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
+  labs(x = "proportion of ancestry from group 1", 
+       y = "probability of being assigned to group",
+       color = "group assignment")+
+  theme_bw()
+```
