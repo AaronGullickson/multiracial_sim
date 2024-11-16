@@ -26,6 +26,9 @@ library(here)
 source(here("utils", "check_packages.R"))
 source(here("utils", "functions.R"))
 source(here("simulation", "simulation_functions.R"))
+
+# chosen from Color Buddy
+my_palette <- c("#a91610", "#005864", "#fdcc00", "#4d8900", "#ce6a00")
 ```
 
 ```{r}
@@ -197,6 +200,7 @@ tibble(year = total_pop$year[indices[-1]] - 5, growth_rate) |>
   geom_line()+
   geom_point()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year (midpoint of decade)", y = "annual population growth rate")+
   theme_bw()
 ```
@@ -208,6 +212,7 @@ tibble(year = total_pop$year[indices[-1]] - 5, growth_rate) |>
 total_pop_group |>
   ggplot(aes(x = year, y = population, group = group, color = group))+
   geom_line()+
+  scale_color_manual(values = my_palette)+
   labs(x = "year from start of simulation", y = "population size")+
   theme_bw()
 ```
@@ -220,6 +225,7 @@ total_pop_group |>
   ggplot(aes(x = year, y = share, group = group, fill = group))+
   geom_area(color = "black")+
   scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = my_palette)+
   labs(x = "year from start of simulation", y = "share")+
   theme_bw()
 ```
@@ -273,6 +279,7 @@ tibble(year = factor(rep(levels(asmr$year), each = 2),
   ggplot(aes(x = year, y = life_exp, group = sex, color = sex))+
   geom_line()+
   geom_point()+
+  scale_color_manual(values = my_palette)+
   labs(x = "time period", y = "period life expectancy at birth")+
   theme_bw()
 ```
@@ -295,6 +302,7 @@ mar |>
   mutate(exogamy = hgroup != wgroup) |>
   ggplot(aes(x = wage, fill = exogamy))+
   geom_density(alpha =0.7)+
+  scale_fill_manual(values = my_palette)+
   labs(x = "wife's age at marriage")+
   theme_bw()
 ```
@@ -315,6 +323,7 @@ mar |>
   mutate(exogamy = hgroup != wgroup) |>
   ggplot(aes(x = hage, fill = exogamy))+
   geom_density(alpha = 0.7)+
+  scale_fill_manual(values = my_palette)+
   labs(x = "husband's age at marriage")+
   theme_bw()
 ```
@@ -335,6 +344,7 @@ mar |>
   mutate(exogamy = hgroup != wgroup) |>
   ggplot(aes(x = (hage - wage), fill = exogamy))+
   geom_density()+
+  scale_fill_manual(values = my_palette)+
   labs(x = "husband's age minus wife's age")+
   theme_bw()
 ```
@@ -399,6 +409,7 @@ exog_group |>
   geom_point()+
   geom_smooth(se = FALSE)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year (in decade intervals)", 
        y = "percent of unions that are group exogamous")+
   theme_bw()
@@ -451,6 +462,7 @@ pop |>
              color = group, group = group))+
   geom_point()+
   geom_line()+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)", 
        y = "mean nearest generational locus")+
   theme_bw()
@@ -504,6 +516,7 @@ pop |>
              group = group, color = group))+
   geom_point()+
   geom_line()+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)", 
        y = "mean level of mixedness")+
   theme_bw()
@@ -585,6 +598,7 @@ pop |>
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
        color = "generational locus")+
@@ -612,6 +626,7 @@ pop |>
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   facet_wrap(~group)+
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
@@ -637,6 +652,7 @@ pop |>
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   facet_wrap(~group)+
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
@@ -659,6 +675,7 @@ pop |>
   geom_line()+
   geom_point()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (at decade intervals)", 
        y = "percent unmixed",
        color = "group")+
@@ -677,6 +694,7 @@ pop |>
   geom_point()+
   geom_line()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)",
        y = "Mean group 1 ancestry percentage")+
   theme_bw()
@@ -694,6 +712,7 @@ pop |>
   geom_point()+
   geom_line()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)",
        y = "Mean group 2 ancestry percentage")+
   theme_bw()
