@@ -175,18 +175,18 @@ get_married <- function(pop, lodds, month_current, mid_max) {
     filter(mstat != 4 & dod == 0) |>
     mutate(age = (month_current - dob) / 12,
            sex = factor(fem, levels = 0:1, labels = c("Male", "Female"))) |>
-    # restrict age at which people get married
-    filter(age >= 18 & age <= 60) |>
     select(pid, sex, group, age, marid) |>
     rename(prior = marid)
   
-  # break singles into men and women
+  # break singles into men and women - restrict age a little differently
   single_women <- singles |>
     filter(sex == "Female") |>
+    filter(age >= 18 & age <= 60) |>
     rename(wpid = pid, group_w = group, age_w = age, wprior = prior) |>
     select(wpid, group_w, age_w, wprior)
   single_men <- singles |>
     filter(sex == "Male") |>
+    filter(age >= 20 & age <= 70) |>
     rename(hpid = pid, group_h = group, age_h = age, hprior = prior) |>
     select(hpid, group_h, age_h, hprior)
   
@@ -199,7 +199,8 @@ get_married <- function(pop, lodds, month_current, mid_max) {
     group_split() |> 
     map(function(x) {
       # sample 50 partners for each woman
-      slice_sample(single_men, n = 50) |> 
+      choice_set <- single_men |> 
+        slice_sample(n = 50) |> 
         bind_cols(x) |>
         # calculate covariates and odds ratios using Dem Research article numbers
         mutate(age_diff = age_h - age_w,
@@ -220,11 +221,21 @@ get_married <- function(pop, lodds, month_current, mid_max) {
                                       exogamy_param,
                                       ifelse(exogamy, -Inf, 0)),
                or = exp(0.072 * age_diff - 0.014 * age_diff^2 +
-                          exogamy_param * exogamy)) |>
-        # we don't need the actual probabilities because weights will be 
-        # standardized in slice_sample which amounts to the same thing
-        # pick a partner!
-        slice_sample(n = 1, weight_by = or)
+                          exogamy_param * exogamy))
+      
+      # How good are the choices?
+      # if the maximum odds ratio is low, then that suggests we didn't have
+      # a lot of good choices and so we will wait. We will also wait if
+      # the absolute number of choices is below a threshold.
+      # this helps to avoid mismatching in situations of data sparseness.
+      if(nrow(choice_set) < 4 | max(choice_set$or) < 0.12) {
+        return(NULL)
+      }
+      
+      # pick a partner!
+      # we don't need the actual probabilities because weights will be 
+      # standardized in slice_sample which amounts to the same thing
+      return(slice_sample(choice_set, n = 1, weight_by = or))
     }) |> 
     bind_rows() |>
     # some men will be chosen multiple times (lucky!), get rid of duplicates
