@@ -284,7 +284,7 @@ tibble(year = factor(rep(levels(asmr$year), each = 2),
   theme_bw()
 ```
 
-## Age at Marriage
+## Marriage Statistics
 
 ```{r}
 #| label: fig-wife-age
@@ -363,6 +363,41 @@ ggplot(tab_lor, aes(x = decade_mar, y = lor, group = 1))+
   geom_point()+
   geom_smooth(se = FALSE)+
   labs(x = "year (in decade intervals)", y = "log odds ratio of intermarriage")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-lor-compare
+#| fig-cap: Comparison of the log odds ratio of marriage to birth over time
+parent_info <- get_parent_info(pop) |>
+  filter(!is.na(mom) & !is.na(dad)) |>
+  mutate(decade_birth = floor(dob / 10) * 10 + 5,
+         decade_birth = ifelse(decade_birth < 0 | decade_birth > last_year,
+                             NA, decade_birth))
+
+tab_lor_kid <- parent_info |>
+    group_by(decade_birth) |>
+    summarize(n12 = sum(dad_group == 1 & mom_group ==2),
+              n21 = sum(dad_group == 2 & mom_group ==1),
+              n11 = sum(dad_group == 1 & mom_group ==1),
+              n22 = sum(dad_group == 2 & mom_group ==2),
+              lor = log((n12 * n21) / (n11 * n22))) |>
+    select(decade_birth, lor)
+
+tab_lor_kid <- tab_lor_kid |>
+  rename(decade = decade_birth) |>
+  mutate(type = "birth")
+
+tab_lor <- tab_lor |>
+  rename(decade = decade_mar) |>
+  mutate(type = "marriage") |>
+  bind_rows(tab_lor_kid)
+
+ggplot(tab_lor, aes(x = decade, y = lor, group = type, color = type))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  scale_color_manual(values = my_palette)+
+  labs(x = "year (in decade intervals)", y = "log odds ratio")+
   theme_bw()
 ```
 
