@@ -294,7 +294,7 @@ ggplot(mar, aes(x = wage))+
 mar |>
   mutate(exogamy = hgroup != wgroup) |>
   ggplot(aes(x = wage, fill = exogamy))+
-  geom_density()+
+  geom_density(alpha =0.7)+
   labs(x = "wife's age at marriage")+
   theme_bw()
 ```
@@ -314,7 +314,7 @@ ggplot(mar, aes(x = hage))+
 mar |>
   mutate(exogamy = hgroup != wgroup) |>
   ggplot(aes(x = hage, fill = exogamy))+
-  geom_density()+
+  geom_density(alpha = 0.7)+
   labs(x = "husband's age at marriage")+
   theme_bw()
 ```
