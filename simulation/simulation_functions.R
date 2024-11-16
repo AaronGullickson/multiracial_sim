@@ -42,6 +42,9 @@ run_simulation <- function(sim_name,
   
   ##  Create some additional things where necessary ##
   
+  # starting month, so we can track the overall time in the sim
+  month <- max(pop_start$dob)
+  
   if(is.null(mar)) {
     # start with a big marriage party!
     # use the log odds for the first segment
@@ -49,7 +52,7 @@ run_simulation <- function(sim_name,
       slice(1) |> 
       select(starts_with("lodds")) |>
       unlist(use.names = TRUE)
-    mar <- get_married(pop_start, lodds, 1200, 0)
+    mar <- get_married(pop_start, lodds, month, 0)
     pop_start$marid[mar$wpid] <- mar$mid
     pop_start$mstat[mar$wpid] <- 4
     pop_start$marid[mar$hpid] <- mar$mid
@@ -88,10 +91,6 @@ run_simulation <- function(sim_name,
   create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
   
   ## start the sim ##
-  
-  # starting month, so we can track the overall time in the sim
-  month <- max(pop_start$dob)
-  
   for(i in 1:nrow(segment_df)) {
     
     # get segment specific parameters
