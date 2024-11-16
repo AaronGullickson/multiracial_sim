@@ -49,36 +49,38 @@ size_opop <-  50000
 # Create data.frame with 14 columns and nrows = size_opop
 presim_opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
                         c("pid","fem","group","nev","dob","mom","pop",
-                          "nesibm","nesibp","lborn","marid","mstat","dod","fmult"))
+                          "nesibm","nesibp","lborn","marid","mstat","dod",
+                          "fmult")) |>
+  as_tibble()
 
 # Add pid 1:sizeopop
 presim_opop$pid <- 1:size_opop
 
 # Add sex randomly
-presim_opop$fem <- sample(0:1, nrow(presim_opop), replace = T)
+presim_opop$fem <- sample(0:1, nrow(presim_opop), replace = TRUE)
 
 # Add random dates of birth (max age around 70)
-presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = T)
+presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = TRUE)
 
 
 # Test simulations --------------------------------------------------------
 
-#sim_name <- "test"
-#pop_start <- presim_opop |>
-#  mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-#                        prob = c(0.5, 0.5)))
-#segment_df <- tribble(
-#  ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_g1_intercept, ~inherit_g1_slope, ~inherit_g2_intercept, ~inherit_g2_slope,
-#  100, -1, -1, -1, -7, 10, 3, -10
-#)
-#fert_multiplier <- 1.05
-#mar <- NULL
-#ancestry <- NULL
-#
-#run_simulation("test", 
-#               pop_start, 
-#               segment_df,
-#               fert_multiplier = fert_multiplier)
+# sim_name <- "test"
+# pop_start <- presim_opop |>
+#   mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+#                         prob = c(0.8, 0.2)))
+# segment_df <- tribble(
+#   ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_g1_intercept, ~inherit_g1_slope, ~inherit_g2_intercept, ~inherit_g2_slope,
+#   300, -5, NA, NA, 3, 3, 10, -3
+# )
+# fert_multiplier <- 1.09
+# mar <- NULL
+# ancestry <- NULL
+# 
+# run_simulation("test", 
+#                pop_start, 
+#                segment_df,
+#                fert_multiplier = fert_multiplier)
 
 # Run simulations from googlesheets ---------------------------------------
 
