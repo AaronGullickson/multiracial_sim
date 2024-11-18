@@ -261,7 +261,7 @@ get_married <- function(pop, lodds, month_current, mid_max) {
       # now use the if_all approach to check if any of the potential
       # husband's ancestors are the same and filter out if so
       choice_set <- choice_set |>
-        filter(if_all(c(mom_h, dad_h, starts_with(c("gmom_","gdad_"))), 
+        filter(if_all(c(mom_h, dad_h, ends_with(c("_mat_h","_frat_h"))), 
                       ~ !(.x %in% ancestors_w)))
       
       # How good are the choices?
