@@ -174,23 +174,52 @@ get_married <- function(pop, lodds, month_current, mid_max) {
   singles <- pop |>
     filter(mstat != 4 & dod == 0) |>
     mutate(age = (month_current - dob) / 12,
-           sex = factor(fem, levels = 0:1, labels = c("Male", "Female"))) |>
-    select(pid, sex, group, age, marid) |>
+           sex = factor(fem, levels = 0:1, labels = c("Male", "Female")),
+           mom = ifelse(mom == 0, NA, mom),
+           dad = ifelse(pop == 0, NA, pop)) |>
+    select(pid, sex, group, age, mom, dad, marid) |>
     rename(prior = marid)
   
+  # get grandparent ids, to check for cousin-ness
+  maternal <- pop |>
+    filter(fem == 1) |>
+    mutate(mom = ifelse(mom == 0, NA, mom),
+           dad = ifelse(pop == 0, NA, pop)) |>
+    rename(mom = pid, gmom_mat = mom, gdad_mat = dad) |>
+    select(mom, gmom_mat, gdad_mat)
+  
+  fraternal <- pop |>
+    filter(fem == 0) |>
+    select(pid, mom, pop) |>
+    mutate(mom = ifelse(mom == 0, NA, mom),
+           dad = ifelse(pop == 0, NA, pop)) |>
+    rename(dad = pid, gmom_frat = mom, gdad_frat = dad) |>
+    select(dad, gmom_frat, gdad_frat)
+  
+  singles <- singles |>
+    left_join(maternal) |>
+    left_join(fraternal)
+  
   # break singles into men and women - restrict age a little differently
+  # for each group
   single_women <- singles |>
     filter(sex == "Female") |>
     filter(age >= 18 & age <= 60) |>
-    rename(wpid = pid, group_w = group, age_w = age, wprior = prior) |>
-    select(wpid, group_w, age_w, wprior)
+    rename(wpid = pid, group_w = group, age_w = age, wprior = prior,
+           mom_w = mom, dad_w = dad, gmom_mat_w = gmom_mat, 
+           gdad_mat_w = gdad_mat, gmom_frat_w = gmom_frat, 
+           gdad_frat_w = gdad_frat) |>
+    select(wpid, group_w, age_w, wprior, mom_w, dad_w, starts_with("gmom_"),
+           starts_with("gdad_"))
   single_men <- singles |>
     filter(sex == "Male") |>
     filter(age >= 20 & age <= 70) |>
-    rename(hpid = pid, group_h = group, age_h = age, hprior = prior) |>
-    select(hpid, group_h, age_h, hprior)
-  
-  ## TODO: track parents and grandparents to avoid incest
+    rename(hpid = pid, group_h = group, age_h = age, hprior = prior,
+           mom_h = mom, dad_h = dad, gmom_mat_h = gmom_mat, 
+           gdad_mat_h = gdad_mat, gmom_frat_h = gmom_frat, 
+           gdad_frat_h = gdad_frat) |>
+    select(hpid, group_h, age_h, hprior, mom_h, dad_h, starts_with("gmom_"),
+           starts_with("gdad_"))
   
   # speed dating!
   matches <- single_women |>
@@ -222,6 +251,18 @@ get_married <- function(pop, lodds, month_current, mid_max) {
                                       ifelse(exogamy, -Inf, 0)),
                or = exp(0.072 * age_diff - 0.014 * age_diff^2 +
                           exogamy_param * exogamy))
+      
+      # check for icky related-ness levels and remove
+      # first create a vector of unacceptable shared relatives for woman
+      ancestors_w <- x |> 
+        select(mom_w, dad_w, starts_with(c("gmom_","gdad_"))) |> 
+        unlist() |> 
+        na.omit()
+      # now use the if_all approach to check if any of the potential
+      # husband's ancestors are the same and filter out if so
+      choice_set <- choice_set |>
+        filter(if_all(c(mom_h, dad_h, starts_with(c("gmom_","gdad_"))), 
+                      ~ !(.x %in% ancestors_w)))
       
       # How good are the choices?
       # if the maximum odds ratio is low, then that suggests we didn't have
