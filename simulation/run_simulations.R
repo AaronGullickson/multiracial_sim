@@ -67,7 +67,7 @@ presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = TRUE)
 
 # sim_name <- "test"
 # pop_start <- presim_opop |>
-#   mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+#   mutate(group = sample(1:2, nrow(presim_opop), replace = T,
 #                         prob = c(0.8, 0.2)))
 # segment_df <- tribble(
 #   ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_g1_intercept, ~inherit_g1_slope, ~inherit_g2_intercept, ~inherit_g2_slope,
@@ -77,8 +77,8 @@ presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = TRUE)
 # mar <- NULL
 # ancestry <- NULL
 # 
-# run_simulation("test", 
-#                pop_start, 
+# run_simulation("test",
+#                pop_start,
 #                segment_df,
 #                fert_multiplier = fert_multiplier)
 
