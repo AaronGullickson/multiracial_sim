@@ -37,8 +37,7 @@ ui <- page_fillable(
                     "Group 2 Slope:",#
                     min = -15,
                     max = 0,
-                    value = -3),
-        "Sidebar"
+                    value = -3)
       ),
         accordion(
           accordion_panel(
@@ -55,7 +54,7 @@ ui <- page_fillable(
   
   card(
     card_header("Instructions"),
-    "No Sidebar"
+    includeMarkdown("text/instructions.md")
   )
   
 )
