@@ -12,40 +12,35 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-
-    # Application title
-    titlePanel("Parameters for Group Inheritance"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("group1_intercept",
-                        "Group 1 Intercept:",
-                        min = -20,
-                        max = 20,
-                        value = 3),
-            sliderInput("group1_slope",
-                        "Group 1 Slope:",
-                        min = 0,
-                        max = 15,
-                        value = 3),
-            sliderInput("group2_intercept",
-                        "Group 2 Intercept:",
-                        min = -20,
-                        max = 20,
-                        value = 10),
-            sliderInput("group2_slope",
-                        "Group 2 Slope:",
-                        min = -15,
-                        max = 0,
-                        value = -3)
-        ),
-        mainPanel(
-           plotOutput("distPlot")
-        )
-    )
+# Define UI for application
+ui <- page_sidebar(
+  
+  title = "Parameters for Group Inheritance",
+  
+  sidebar = sidebar(
+    sliderInput("group1_intercept",
+                "Group 1 Intercept:",
+                min = -20,
+                max = 20,
+                value = 3),
+    sliderInput("group1_slope",
+                "Group 1 Slope:",
+                min = 0,
+                max = 15,
+                value = 3),
+    sliderInput("group2_intercept",
+                "Group 2 Intercept:",
+                min = -20,
+                max = 20,
+                value = 10),
+    sliderInput("group2_slope",
+                "Group 2 Slope:",
+                min = -15,
+                max = 0,
+                value = -3)
+  ),
+  
+  plotOutput("distPlot")
 )
 
 # Define server logic required to draw a histogram
