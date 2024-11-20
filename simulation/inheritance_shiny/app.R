@@ -3,9 +3,14 @@
 # scenarios
 
 library(shiny)
+library(bslib)
+library(markdown)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+
+# chosen from Color Buddy
+my_palette <- c("#a91610", "#005864", "#fdcc00", "#4d8900", "#ce6a00")
 
 # Define UI for application
 ui <- page_fillable(
@@ -77,6 +82,7 @@ server <- function(input, output) {
       ggplot(aes(x = prop_group1, y = prob, color = group, group = group))+
         geom_line(size=1.5, alpha = 0.6)+
         scale_y_continuous(labels = scales::percent)+
+        scale_color_manual(values = my_palette)+
         labs(x = "proportion of ancestry from group 1",
              y = "probability of being classified with given group")+
         theme_bw()
@@ -112,6 +118,7 @@ server <- function(input, output) {
         ggplot(aes(x = prop_group1, y = prob, fill = group, group = group))+
         geom_area()+
         scale_y_continuous(labels = scales::percent)+
+        scale_fill_manual(values = my_palette)+
         labs(x = "proportion of ancestry from group 1",
              y = "probability of being classified with given group")+
         theme_bw()
