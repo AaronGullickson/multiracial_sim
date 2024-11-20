@@ -1,27 +1,32 @@
-# functions for simulation
+# functions for running SOCSIM simulation. The main function is run_simulation
+# with a variety of helper functions
 
 
-#######
+####
 # This function is the big one that runs the full simulation. This simulation
-# runs a number of years of socsim equal to each value in the segments vector
-# and then assigns ancestry information and group to any new children produced
-# by that simulation before continuing on with the simulation. This makes it 
-# fast to measure ancestry and flexible and extensivel in terms of handling 
-# how group is assigned. 
+# runs a single year of simulation using SOCSIM and then uses R to assign
+# ancestry to new kids and marriages to existing singles. Marriages should 
+# not be asssigned within SOCSIM itself (i.e. set all marriage rates to zero
+# in SOCSIM). The two helper functions get_married and calculate_ancestry assign
+# marriages and ancestry, respectively. Most of the important parameters for the 
+# simulation are assigned by the segment_df argument.
 # sim_name - the name to call this simulation. This will be the name of the 
 #            folder.
 # pop_start - the population data.frame to start the simulation with. This can
 #             be the result of a previous simulation, but if so the mar and 
 #             ancestry files must also be provided to get correct results.
-# segments - A vector where each value gives the number of years to sim for 
-#            each segment. Segments must be 15 years or less in order to 
-#            correctly assign children to group before they start partnering.
-# endogamy - A vector of the same length as segments that gives the endogamy
-#            parameter to use for each segment (between 0 and 1).
-# inheritance - A vector of the same length that gives the inheritance value
-#               to use when assigning children to groups. See the 
-#               calculate_ancestry function for details. If left NULL, it will
-#               default to random (50/50) assignment of mixed children to groups.
+# segment_df - a data.frame or tibble where each row holds the parameters for 
+#              a given segment of the simulation. The required variables are:
+#              segment_length - The length of this segment in years.
+#              lodds12 - the log odds of intermarriage for groups 1 and 2
+#              lodds13 - the log odds of intermarriage for groups 1 and 3
+#              lodds23 - the log odds of intermarriage for groups 2 and 3
+#              inherit_g1_intercept - the group 1 intercept for the inheritance 
+#                                     model
+#              inherit_g1_slope - the group 1 slope for the inheritance model
+#              inherit_g2_intercept - the group 2 intercept for the inheritance 
+#                                     model
+#              inherit_g2_slope - the group 2 slope for the inheritance model
 # mar - A marriage dataset to use for the start of the simulation. This can be left
 #       null for simulations starting from scratch, but should be specified 
 #       by the final mar file from a previous sim if starting from a previous
@@ -32,7 +37,7 @@
 #            starting from a previous sim.
 # fert_multiplier - A multiplier to apply to base fertility rates to dictate
 #                   the overall growth rate of the population.
-######
+####
 run_simulation <- function(sim_name, 
                            pop_start,
                            segment_df, 
@@ -168,6 +173,29 @@ run_simulation <- function(sim_name,
   
 }
 
+####
+# This function will take existing single people and assign them to marriages,
+# writing the results into a new mar file that is returned and can be added
+# to the existing mar file. Marriages are determined by selecting a certain 
+# number of potential male partners for every woman. Then these potential
+# marriages are scored by a log-odds formula that adjusts for age differences
+# and group exogamy. Those scores are used to get the probability of each union
+# from which one is selected. If all the scores are low or there are only a few
+# potential partners available, then the woman decides to wait. The program
+# also checks for relatedness within two generations and removes those potential
+# partners. Since some women will choose the same partner, not everyone will get 
+# their choice. Those who get scooped will wait until next year.
+# The arguments are:
+# pop - the population dataset for the simulation at its current state. This is 
+#       used to determine single people as well as relatedness.
+# lodds - a named vector with the names "lodds12", "lodds13", and "lodds23" 
+#         which gives the log odds of a union between the specified groups
+#         (e.g. lodds12 is between groups 1 and 2).
+# month_current - the last of month of the simulation in its current state. This 
+#                 is used as the marriage date for each marriage.
+# mid_max - the marriage id of the last marriage among the existing marriages
+#           in the simulation. Used to determine the ids of new marriages.
+####
 get_married <- function(pop, lodds, month_current, mid_max) {
   
   # get singles
@@ -303,10 +331,12 @@ get_married <- function(pop, lodds, month_current, mid_max) {
 # pop - the pop dataset for the current simulation. Anyone with a group ==3 will
 #       be new children and get stuff measured and group determined.
 # ancestry - the ancestry dataset for the current simulation.
-# inheritance - a numeric between 0 and 1 indicating the probability of a kid
-#               of mixed parentage being assigned to group 2. A value of 1 
-#               indicates strict hypodescent and 0 indicates strict 
-#               hyperdescent. 0.5 indicates a coin toss. 
+# inheritance - a vector containing the inheritance parameters for the 
+#               multinomial model that will determine the probability of being
+#               assigned to a given group. This vector must have the following
+#               names for items: inherit_g1_intercept, inherit_g1_slope,
+#               inherit_g2_intercept, inherit_g2_slope
+####
 calculate_ancestry <- function(pop, 
                                ancestry, 
                                inheritance) {
