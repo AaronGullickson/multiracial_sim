@@ -15,7 +15,7 @@ source(here("simulation","simulation_functions.R"))
 #| label: define-constants
 
 sim_folder = here("data", "data_constructed", "sims")
-sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
+sheet_id <- "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 googlesheets4::gs4_deauth()
 ```
 
@@ -28,7 +28,8 @@ intermar_even <- get_sim_parameters("even_intermar_benchmark",
                                     sheet_id)$segments |>
   mutate(year_end = cumsum(segment_length),
          time_period = cut(year_end, breaks = c(0, year_end))) |>
-  select(year_end, time_period, endogamy)
+  select(year_end, time_period, lodds12) |>
+  rename(exogamy = lodds12)
 
 pop <- read_csv(here(sim_folder, "even_intermar_benchmark", "final_pop.csv"))
 mar <- read_csv(here(sim_folder, "even_intermar_benchmark", "final_mar.csv"))
@@ -43,14 +44,15 @@ intermar_even <- calculate_lor(mar) |>
   rename(time_period = decade_mar) |>
   full_join(intermar_even) |>
   mutate(group_share = "even") |>
-  select(time_period, group_share, endogamy, lor)
+  select(time_period, group_share, exogamy, lor)
 
 # uneven scenario
 intermar_uneven <- get_sim_parameters("uneven_intermar_benchmark", 
                                     sheet_id)$segments |>
   mutate(year_end = cumsum(segment_length),
          time_period = cut(year_end, breaks = c(0, year_end))) |>
-  select(year_end, time_period, endogamy)
+  select(year_end, time_period, lodds12) |>
+  rename(exogamy = lodds12)
 
 pop <- read_csv(here(sim_folder, "uneven_intermar_benchmark", "final_pop.csv"))
 mar <- read_csv(here(sim_folder, "uneven_intermar_benchmark", "final_mar.csv"))
@@ -65,7 +67,7 @@ intermar <- calculate_lor(mar) |>
   rename(time_period = decade_mar) |>
   full_join(intermar_uneven) |>
   mutate(group_share = "uneven") |>
-  select(time_period, group_share, endogamy, lor) |>
+  select(time_period, group_share, exogamy, lor) |>
   bind_rows(intermar_even) |>
   mutate(lor = ifelse(lor == -Inf, NA, lor))
 ```
