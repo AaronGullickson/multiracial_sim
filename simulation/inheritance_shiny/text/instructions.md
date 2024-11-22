@@ -9,9 +9,10 @@ The mixed group is the reference for all assignment. These four parameters can b
 
 | Scenario                  | G1 Intercept | G1 Slope | G2 Intercept | G2 Slope |
 |---------------------------|--------------|----------|--------------|----------|
-| Strict Hypo/Hyperdescent  |  0 |  0 |  10 |   0 |
-| Loose Hypo/Hyperdescent   |  3 |  3 |  10 |   3 |
-| Low Multiracial ID        | -6 | 12 |   6 | -12 |
-| High Multiracial ID       | -8 | 12 |   4 | -12 |
-| Hypodescent to Multiracial| -8 |  6 |   4 | -12 |
-| Symmetric Single Race ID  |  0 | 10 |  10 | -10 | 
+| Strict Hypo/Hyperdescent  |   0 |  0 |  10 |   0 |
+| Loose Hypo/Hyperdescent   |   3 |  3 |  10 |   3 |
+| Low Multiracial ID        |  -6 | 12 |   6 | -12 |
+| High Multiracial ID       |  -8 | 12 |   4 | -12 |
+| Hypodescent to Multiracial|  -8 |  6 |   6 | -12 |
+| Symmetric Single Race ID  |   0 | 10 |  10 | -10 |
+| New Multiracial Formation | -10 |  0 | -10 |   0 |
