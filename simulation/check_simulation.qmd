@@ -755,21 +755,26 @@ pop |>
 
 ```{r}
 #| label: fig-ancestry-rules
-#| fig-cap: Probability of being assigned to a given group among first generation biracial individuals as a function of proportion of ancestry from group 1
+#| fig-cap: Probability of being assigned to a given group among first generation biracial individuals as a function of proportion of ancestry from group 1 for the final 100 years of the simulation.
 pop |>
   filter(nearest_gen_locus == 1) |>
+  filter((max(dob) - dob) < 100) |>
+  mutate(ancestry_group1 = cut_interval(ancestry_group1, n = 20)) |>
   group_by(ancestry_group1) |>
   summarize(prop_group1 = mean(group == 1),
             prop_group2 = mean(group == 2),
-            prop_group3 = mean(group == 3)) |>
+            prop_group3 = mean(group == 3),
+            n = n()) |>
   pivot_longer(cols = starts_with("prop_"), names_prefix = "prop_") |>
   ggplot(aes(x = ancestry_group1, y = value, group = name, color = name))+
-  geom_point()+
-  geom_smooth(se = FALSE)+
+  geom_point(aes(size = n), alpha = 0.4)+
+  geom_smooth(se = FALSE, aes(weight = n))+
   scale_y_continuous(labels = scales::percent)+
   scale_color_manual(values = my_palette)+
-  labs(x = "proportion of ancestry from group 1", 
+  labs(x = "proportion of ancestry from group 1 (equal interval bins)", 
        y = "probability of being assigned to group",
-       color = "group assignment")+
-  theme_bw()
+       color = "group assignment",
+       size = "Sample size")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
