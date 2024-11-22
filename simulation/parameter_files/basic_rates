@@ -1,55 +1,36 @@
-*** Fertility Rates ***
+*** Marriage Rates ***
 
 * general formula here is
 * 1-(1-X)^(1/Y)
 * Where X is the proportion who start a marriage search in the interval
 * and Y is the length of the interval in months
 
-* We are basically going to have people seek universal marriage at the age of 
-* 18, since all fertility needs to happen in marriage. This will cause the 
-* exogamy trends to somewhat more slowly affect the population than it might
-* otherwise, but is close enough for our purposes. NOTE: you have do two
-* sided marriage queues to get this stuff to work.
+* So we are now determining marriages in R to get greater flexibility over it, 
+* which means that we will not allow any marriages through SOCSIM.
 
 marriage 1 F single
-18    0   0.0
-55    0   0.9
-111   0   0.0001
-  
+111  0   0
+
 marriage 1 F widowed
-18    0   0.0
-55    0   0.9
-111   0   0.0001
+111  0   0
   
 marriage 2 F single
-18    0   0.0
-55    0   0.9
-111   0   0.0001
+111  0   0
   
 marriage 2 F widowed
-18    0   0.0
-55    0   0.9
-111   0   0.0001
+111  0   0
 
 marriage 1 M single
-18    0   0.0
-55    0   0.9
-111   0   0.0001
+111  0   0
   
 marriage 1 M widowed
-18    0   0.0
-55    0   0.9
-111   0   0.0001
-  
+111  0   0
+
 marriage 2 M single
-18    0   0.0
-55    0   0.9
-111   0   0.0001
+111  0   0
   
 marriage 2 M widowed
-18    0   0.0
-55    0   0.9
-111   0   0.0001
+111  0   0
 
 *** Divorce Rates ***
 *divorce - for now, no divorce

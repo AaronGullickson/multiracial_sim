@@ -36,7 +36,7 @@ seed <- sample(1:100, 1)
 set.seed(seed)
 
 # sheet id to read from on google sheets
-sheet_id <- "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
+sheet_id <- "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 
 # de-authorize googlesheets4 so it won't ask about authorization
 googlesheets4::gs4_deauth()
@@ -49,17 +49,38 @@ size_opop <-  50000
 # Create data.frame with 14 columns and nrows = size_opop
 presim_opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
                         c("pid","fem","group","nev","dob","mom","pop",
-                          "nesibm","nesibp","lborn","marid","mstat","dod","fmult"))
+                          "nesibm","nesibp","lborn","marid","mstat","dod",
+                          "fmult")) |>
+  as_tibble()
 
 # Add pid 1:sizeopop
 presim_opop$pid <- 1:size_opop
 
 # Add sex randomly
-presim_opop$fem <- sample(0:1, nrow(presim_opop), replace = T)
+presim_opop$fem <- sample(0:1, nrow(presim_opop), replace = TRUE)
 
 # Add random dates of birth (max age around 70)
-presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = T)
+presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = TRUE)
 
+
+# Test simulations --------------------------------------------------------
+
+# sim_name <- "test"
+# pop_start <- presim_opop |>
+#   mutate(group = sample(1:2, nrow(presim_opop), replace = T,
+#                         prob = c(0.8, 0.2)))
+# segment_df <- tribble(
+#   ~segment_length, ~lodds12, ~lodds13, ~lodds23, ~inherit_g1_intercept, ~inherit_g1_slope, ~inherit_g2_intercept, ~inherit_g2_slope,
+#   300, -5, NA, NA, 3, 3, 10, -3
+# )
+# fert_multiplier <- 1.09
+# mar <- NULL
+# ancestry <- NULL
+# 
+# run_simulation("test",
+#                pop_start,
+#                segment_df,
+#                fert_multiplier = fert_multiplier)
 
 # Run simulations from googlesheets ---------------------------------------
 
@@ -99,12 +120,10 @@ for(sim_name in sim_names) {
       # run the simulation
       run_simulation(sim_name, 
                      pop_start = pop_start,
+                     segment_df = sim_param$segments,
                      mar = mar_start,
                      ancestry = ancestry_start,
-                     fert_multiplier = sim_param$start$fert_multiplier,
-                     segments = sim_param$segments$segment_length,
-                     endogamy = sim_param$segments$endogamy,
-                     inheritance = sim_param$segments$inheritance)
+                     fert_multiplier = sim_param$start$fert_multiplier)
       
       # now create the report
       # annoyingly, I have to set the working directory here to get it to work. 

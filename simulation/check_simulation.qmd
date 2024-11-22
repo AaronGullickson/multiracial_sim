@@ -1,8 +1,8 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "uneven_intermar_benchmark"
-  sheet_id: "18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs"
+  sim: "uneven_hypo_baseline"
+  sheet_id: "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 format:
   html:
     code-fold: true
@@ -26,6 +26,9 @@ library(here)
 source(here("utils", "check_packages.R"))
 source(here("utils", "functions.R"))
 source(here("simulation", "simulation_functions.R"))
+
+# chosen from Color Buddy
+my_palette <- c("#a91610", "#005864", "#fdcc00", "#4d8900", "#ce6a00")
 ```
 
 ```{r}
@@ -103,13 +106,21 @@ sim_params$start |>
 sim_params$segments |>
   mutate(index = 1:nrow(sim_params$segments),
          total_years = cumsum(segment_length)) |>
-  select(index, total_years, segment_length, endogamy, inheritance) |>
+  select(total_years, segment_length, starts_with("lodds"), 
+         starts_with("inherit_")) |>
   gt() |>
-  cols_label(index = "Index",
-             total_years = "Total years",
+  cols_label(total_years = "Total years",
              segment_length = "Length of segment",
-             endogamy = "Endogamy parameter",
-             inheritance = "Inheritance parameter")
+             lodds12 = "G1-G2",
+             lodds13 = "G1-G3",
+             lodds23 = "G2-G3",
+             inherit_g1_intercept = "G1 Intercept",
+             inherit_g1_slope = "G1 Slope",
+             inherit_g2_intercept = "G2 Intercept",
+             inherit_g2_slope = "G2 Slope") |>
+  tab_spanner(label = "Log Odds", columns = starts_with("lodds")) |>
+  tab_spanner(label = "Inheritance Parameters", 
+              columns = starts_with("inherit_"))
 ```
 
 # Basic Demographic Information
@@ -189,6 +200,7 @@ tibble(year = total_pop$year[indices[-1]] - 5, growth_rate) |>
   geom_line()+
   geom_point()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year (midpoint of decade)", y = "annual population growth rate")+
   theme_bw()
 ```
@@ -200,6 +212,7 @@ tibble(year = total_pop$year[indices[-1]] - 5, growth_rate) |>
 total_pop_group |>
   ggplot(aes(x = year, y = population, group = group, color = group))+
   geom_line()+
+  scale_color_manual(values = my_palette)+
   labs(x = "year from start of simulation", y = "population size")+
   theme_bw()
 ```
@@ -212,6 +225,7 @@ total_pop_group |>
   ggplot(aes(x = year, y = share, group = group, fill = group))+
   geom_area(color = "black")+
   scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = my_palette)+
   labs(x = "year from start of simulation", y = "share")+
   theme_bw()
 ```
@@ -265,17 +279,30 @@ tibble(year = factor(rep(levels(asmr$year), each = 2),
   ggplot(aes(x = year, y = life_exp, group = sex, color = sex))+
   geom_line()+
   geom_point()+
+  scale_color_manual(values = my_palette)+
   labs(x = "time period", y = "period life expectancy at birth")+
   theme_bw()
 ```
 
-## Age at Marriage
+## Marriage Statistics
 
 ```{r}
 #| label: fig-wife-age
 #| fig-cap: Distribution of wife's age at marriage
 ggplot(mar, aes(x = wage))+
   geom_histogram()+
+  labs(x = "wife's age at marriage")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-wife-age-group
+#| fig-cap: Distribution of wife's age at marriage separately by whether the marriage is group exogamous
+mar |>
+  mutate(exogamy = hgroup != wgroup) |>
+  ggplot(aes(x = wage, fill = exogamy))+
+  geom_density(alpha =0.7)+
+  scale_fill_manual(values = my_palette)+
   labs(x = "wife's age at marriage")+
   theme_bw()
 ```
@@ -290,10 +317,34 @@ ggplot(mar, aes(x = hage))+
 ```
 
 ```{r}
+#| label: fig-husband-age-group
+#| fig-cap: Distribution of husband's age at marriage separately by whether the marriage is group exogamous
+mar |>
+  mutate(exogamy = hgroup != wgroup) |>
+  ggplot(aes(x = hage, fill = exogamy))+
+  geom_density(alpha = 0.7)+
+  scale_fill_manual(values = my_palette)+
+  labs(x = "husband's age at marriage")+
+  theme_bw()
+```
+
+```{r}
 #| label: fig-spouse-age-gap
 #| fig-cap: Distribution of age difference between partners
 ggplot(mar, aes(x = (hage - wage)))+
   geom_histogram()+
+  labs(x = "husband's age minus wife's age")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-spouse-age-gap-group
+#| fig-cap: Distribution of age difference between partners separately by whether the marriage is exogamous
+mar |>
+  mutate(exogamy = hgroup != wgroup) |>
+  ggplot(aes(x = (hage - wage), fill = exogamy))+
+  geom_density()+
+  scale_fill_manual(values = my_palette)+
   labs(x = "husband's age minus wife's age")+
   theme_bw()
 ```
@@ -312,6 +363,41 @@ ggplot(tab_lor, aes(x = decade_mar, y = lor, group = 1))+
   geom_point()+
   geom_smooth(se = FALSE)+
   labs(x = "year (in decade intervals)", y = "log odds ratio of intermarriage")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-lor-compare
+#| fig-cap: Comparison of the log odds ratio of marriage to birth over time
+parent_info <- get_parent_info(pop) |>
+  filter(!is.na(mom) & !is.na(dad)) |>
+  mutate(decade_birth = floor(dob / 10) * 10 + 5,
+         decade_birth = ifelse(decade_birth < 0 | decade_birth > last_year,
+                             NA, decade_birth))
+
+tab_lor_kid <- parent_info |>
+    group_by(decade_birth) |>
+    summarize(n12 = sum(dad_group == 1 & mom_group ==2),
+              n21 = sum(dad_group == 2 & mom_group ==1),
+              n11 = sum(dad_group == 1 & mom_group ==1),
+              n22 = sum(dad_group == 2 & mom_group ==2),
+              lor = log((n12 * n21) / (n11 * n22))) |>
+    select(decade_birth, lor)
+
+tab_lor_kid <- tab_lor_kid |>
+  rename(decade = decade_birth) |>
+  mutate(type = "birth")
+
+tab_lor <- tab_lor |>
+  rename(decade = decade_mar) |>
+  mutate(type = "marriage") |>
+  bind_rows(tab_lor_kid)
+
+ggplot(tab_lor, aes(x = decade, y = lor, group = type, color = type))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  scale_color_manual(values = my_palette)+
+  labs(x = "year (in decade intervals)", y = "log odds ratio")+
   theme_bw()
 ```
 
@@ -358,6 +444,7 @@ exog_group |>
   geom_point()+
   geom_smooth(se = FALSE)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year (in decade intervals)", 
        y = "percent of unions that are group exogamous")+
   theme_bw()
@@ -410,6 +497,7 @@ pop |>
              color = group, group = group))+
   geom_point()+
   geom_line()+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)", 
        y = "mean nearest generational locus")+
   theme_bw()
@@ -463,6 +551,7 @@ pop |>
              group = group, color = group))+
   geom_point()+
   geom_line()+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)", 
        y = "mean level of mixedness")+
   theme_bw()
@@ -544,6 +633,7 @@ pop |>
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
        color = "generational locus")+
@@ -571,6 +661,7 @@ pop |>
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   facet_wrap(~group)+
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
@@ -596,6 +687,7 @@ pop |>
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   facet_wrap(~group)+
   labs(x = "year of birth (at decade intervals)", 
        y = "share of population",
@@ -618,6 +710,7 @@ pop |>
   geom_line()+
   geom_point()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (at decade intervals)", 
        y = "percent unmixed",
        color = "group")+
@@ -636,6 +729,7 @@ pop |>
   geom_point()+
   geom_line()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)",
        y = "Mean group 1 ancestry percentage")+
   theme_bw()
@@ -653,7 +747,29 @@ pop |>
   geom_point()+
   geom_line()+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year of birth (in decade intervals)",
        y = "Mean group 2 ancestry percentage")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-ancestry-rules
+#| fig-cap: Probability of being assigned to a given group among first generation biracial individuals as a function of proportion of ancestry from group 1
+pop |>
+  filter(nearest_gen_locus == 1) |>
+  group_by(ancestry_group1) |>
+  summarize(prop_group1 = mean(group == 1),
+            prop_group2 = mean(group == 2),
+            prop_group3 = mean(group == 3)) |>
+  pivot_longer(cols = starts_with("prop_"), names_prefix = "prop_") |>
+  ggplot(aes(x = ancestry_group1, y = value, group = name, color = name))+
+  geom_point()+
+  geom_smooth(se = FALSE)+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = my_palette)+
+  labs(x = "proportion of ancestry from group 1", 
+       y = "probability of being assigned to group",
+       color = "group assignment")+
   theme_bw()
 ```
