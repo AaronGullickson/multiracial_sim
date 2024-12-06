@@ -134,3 +134,36 @@ sims_pop |>
        y = "mean level of mixedness")+
   theme_bw()
 ```
+
+
+```{r}
+#| label: fig-nearest-locus-trend
+#| fig-cap: Share of each generational locus over time
+sims_pop |>
+  group_by(growth, regime, decade_birth) |>
+  summarize(n = n(),
+            punmixed = sum(is.na(nearest_gen_locus)) / n, 
+            p1 = sum(nearest_gen_locus == 1, na.rm = TRUE) / n,
+            p2 = sum(nearest_gen_locus == 2, na.rm = TRUE) / n,
+            p3 = sum(nearest_gen_locus == 3, na.rm = TRUE) / n,
+            p4plus = sum(nearest_gen_locus >= 4, na.rm = TRUE) / n) |>
+  ungroup() |>
+  select(growth, regime, decade_birth, starts_with("p")) |>
+  pivot_longer(cols = starts_with("p"), names_to = "gen", values_to = "prop") |>
+  mutate(gen = factor(gen, levels = c("p1", "p2", "p3", "p4plus", "punmixed"),
+                        labels = c("1st gen (biracial)", "2nd gen", "3rd gen", 
+                                   "4th+ gen", "Unmixed"))) |>
+  filter(decade_birth >= 300) |>
+  filter(gen != "4th+ gen" & gen != "Unmixed") |>
+  ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
+  #geom_point(alpha = 0.3)+
+  geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
+  facet_grid(regime ~ growth)+
+  scale_y_continuous(labels = scales::percent)+
+  #scale_color_manual(values = my_palette)+
+  labs(x = "year of birth (at decade intervals)", 
+       y = "share of population",
+       color = "generational locus")+
+  theme_bw()
+```
+
