@@ -19,6 +19,27 @@ sheet_id <- "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 googlesheets4::gs4_deauth()
 ```
 
+```{r}
+#| label: functions
+
+organize_sim_pop_data <- function(sim_name) {
+  
+  sim_folder = here("data", "data_constructed", "sims", sim_name)
+  
+  if(!dir_exists(sim_folder)) {
+     return(NULL)
+  }
+  
+  pop <- read_csv(here(sim_folder, "final_pop.csv"))
+  ancestry <- read_csv(here(sim_folder, "ancestry.csv"))
+  
+  pop <- code_population(pop, ancestry) |>
+    mutate(sim_name = sim_name)
+
+  return(pop)
+}
+```
+
 
 ```{r}
 #| label: organize-intermarriage-benchmark-data
@@ -73,8 +94,21 @@ intermar <- calculate_lor(mar) |>
 ```
 
 ```{r}
+#| label: get-all-sims
+
+sim_names <- googlesheets4::sheet_names(sheet_id)
+sim_names <- sim_names[!str_detect(sim_names, "IGNORE$") & 
+                         !str_detect(sim_names, "benchmark$") &
+                         !str_detect(sim_names, "baseline$")]
+
+sims_pop <- map(sim_names, organize_sim_pop_data) |>
+  bind_rows()
+```
+
+
+```{r}
 #| label: save-data
 
-save(intermar, 
+save(intermar, sims_pop, 
      file = here("data", "data_constructed", "analytical_data.RData"))
 ```
