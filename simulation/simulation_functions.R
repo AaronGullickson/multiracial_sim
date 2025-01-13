@@ -334,8 +334,10 @@ get_married <- function(pop, lodds, month_current, mid_max) {
 # inheritance - a vector containing the inheritance parameters for the 
 #               multinomial model that will determine the probability of being
 #               assigned to a given group. This vector must have the following
-#               names for items: inherit_g1_intercept, inherit_g1_slope,
-#               inherit_g2_intercept, inherit_g2_slope
+#               names for items: inherit_g1_intercept, inherit_g1_slope, 
+#               inherit_g1_slope_sq, inherit_g1_slope_cube, 
+#               inherit_g2_intercept, inherit_g2_slope, inherit_g2_slope_sq,
+#               inherit_g2_slope_cube
 ####
 calculate_ancestry <- function(pop, 
                                ancestry, 
@@ -387,9 +389,13 @@ calculate_ancestry <- function(pop,
         # calculate probability weights for the sampling
         lor <- c(
           inheritance["inherit_g1_intercept"]+
-            inheritance["inherit_g1_slope"] * x$ancestry_group1,
+            inheritance["inherit_g1_slope"] * x$ancestry_group1+
+            inheritance["inherit_g1_slope_sq"] * x$ancestry_group1^2+
+            inheritance["inherit_g1_slope_cube"] * x$ancestry_group1^2,
           inheritance["inherit_g2_intercept"]+
-            inheritance["inherit_g2_slope"] * x$ancestry_group1,
+            inheritance["inherit_g2_slope"] * x$ancestry_group1+
+            inheritance["inherit_g2_slope_sq"] * x$ancestry_group1^2+
+            inheritance["inherit_g2_slope_cube"] * x$ancestry_group1^2,
           0)
         probs <- exp(lor)/sum(exp(lor))  
         # now sample a group
@@ -439,7 +445,7 @@ get_sim_parameters <- function(sim_name, sheet_id) {
                                                        sep="!"))
   
   sim_segments <- googlesheets4::range_read(sheet_id, 
-                                            range = paste(sim_name, "A8:H1000", 
+                                            range = paste(sim_name, "A8:L1000", 
                                                           sep="!")) |>
     filter(!is.na(segment_length))
   
