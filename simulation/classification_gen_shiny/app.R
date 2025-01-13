@@ -66,7 +66,7 @@ ui <- page_fillable(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-  get_model <- eventReactive(input$generate, {
+  get_results <- eventReactive(input$generate, {
     
     # generate data and model and return model
     
@@ -123,36 +123,6 @@ server <- function(input, output) {
     
     model <- multinom(race ~ prop_a+I(prop_a^2)+I(prop_a^3), data = sim_data)
     
-    
-    
-    return(model)
-    
-  })
-  
-  output$plot <- renderPlot({
-    
-    model <- get_model()
-    
-    pred_data <- tibble(prop_a = seq(from = 0.01, to = 0.99, by =0.005))
-    df_pred <- predict(model, newdata = pred_data,
-                       type = "probs") |>
-      as_tibble() |> 
-      mutate(prop_a = seq(from = 0.01, to = 0.99, by =0.005)) |> 
-      pivot_longer(cols = c(MR, A, B), names_to = "group", values_to = "prop")
-    
-    # set up some parameters
-    first_gen_peak <- input$first_gen_peak
-    second_gen_loss <- input$second_gen_loss
-    second_gen_ratio <- input$second_gen_ratio
-    third_gen_loss <- input$third_gen_loss
-    third_gen_ratio <- input$third_gen_ratio
-    second_gen_peak <- first_gen_peak * (1- second_gen_loss)
-    second_gen_pref <- (1-second_gen_peak)*second_gen_ratio/(second_gen_ratio+1)
-    second_gen_dis <- (1-second_gen_peak)*1/(second_gen_ratio+1)
-    third_gen_peak <- second_gen_peak * (1 - third_gen_loss)
-    third_gen_pref <- (1-third_gen_peak)*third_gen_ratio/(third_gen_ratio+1)
-    third_gen_dis <- (1-third_gen_peak)*1/(third_gen_ratio+1)
-    
     point_pred <- tibble(prop_a = rep(c(0.125, 0.25, 0.5, 0.75, 0.875), 3),
                          group = rep(c("MR", "A", "B"), each = 5),
                          prop = c(third_gen_peak, second_gen_peak, first_gen_peak,
@@ -164,9 +134,24 @@ server <- function(input, output) {
                                   (1-first_gen_peak)/2, second_gen_dis, 
                                   third_gen_dis))
     
+    return(list(model = model, point_pred = point_pred))
+    
+  })
+  
+  output$plot <- renderPlot({
+    
+    results <- get_results()
+    
+    pred_data <- tibble(prop_a = seq(from = 0.01, to = 0.99, by =0.005))
+    df_pred <- predict(results$model, newdata = pred_data,
+                       type = "probs") |>
+      as_tibble() |> 
+      mutate(prop_a = seq(from = 0.01, to = 0.99, by =0.005)) |> 
+      pivot_longer(cols = c(MR, A, B), names_to = "group", values_to = "prop")
+    
     ggplot(df_pred, aes(x = prop_a, y = prop, group = group, color = group))+
       geom_line(size = 1.5, alpha = 0.6)+
-      geom_point(data = point_pred)+
+      geom_point(data = results$point_pred)+
       scale_y_continuous(labels = scales::percent, limits = c(0,1))+
       labs(x = "proportion of ancestry from group A",
            y = "probability of being classified with given group")+
