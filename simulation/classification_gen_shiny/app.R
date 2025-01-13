@@ -14,6 +14,12 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(nnet)
+library(gt)
+library(modelsummary)
+
+# chosen from Color Buddy
+my_palette <- c("#a91610", "#005864", "#fdcc00", "#4d8900", "#ce6a00")
+
 
 # Define UI for application that draws a histogram
 ui <- page_fillable(
@@ -57,6 +63,10 @@ ui <- page_fillable(
         accordion_panel(
           "Probability",
           plotOutput("plot")
+        ),
+        accordion_panel(
+          "Model Parameters",
+          gt_output("model")
         )
       )
     )
@@ -84,20 +94,20 @@ server <- function(input, output) {
     third_gen_dis <- (1-third_gen_peak)*1/(third_gen_ratio+1)
     
     # first generation
-    race <- sample(c("MR","A","B"), 10000, replace = TRUE, 
+    race <- sample(c("MR","A","B"), 20000, replace = TRUE, 
                    prob = c(first_gen_peak, (1-first_gen_peak)/2, (1-first_gen_peak)/2))
     sim_data <- tibble(prop_a = 0.5, race)
     
     # second generation
     # prop_a = 0.75
-    race <- sample(c("MR","A","B"), 5000, replace = TRUE, 
+    race <- sample(c("MR","A","B"), 10000, replace = TRUE, 
                    prob = c(second_gen_peak, second_gen_pref, second_gen_dis))
     
     sim_data <- tibble(prop_a = 0.75, race) |>
       bind_rows(sim_data)
    
     # prop_a = 0.25
-    race <- sample(c("MR","A","B"), 5000, replace = TRUE, 
+    race <- sample(c("MR","A","B"), 10000, replace = TRUE, 
                    prob = c(second_gen_peak, second_gen_dis, second_gen_pref))
     
     sim_data <- tibble(prop_a = 0.25, race) |>
@@ -105,14 +115,14 @@ server <- function(input, output) {
     
     # third generation
     # prop_a = 0.875
-    race <- sample(c("MR","A","B"), 5000, replace = TRUE, 
+    race <- sample(c("MR","A","B"), 10000, replace = TRUE, 
                    prob = c(third_gen_peak, third_gen_pref, third_gen_dis))
     
     sim_data <- tibble(prop_a = 0.875, race) |>
       bind_rows(sim_data)
     
     # prop_a = 0.125
-    race <- sample(c("MR","A","B"), 5000, replace = TRUE, 
+    race <- sample(c("MR","A","B"), 10000, replace = TRUE, 
                    prob = c(third_gen_peak, third_gen_dis, third_gen_pref))
     
     sim_data <- tibble(prop_a = 0.125, race) |>
@@ -153,10 +163,18 @@ server <- function(input, output) {
       geom_line(size = 1.5, alpha = 0.6)+
       geom_point(data = results$point_pred)+
       scale_y_continuous(labels = scales::percent, limits = c(0,1))+
+      scale_color_manual(values = my_palette)+
       labs(x = "proportion of ancestry from group A",
            y = "probability of being classified with given group")+
       theme_bw()
     
+  })
+  
+  output$model <- render_gt({
+    
+    results <- get_results()
+    modelsummary(results$model, shape = term ~ response, output = "gt")
+  
   })
 }
 
