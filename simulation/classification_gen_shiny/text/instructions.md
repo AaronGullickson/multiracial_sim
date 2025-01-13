@@ -1,0 +1,7 @@
+Fit a model of inheritance based on proportion of group A ancestry (plus its square and cube). The model is based on expectations for first generation (50/50 biracial person), second generation (75/25), and third generation (87.5/12.5) cases, where in the second and third generation, only one ancestor from that generation is found in the genealogy. The parameters are as follows:
+
+- **First Generation Peak:** The probability of classification as mixed for a first generational biracial person.
+- **Second Generation Loss**: The proportionate reduction in the probability of classification as mixed for a second generation mixed-race person compared to a first generation person.
+- **Second Generation Ratio**: For second generation individuals classified as single race, the expected ratio of group membership favoring the group with more ancestry (e.g. if 75% Group A, the ratio of Group A classification to Group B classification).
+- **Third Generation Loss**: The proportionate reduction in the probability of classification as mixed for a third generation mixed-race person compared to a second generation person.
+- **Third Generation Ratio**: As the Second Generation Ratio, but for third generation individuals.

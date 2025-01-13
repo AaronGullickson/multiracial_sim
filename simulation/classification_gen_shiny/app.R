@@ -59,17 +59,17 @@ ui <- page_fillable(
                     step = 1),
         actionButton("generate", "Generate")
       ),
-      accordion(
-        accordion_panel(
-          "Probability",
-          plotOutput("plot")
-        ),
-        accordion_panel(
-          "Model Parameters",
-          gt_output("model")
-        )
+      
+      navset_card_underline(
+        nav_panel("Probability", plotOutput("plot")),
+        nav_panel("Model", gt_output("model"))
       )
     )
+  ),
+  
+  card(
+    card_header("Instructions"),
+    includeMarkdown("text/instructions.md")
   )
 )
 
