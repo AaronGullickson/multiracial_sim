@@ -24,9 +24,13 @@
 #              inherit_g1_intercept - the group 1 intercept for the inheritance 
 #                                     model
 #              inherit_g1_slope - the group 1 slope for the inheritance model
+#              inherit_g1_slope_sq - the group 1 slope for the inheritance model (squared parameter)
+#              inherit_g1_slope_cube - the group 1 slope for the inheritance model (cubed parameter)
 #              inherit_g2_intercept - the group 2 intercept for the inheritance 
 #                                     model
 #              inherit_g2_slope - the group 2 slope for the inheritance model
+#              inherit_g2_slope_sq - the group 2 slope for the inheritance model (squared parameter)
+#              inherit_g2_slope_cube - the group 2 slope for the inheritance model (cubed parameter)
 # mar - A marriage dataset to use for the start of the simulation. This can be left
 #       null for simulations starting from scratch, but should be specified 
 #       by the final mar file from a previous sim if starting from a previous
