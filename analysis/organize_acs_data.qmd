@@ -1,0 +1,158 @@
+---
+title: "Organize ACS/Census Data Notebook"
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(here)
+source(here("utils","check_packages.R"))
+source(here("utils","functions.R"))
+```
+
+This script will read in Census and ACS data from 1960 to 2019 to construct broad interracial marriage patterns over that entire time period. We will use the imputation of Hispanicity in the 1960 data.
+
+```{r}
+#| label: read-data
+
+census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00135.dat.gz"),
+                   col_positions = fwf_cols(YEAR = c(1,4),
+                                            SAMPLE = c(5, 10),
+                                            HHWT = c(31, 41),
+                                            SEX = 82,
+                                            AGE = c(83, 85),
+                                            RACED = c(88, 90),
+                                            HISPAN = 91,
+                                            SEX_SP = 95,
+                                            AGE_SP = c(96, 98),
+                                            RACED_SP = c(100, 102),
+                                            HISPAN_SP = 103),
+                   col_types = cols(.default = "i", HHWT = "d"))
+```
+
+In more recent data we will have some same sex couples. Since we are interested in genealogies, we want opposite sex couples. We also want to have a consistent comparison over time. So, we will exclude same sex couples.
+
+```{r}
+#| label: check-spouse-sex
+
+# 
+table(census$SEX, census$SEX_SP)
+
+census <- census |>
+  filter(SEX_SP == 2)
+
+table(census$SEX, census$SEX_SP)
+```
+
+I accidentally grabbed both 1970 datasets so lets just restrict that to one.
+
+```{r}
+#| label: restrict-1970
+
+census <- census |>
+  filter(SAMPLE != 197002)
+
+table(census$SAMPLE)
+```
+
+Husbands should be restricted to 25-34. Lets check the ages of men and women.
+
+```{r}
+#| label: check-age
+
+summary(census$AGE)
+summary(census$AGE_SP)
+```
+
+Hmmm, a bit troubling on the minimum values. Data errors? I will leave them in for now.
+
+Ok, now we are ready to do the data coding/cleaning.
+
+```{r}
+#| label: create-vars
+
+# lets create a function for assigning race, since we will do it for both spouses
+code_race <- function(raced, hispan) {
+  
+  race <- case_when(
+    hispan != 0 | raced == 110 ~ "Hispanic",
+    raced == 100 ~ "White",
+    raced == 200 ~ "Black",
+    raced >= 300 & raced <= 399 ~ "AIAN",
+    # we have to do API because 1980 and 1990
+    (raced >= 400 & raced <= 699) | (raced >= 860 & raced <= 869) ~ "API",
+    raced == 700 ~ "Other", 
+    # lets do major biracial groups for fun
+    raced == 801 ~ "White/Black",
+    raced == 802 ~ "White/AIAN",
+    raced >= 803 & raced <= 825 ~ "White/API",
+    raced == 830 ~ "Black/AIAN",
+    raced >= 831 & raced <= 842 ~ "Black/API",
+    TRUE ~ "Other Multiracial")
+  
+  factor(race, 
+         levels = c("White", "Black", "AIAN", "Hispanic", "API", "Other",
+                    "White/Black", "White/AIAN", "White/API", 
+                    "Black/AIAN", "Black/API", "Other Multiracial"))
+}
+
+census <- census |>
+  mutate(race_husband = code_race(RACED, HISPAN),
+         race_wife = code_race(RACED_SP, HISPAN_SP), 
+         year = as.numeric(YEAR)) |>
+  # remove hispanics in 1960 due to measurement issues
+  filter(!(race_husband == "Hispanic" & year <= 1970))
+  
+
+census <- census
+
+table(census$race_husband)
+table(census$race_wife)
+```
+
+
+```{r}
+#| label: create-master-tab
+tab_mar <- table(census$race_husband, census$race_wife, census$year)
+```
+
+```{r}
+calculate_or <- function(group1, group2) {
+  log(tab_mar[group1, group2,])+log(tab_mar[group2, group1,])-
+    log(tab_mar[group1, group1,])-log(tab_mar[group2, group2,])
+}
+```
+
+
+```{r}
+#races <- c("White", "Black", "AIAN", "API")
+
+# kind of hard to get all non-redundant pairings
+#all_combos <- as_tibble(t(combn(races, 2))) |>
+#  rename(race1 = V1, race2 = V2)
+
+all_combos <- tribble(
+  ~race1, ~race2,
+  "White", "Black",
+  #"White", "AIAN",
+  #"White", "API",
+  #"White", "Hispanic",
+  "White/Black", "White",
+  "White/Black", "Black"
+)
+
+lor <- pmap(all_combos, function(race1, race2) {
+  enframe(calculate_or(race1, race2), name = "year", value = "lor") |>
+    mutate(type = paste(race1, race2, sep="-"))
+  }) |>
+  bind_rows() |>
+  mutate(year = as.numeric(year)) |>
+  filter(lor > -Inf)
+
+
+ggplot(lor, aes(x = year, y = lor, group = type, color = type))+
+  geom_smooth(se = FALSE)+
+  geom_point()+
+  theme_bw()
+
+```
