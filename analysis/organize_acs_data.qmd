@@ -12,10 +12,12 @@ source(here("utils","functions.R"))
 
 This script will read in Census and ACS data from 1960 to 2019 to construct broad interracial marriage patterns over that entire time period. We will use the imputation of Hispanicity in the 1960 data.
 
+<!-- TODO: I need to also restrict this to the native born population for both partners -->
+
 ```{r}
 #| label: read-data
 
-census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00137.dat.gz"),
+census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00138.dat.gz"),
                    col_positions = fwf_cols(YEAR = c(1,4),
                                             SAMPLE = c(5, 10),
                                             HHWT = c(32, 41),
@@ -23,12 +25,14 @@ census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00137.dat.gz"),
                                             AGE = c(83, 85),
                                             RACED = c(88, 90),
                                             HISPAN = 91,
-                                            HISP1970 = 95,
-                                            SEX_SP = 96,
-                                            AGE_SP = c(97, 99),
-                                            RACED_SP = c(101, 103),
-                                            HISPAN_SP = 104,
-                                            HISP1970_SP = 108),
+                                            HISP1970 = 103,
+                                            BPL = c(95, 97),
+                                            SEX_SP = 104,
+                                            AGE_SP = c(105, 107),
+                                            RACED_SP = c(109, 111),
+                                            HISPAN_SP = 112,
+                                            HISP1970_SP = 119,
+                                            BPL_SP = c(116, 118)),
                    col_types = cols(.default = "i", HHWT = "d"))
 ```
 
@@ -54,6 +58,19 @@ Replace HISPAN with HISP1970 for the 1970 data.
 census <- census |>
   mutate(HISPAN = ifelse(YEAR == 1970, HISP1970, HISPAN),
          HISPAN_SP = ifelse(YEAR == 1970, HISP1970_SP, HISPAN_SP))
+```
+
+Husbands should be restricted to native born. Lets also restrict wives.
+
+```{r}
+#| label: restrict-nativity
+
+table(census$BPL)
+
+census <- census |>
+  filter(BPL_SP <= 99)
+
+table(census$BPL)
 ```
 
 Husbands should be restricted to 25-34. Lets check the ages of men and women.
@@ -138,6 +155,12 @@ all_combos <- tribble(
   "White", "AIAN",
   "White", "API",
   "White", "Hispanic",
+  "Black", "AIAN",
+  "Black", "API",
+  "Black", "Hispanic",
+  "AIAN", "API",
+  "AIAN", "Hispanic",
+  "API", "Hispanic",
   "White/Black", "White",
   "White/Black", "Black",
   "White/API", "White",
@@ -155,7 +178,7 @@ lor <- pmap(all_combos, function(race1, race2) {
 
 ```{r}
 #| label: fig-trends
-#| fig-cap: Trends in interracial marraige
+#| fig-cap: Trends in interracial marriage involving a White or part-White partner
 #| layout-ncol: 2
 #| fig-subcap:
 #|   - Single race groups
@@ -192,6 +215,53 @@ lor |>
 
 lor |>
   filter(type %in% c("White-AIAN","White/AIAN-White","White/AIAN-AIAN")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-trends-nonwhite
+#| fig-cap: Trends in interracial marriage by focal minority group
+#| layout-ncol: 2
+#| fig-subcap:
+#|   - Black partner
+#|   - AIAN partner
+#|   - API partner
+#|   - Hispanic partner
+
+lor |>
+  filter(type %in% c("White-Black", "Black-AIAN","Black-API","Black-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  theme_bw()
+
+lor |>
+  filter(type %in% c("White-AIAN", "Black-AIAN", "AIAN-API", "AIAN-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  theme_bw()
+
+lor |>
+  filter(type %in% c("White-API", "Black-API","AIAN-API","API-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  theme_bw()
+
+lor |>
+  filter(type %in% c("White-Hispanic", "Black-Hispanic","AIAN-Hispanic","API-Hispanic")) |>
   ggplot(aes(x = year, y = lor, group = type))+
   geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
               alpha = 0.3)+
