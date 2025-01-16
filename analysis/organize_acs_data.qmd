@@ -15,7 +15,7 @@ This script will read in Census and ACS data from 1960 to 2019 to construct broa
 ```{r}
 #| label: read-data
 
-census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00136.dat.gz"),
+census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00137.dat.gz"),
                    col_positions = fwf_cols(YEAR = c(1,4),
                                             SAMPLE = c(5, 10),
                                             HHWT = c(32, 41),
@@ -23,10 +23,12 @@ census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00136.dat.gz"),
                                             AGE = c(83, 85),
                                             RACED = c(88, 90),
                                             HISPAN = 91,
+                                            HISP1970 = 95,
                                             SEX_SP = 96,
                                             AGE_SP = c(97, 99),
                                             RACED_SP = c(101, 103),
-                                            HISPAN_SP = 104),
+                                            HISPAN_SP = 104,
+                                            HISP1970_SP = 108),
                    col_types = cols(.default = "i", HHWT = "d"))
 ```
 
@@ -44,15 +46,14 @@ census <- census |>
 table(census$SEX, census$SEX_SP)
 ```
 
-I accidentally grabbed both 1970 datasets so lets just restrict that to one.
+Replace HISPAN with HISP1970 for the 1970 data.
 
 ```{r}
 #| label: restrict-1970
 
 census <- census |>
-  filter(SAMPLE != 197002)
-
-table(census$SAMPLE)
+  mutate(HISPAN = ifelse(YEAR == 1970, HISP1970, HISPAN),
+         HISPAN_SP = ifelse(YEAR == 1970, HISP1970_SP, HISPAN_SP))
 ```
 
 Husbands should be restricted to 25-34. Lets check the ages of men and women.
@@ -99,9 +100,9 @@ code_race <- function(raced, hispan) {
 census <- census |>
   mutate(race_husband = code_race(RACED, HISPAN),
          race_wife = code_race(RACED_SP, HISPAN_SP), 
-         year = as.numeric(YEAR)) |>
+         year = YEAR) |>
   # remove hispanics in 1960 due to measurement issues
-  filter(!(race_husband == "Hispanic" & year <= 1970))
+  filter(!(race_husband == "Hispanic" & year == 1960))
   
 
 census <- census
@@ -129,18 +130,20 @@ calculate_or <- function(group1, group2) {
 
 
 ```{r}
-#races <- c("White", "Black", "AIAN", "API")
-
-# kind of hard to get all non-redundant pairings
-#all_combos <- as_tibble(t(combn(races, 2))) |>
-#  rename(race1 = V1, race2 = V2)
+#| label: get-lor-df
 
 all_combos <- tribble(
   ~race1, ~race2,
   "White", "Black",
   "White", "AIAN",
   "White", "API",
-  "White", "Hispanic"
+  "White", "Hispanic",
+  "White/Black", "White",
+  "White/Black", "Black",
+  "White/API", "White",
+  "White/API", "API",
+  "White/AIAN", "White",
+  "White/AIAN", "AIAN"
 )
 
 lor <- pmap(all_combos, function(race1, race2) {
@@ -148,13 +151,51 @@ lor <- pmap(all_combos, function(race1, race2) {
   }) |>
   bind_rows() |>
   filter(lor > -Inf)
+```
 
+```{r}
+#| label: fig-trends
+#| fig-cap: Trends in interracial marraige
+#| layout-ncol: 2
+#| fig-subcap:
+#|   - Single race groups
+#|   - White/Black
+#|   - White/API
+#|   - White/AIAN
 
-ggplot(lor, aes(x = year, y = lor, group = type))+
+lor |>
+  filter(type %in% c("White-Black","White-AIAN","White-API", "White-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
   geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
               alpha = 0.3)+
   geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
   theme_bw()
 
+lor |>
+  filter(type %in% c("White-Black","White/Black-White","White/Black-Black")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  theme_bw()
+
+lor |>
+  filter(type %in% c("White-API","White/API-White","White/API-API")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  theme_bw()
+
+lor |>
+  filter(type %in% c("White-AIAN","White/AIAN-White","White/AIAN-AIAN")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  theme_bw()
 ```
