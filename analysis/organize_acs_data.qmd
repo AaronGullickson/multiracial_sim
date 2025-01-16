@@ -15,18 +15,18 @@ This script will read in Census and ACS data from 1960 to 2019 to construct broa
 ```{r}
 #| label: read-data
 
-census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00135.dat.gz"),
+census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00136.dat.gz"),
                    col_positions = fwf_cols(YEAR = c(1,4),
                                             SAMPLE = c(5, 10),
-                                            HHWT = c(31, 41),
+                                            HHWT = c(32, 41),
                                             SEX = 82,
                                             AGE = c(83, 85),
                                             RACED = c(88, 90),
                                             HISPAN = 91,
-                                            SEX_SP = 95,
-                                            AGE_SP = c(96, 98),
-                                            RACED_SP = c(100, 102),
-                                            HISPAN_SP = 103),
+                                            SEX_SP = 96,
+                                            AGE_SP = c(97, 99),
+                                            RACED_SP = c(101, 103),
+                                            HISPAN_SP = 104),
                    col_types = cols(.default = "i", HHWT = "d"))
 ```
 
@@ -118,8 +118,12 @@ tab_mar <- table(census$race_husband, census$race_wife, census$year)
 
 ```{r}
 calculate_or <- function(group1, group2) {
-  log(tab_mar[group1, group2,])+log(tab_mar[group2, group1,])-
+  lor <- log(tab_mar[group1, group2,])+log(tab_mar[group2, group1,])-
     log(tab_mar[group1, group1,])-log(tab_mar[group2, group2,])
+  se <- sqrt(1/tab_mar[group1, group2,]+1/tab_mar[group2, group1,]+
+               1/tab_mar[group1, group1,]+1/tab_mar[group2, group2,])
+  tibble(year = as.numeric(names(lor)), lor, se, 
+         type = paste(group1, group2, sep="-"))
 }
 ```
 
@@ -134,25 +138,23 @@ calculate_or <- function(group1, group2) {
 all_combos <- tribble(
   ~race1, ~race2,
   "White", "Black",
-  #"White", "AIAN",
-  #"White", "API",
-  #"White", "Hispanic",
-  "White/Black", "White",
-  "White/Black", "Black"
+  "White", "AIAN",
+  "White", "API",
+  "White", "Hispanic"
 )
 
 lor <- pmap(all_combos, function(race1, race2) {
-  enframe(calculate_or(race1, race2), name = "year", value = "lor") |>
-    mutate(type = paste(race1, race2, sep="-"))
+  calculate_or(race1, race2)
   }) |>
   bind_rows() |>
-  mutate(year = as.numeric(year)) |>
   filter(lor > -Inf)
 
 
-ggplot(lor, aes(x = year, y = lor, group = type, color = type))+
-  geom_smooth(se = FALSE)+
-  geom_point()+
+ggplot(lor, aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type))+
   theme_bw()
 
 ```
