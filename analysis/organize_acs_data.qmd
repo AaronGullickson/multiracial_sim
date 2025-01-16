@@ -118,8 +118,8 @@ census <- census |>
   mutate(race_husband = code_race(RACED, HISPAN),
          race_wife = code_race(RACED_SP, HISPAN_SP), 
          year = YEAR) |>
-  # remove hispanics in 1960 due to measurement issues
-  filter(!(race_husband == "Hispanic" & year == 1960))
+  # remove hispanics in 1960 and 1970 due to measurement issues
+  filter(!(race_husband == "Hispanic" & year <= 1970))
   
 
 census <- census
