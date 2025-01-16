@@ -12,8 +12,6 @@ source(here("utils","functions.R"))
 
 This script will read in Census and ACS data from 1960 to 2019 to construct broad interracial marriage patterns over that entire time period. We will use the imputation of Hispanicity in the 1960 data.
 
-<!-- TODO: I need to also restrict this to the native born population for both partners -->
-
 ```{r}
 #| label: read-data
 
