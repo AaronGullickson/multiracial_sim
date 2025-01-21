@@ -10,7 +10,7 @@ source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
 ```
 
-This script will read in Census and ACS data from 1960 to 2019 to construct broad interracial marriage patterns over that entire time period. We will use the imputation of Hispanicity in the 1960 data.
+This script will read in Census and ACS data from 1960 to 2019 to construct broad interracial marriage patterns over that entire time period. Reliable data on Hispanic identification is not available until 1980. IPUMS does provide a Hispanic identifier for earlier years that is primarily based on surnames, but this cannot be used by for interracial marriage because the identifier is the same for spouses. The 1970 data do contain responses to the first Hispanicity question on Form 1, but these responses have been shown to be inconsistent with later responses from 1980 on. We did test this response, and found a substantial decrease in Hispanic intermarriage from 1970 to 1980 that is inconsisten with general trends.
 
 ```{r}
 #| label: read-data
@@ -58,7 +58,7 @@ census <- census |>
          HISPAN_SP = ifelse(YEAR == 1970, HISP1970_SP, HISPAN_SP))
 ```
 
-Husbands should be restricted to native born. Lets also restrict wives.
+Check that husbands are restricted to native born respondents and also restrict wives.
 
 ```{r}
 #| label: restrict-nativity
@@ -80,9 +80,9 @@ summary(census$AGE)
 summary(census$AGE_SP)
 ```
 
-Hmmm, a bit troubling on the minimum values. Data errors? I will leave them in for now.
+Hmmm, a bit troubling on the minimum values, but we will leave them be for this analysis.
 
-Ok, now we are ready to do the data coding/cleaning.
+Ok, now we are ready to code race.
 
 ```{r}
 #| label: create-vars
@@ -127,10 +127,14 @@ table(census$race_wife)
 ```
 
 
+From husband's race, wife's race, and year, we can create a three-way table.
+
 ```{r}
 #| label: create-master-tab
 tab_mar <- table(census$race_husband, census$race_wife, census$year)
 ```
+
+Lets create a function that will calculate the log-odds ratio and its standard error from `tab-mar` for two groups.
 
 ```{r}
 calculate_or <- function(group1, group2) {
@@ -143,6 +147,7 @@ calculate_or <- function(group1, group2) {
 }
 ```
 
+We can now use `pmap` to calculate log odds ratios across all groups of interest.
 
 ```{r}
 #| label: get-lor-df
@@ -167,103 +172,20 @@ all_combos <- tribble(
   "White/AIAN", "AIAN"
 )
 
-lor <- pmap(all_combos, function(race1, race2) {
+lor_data <- pmap(all_combos, function(race1, race2) {
   calculate_or(race1, race2)
   }) |>
   bind_rows() |>
   filter(lor > -Inf)
 ```
 
-```{r}
-#| label: fig-trends
-#| fig-cap: Trends in interracial marriage involving a White or part-White partner
-#| layout-ncol: 2
-#| fig-subcap:
-#|   - Single race groups
-#|   - White/Black
-#|   - White/API
-#|   - White/AIAN
 
-lor |>
-  filter(type %in% c("White-Black","White-AIAN","White-API", "White-Hispanic")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
-
-lor |>
-  filter(type %in% c("White-Black","White/Black-White","White/Black-Black")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
-
-lor |>
-  filter(type %in% c("White-API","White/API-White","White/API-API")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
-
-lor |>
-  filter(type %in% c("White-AIAN","White/AIAN-White","White/AIAN-AIAN")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
-```
+Now lets save the data.
 
 ```{r}
-#| label: fig-trends-nonwhite
-#| fig-cap: Trends in interracial marriage by focal minority group
-#| layout-ncol: 2
-#| fig-subcap:
-#|   - Black partner
-#|   - AIAN partner
-#|   - API partner
-#|   - Hispanic partner
-
-lor |>
-  filter(type %in% c("White-Black", "Black-AIAN","Black-API","Black-Hispanic")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
-
-lor |>
-  filter(type %in% c("White-AIAN", "Black-AIAN", "AIAN-API", "AIAN-Hispanic")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
-
-lor |>
-  filter(type %in% c("White-API", "Black-API","AIAN-API","API-Hispanic")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
-
-lor |>
-  filter(type %in% c("White-Hispanic", "Black-Hispanic","AIAN-Hispanic","API-Hispanic")) |>
-  ggplot(aes(x = year, y = lor, group = type))+
-  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
-              alpha = 0.3)+
-  geom_smooth(se = FALSE, aes(color = type))+
-  geom_point(aes(color = type), alpha = 0.5)+
-  theme_bw()
+save(lor_data, file = here("data", "data_constructed", "acs_intermarriage.RData"))
 ```
+
+
+
+
