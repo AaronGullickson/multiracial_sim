@@ -1,0 +1,150 @@
+---
+title: "Analysis of Intermarriage Notebook"
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(here)
+source(here("utils","check_packages.R"))
+source(here("utils","functions.R"))
+load(here("data","data_constructed", "acs_intermarriage.RData"))
+```
+
+This analysis will look at intermarriage trends across racial groups from 1960 to 2019. The goal is not to provide a very precise measure of these trends, but rather to get a rough sense of the trends in order to provide examples for the simulation.
+
+We include the following single race groups:
+
+- White
+- Black
+- American Indian/Alaska Native (AIAN)
+- Asian/Pacific Islander (API). I would prefer not to combine these groups, but some of the categories used in the 1980 and 1990 data don't allow breaking them apart properly.
+- Hispanic. If someone identified as Hispanic, we treat them as Hispanic regardless of race response. We can only record Hispanicity properly as of 1980.
+
+From 2000 onward, we also look at interracial marriage between individuals who identifies as White and one of the other races listed above and a person who was White or the other constituent race (e.g. White/Black person marrying a White or a Black person). Due to the nature of the way Hispanicity is recorded, we cannot identify multiracial part-Hispanic individuals properly.
+
+We limit analysis to couples where both partners are native born and the husband is aged 25-34 in an attempt to identify marriages that took place recently in the US. 
+
+A couple of changes to racial identification and classification may affect trends:
+
+- The option to check more than one race since 2000. This effect may particularly strong for AIAN reporting.
+- The lack of Hispanic identifiers prior to 1980. Some Hispanic individuals will be present in the other categories.
+- A persistent increase in reporting as American Indian since the 1960s up until at least the option to report as multiracial in 2000. If people who would have previously identified as White, re-identified as American Indian, this could lead to a seeming increase in interracial marriage. 
+
+```{r}
+#| label: fig-trends-white
+#| fig-cap: Trends in interracial marriage involving a White or part-White partner from 1960-2019. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother are also shown.
+#| layout-ncol: 2
+#| fig-subcap:
+#|   - Single race groups
+#|   - White/Black
+#|   - White/API
+#|   - White/AIAN
+
+lor_data |>
+  filter(type %in% c("White-Black","White-AIAN","White-API", "White-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+
+lor_data |>
+  filter(type %in% c("White-Black","White/Black-White","White/Black-Black")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+
+lor_data |>
+  filter(type %in% c("White-API","White/API-White","White/API-API")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+
+lor_data |>
+  filter(type %in% c("White-AIAN","White/AIAN-White","White/AIAN-AIAN")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+```
+
+@fig-trends-white shows the patterns for intermarriages involving a White or part-White individual. [@fig-trends-white]a shows the trends for intermarriage with the other four monoracial categories. For all of these groups we see growth in interracial marriage throughout the 20th century, but starting from substantially different bases. White-Black intermarriage was much less likely in 1960 than other forms of intermarriage. Since 2000, the rates have continued to climb for White-Black and White-Hispanic intermarriage, but have leveled off for White-API intermarriage and even declined somewhat for White-AIAN intermarriage. The decline in the latter case may be somewhat due to changes in classification and the new check all that apply option after 2000. However, for both White-API and White-AIAN, there is at least a "plateauing" trend that is not visible for the other two forms of intermarriage (although the rate of increase may have slowed a bit for White-Black intermarriage). 
+
+The remaining panels show these same trends for each minority group, along with the pattern of intermarriage with constituent racial groups for someone who identifies with both of these groups. These latter panels allow us to loosely explore how patterns of interracial marriage change for "the next generation down." For White/Black and White/API individuals, the odds of marrying a member of their constituent races is roughly similar and substantially greater than intermarriage in the "first generation" suggesting a weakening of boundaries to both monoracial groups. For the White/AIAN case, on the other hand, we see that the odds of a White/AIAN marrying a monoracial White person are substantially higher than a White-AIAN marriage, but the odds of marrying a AIAN person are much lower than marryign a White person and possibly even lower than a White-AIAN marriage. Thus, White/AIAN multiraciality appears to push later generations more toward Whiteness.
+
+```{r}
+#| label: fig-trends-nonwhite
+#| fig-cap: Trends in interracial marriage by focal minority group. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother are also shown.
+#| layout-ncol: 2
+#| fig-subcap:
+#|   - Black partner
+#|   - AIAN partner
+#|   - API partner
+#|   - Hispanic partner
+
+lor_data |>
+  filter(type %in% c("White-Black", "Black-AIAN","Black-API","Black-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+
+lor_data |>
+  filter(type %in% c("White-AIAN", "Black-AIAN", "AIAN-API", "AIAN-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+
+lor_data |>
+  filter(type %in% c("White-API", "Black-API","AIAN-API","API-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+
+lor_data |>
+  filter(type %in% c("White-Hispanic", "Black-Hispanic","AIAN-Hispanic","API-Hispanic")) |>
+  ggplot(aes(x = year, y = lor, group = type))+
+  geom_ribbon(aes(ymin = lor - 1.96 * se, ymax = lor + 1.96 * se, fill = type),
+              alpha = 0.3)+
+  geom_smooth(se = FALSE, aes(color = type))+
+  geom_point(aes(color = type), alpha = 0.5)+
+  labs(x = "log odds ratio of intermarriage")+
+  theme_bw()
+```
+
+Each panel of @fig-trends-nonwhite shows trends in intermarriage for a focal non-white group with a difference monoracial partner. These figures replicate the pairings with White individuals from [@fig-trends-white]a but also show trends in minority-to-minority intermarriage. The error bars for these measurements are generally wider due to smaller sample sizes, particulary for API and AIAN populations. 
+
+[@fig-trends-nonwhite]a shows trends for intermarriages involving a Black partner. We see a similar "plateau" effect for Black-API and Black-AIAN respondents and a a similar linear trend for Black-Hispanic intermarriage which is somewhat more likley than Black-White intermarriage.
+
+[@fig-trends-nonwhite]b shows the trends for intermarriages involving a part-AIAN individual. All of these trends have plateau'ed or have been flat for the entire period (in the case of AIAN-Hispanic indtermarriage).
+
+[@fig-trends-nonwhite]c shows the trends for intermarraiges involving a part-API individual. These have also all plateaued. 
+
+[@fig-trends-nonwhite]c shows the trends for intermarriages involving a part-Hispanic indivudals These whos relatively flat trends with API and AIAN individuals but linearly growing increases for White and Black individuals. 
+
+
