@@ -11,7 +11,7 @@ source(here("utils","functions.R"))
 load(here("data","data_constructed", "acs_intermarriage.RData"))
 ```
 
-This analysis will look at intermarriage trends across racial groups from 1960 to 2019. The goal is not to provide a very precise measure of these trends, but rather to get a rough sense of the trends in order to provide examples for the simulation.
+This analysis will look at intermarriage trends across racial groups from 1960 to 2019 using Census data (from 1960-2000 at ten year intervals) and ACS data (from 2001-2019 at one year intervals). The goal is not to provide a very precise measure of these trends, but rather to get a rough sense of the trends in order to provide examples for the simulation.
 
 We include the following single race groups:
 
@@ -33,7 +33,7 @@ A couple of changes to racial identification and classification may affect trend
 
 ```{r}
 #| label: fig-trends-white
-#| fig-cap: Trends in interracial marriage involving a White or part-White partner from 1960-2019. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother is also shown.
+#| fig-cap: Trends in interracial marriage involving a White or part-White partner from 1960-2019 from Census and ACS data. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother is also shown.
 #| layout-ncol: 2
 #| fig-subcap:
 #|   - Single race groups
@@ -88,7 +88,7 @@ The remaining panels show these same trends for each minority group, along with 
 
 ```{r}
 #| label: fig-trends-nonwhite
-#| fig-cap: Trends in interracial marriage by focal minority group. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother is also shown.
+#| fig-cap: Trends in interracial marriage by focal minority group from Census and ACS data. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother is also shown.
 #| layout-ncol: 2
 #| fig-subcap:
 #|   - Black partner
