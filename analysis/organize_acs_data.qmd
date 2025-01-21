@@ -1,0 +1,191 @@
+---
+title: "Organize ACS/Census Data Notebook"
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(here)
+source(here("utils","check_packages.R"))
+source(here("utils","functions.R"))
+```
+
+This script will read in Census and ACS data from 1960 to 2019 to construct broad interracial marriage patterns over that entire time period. Reliable data on Hispanic identification is not available until 1980. IPUMS does provide a Hispanic identifier for earlier years that is primarily based on surnames, but this cannot be used by for interracial marriage because the identifier is the same for spouses. The 1970 data do contain responses to the first Hispanicity question on Form 1, but these responses have been shown to be inconsistent with later responses from 1980 on. We did test this response, and found a substantial decrease in Hispanic intermarriage from 1970 to 1980 that is inconsisten with general trends.
+
+```{r}
+#| label: read-data
+
+census <- read_fwf(here("data", "data_raw", "acs_census", "usa_00138.dat.gz"),
+                   col_positions = fwf_cols(YEAR = c(1,4),
+                                            SAMPLE = c(5, 10),
+                                            HHWT = c(32, 41),
+                                            SEX = 82,
+                                            AGE = c(83, 85),
+                                            RACED = c(88, 90),
+                                            HISPAN = 91,
+                                            HISP1970 = 103,
+                                            BPL = c(95, 97),
+                                            SEX_SP = 104,
+                                            AGE_SP = c(105, 107),
+                                            RACED_SP = c(109, 111),
+                                            HISPAN_SP = 112,
+                                            HISP1970_SP = 119,
+                                            BPL_SP = c(116, 118)),
+                   col_types = cols(.default = "i", HHWT = "d"))
+```
+
+In more recent data we will have some same sex couples. Since we are interested in genealogies, we want opposite sex couples. We also want to have a consistent comparison over time. So, we will exclude same sex couples.
+
+```{r}
+#| label: check-spouse-sex
+
+# 
+table(census$SEX, census$SEX_SP)
+
+census <- census |>
+  filter(SEX_SP == 2)
+
+table(census$SEX, census$SEX_SP)
+```
+
+Replace HISPAN with HISP1970 for the 1970 data.
+
+```{r}
+#| label: restrict-1970
+
+census <- census |>
+  mutate(HISPAN = ifelse(YEAR == 1970, HISP1970, HISPAN),
+         HISPAN_SP = ifelse(YEAR == 1970, HISP1970_SP, HISPAN_SP))
+```
+
+Check that husbands are restricted to native born respondents and also restrict wives.
+
+```{r}
+#| label: restrict-nativity
+
+table(census$BPL)
+
+census <- census |>
+  filter(BPL_SP <= 99)
+
+table(census$BPL)
+```
+
+Husbands should be restricted to 25-34. Lets check the ages of men and women.
+
+```{r}
+#| label: check-age
+
+summary(census$AGE)
+summary(census$AGE_SP)
+```
+
+Hmmm, a bit troubling on the minimum values, but we will leave them be for this analysis.
+
+Ok, now we are ready to code race.
+
+```{r}
+#| label: create-vars
+
+# lets create a function for assigning race, since we will do it for both spouses
+code_race <- function(raced, hispan) {
+  
+  race <- case_when(
+    hispan != 0 | raced == 110 ~ "Hispanic",
+    raced == 100 ~ "White",
+    raced == 200 ~ "Black",
+    raced >= 300 & raced <= 399 ~ "AIAN",
+    # we have to do API because 1980 and 1990
+    (raced >= 400 & raced <= 699) | (raced >= 860 & raced <= 869) ~ "API",
+    raced == 700 ~ "Other", 
+    # lets do major biracial groups for fun
+    raced == 801 ~ "White/Black",
+    raced == 802 ~ "White/AIAN",
+    raced >= 803 & raced <= 825 ~ "White/API",
+    raced == 830 ~ "Black/AIAN",
+    raced >= 831 & raced <= 842 ~ "Black/API",
+    TRUE ~ "Other Multiracial")
+  
+  factor(race, 
+         levels = c("White", "Black", "AIAN", "Hispanic", "API", "Other",
+                    "White/Black", "White/AIAN", "White/API", 
+                    "Black/AIAN", "Black/API", "Other Multiracial"))
+}
+
+census <- census |>
+  mutate(race_husband = code_race(RACED, HISPAN),
+         race_wife = code_race(RACED_SP, HISPAN_SP), 
+         year = YEAR) |>
+  # remove hispanics in 1960 and 1970 due to measurement issues
+  filter(!(race_husband == "Hispanic" & year <= 1970))
+  
+
+census <- census
+
+table(census$race_husband)
+table(census$race_wife)
+```
+
+
+From husband's race, wife's race, and year, we can create a three-way table.
+
+```{r}
+#| label: create-master-tab
+tab_mar <- table(census$race_husband, census$race_wife, census$year)
+```
+
+Lets create a function that will calculate the log-odds ratio and its standard error from `tab-mar` for two groups.
+
+```{r}
+calculate_or <- function(group1, group2) {
+  lor <- log(tab_mar[group1, group2,])+log(tab_mar[group2, group1,])-
+    log(tab_mar[group1, group1,])-log(tab_mar[group2, group2,])
+  se <- sqrt(1/tab_mar[group1, group2,]+1/tab_mar[group2, group1,]+
+               1/tab_mar[group1, group1,]+1/tab_mar[group2, group2,])
+  tibble(year = as.numeric(names(lor)), lor, se, 
+         type = paste(group1, group2, sep="-"))
+}
+```
+
+We can now use `pmap` to calculate log odds ratios across all groups of interest.
+
+```{r}
+#| label: get-lor-df
+
+all_combos <- tribble(
+  ~race1, ~race2,
+  "White", "Black",
+  "White", "AIAN",
+  "White", "API",
+  "White", "Hispanic",
+  "Black", "AIAN",
+  "Black", "API",
+  "Black", "Hispanic",
+  "AIAN", "API",
+  "AIAN", "Hispanic",
+  "API", "Hispanic",
+  "White/Black", "White",
+  "White/Black", "Black",
+  "White/API", "White",
+  "White/API", "API",
+  "White/AIAN", "White",
+  "White/AIAN", "AIAN"
+)
+
+lor_data <- pmap(all_combos, function(race1, race2) {
+  calculate_or(race1, race2)
+  }) |>
+  bind_rows() |>
+  filter(lor > -Inf)
+```
+
+
+Now lets save the data.
+
+```{r}
+save(lor_data, file = here("data", "data_constructed", "acs_intermarriage.RData"))
+```
+
+
+
+
