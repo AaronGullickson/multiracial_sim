@@ -33,7 +33,7 @@ A couple of changes to racial identification and classification may affect trend
 
 ```{r}
 #| label: fig-trends-white
-#| fig-cap: Trends in interracial marriage involving a White or part-White partner from 1960-2019. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother are also shown.
+#| fig-cap: Trends in interracial marriage involving a White or part-White partner from 1960-2019. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother is also shown.
 #| layout-ncol: 2
 #| fig-subcap:
 #|   - Single race groups
@@ -88,7 +88,7 @@ The remaining panels show these same trends for each minority group, along with 
 
 ```{r}
 #| label: fig-trends-nonwhite
-#| fig-cap: Trends in interracial marriage by focal minority group. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother are also shown.
+#| fig-cap: Trends in interracial marriage by focal minority group. 95% confidence interval around each point estimate are shown as bands. Linear fit from a LOESS smoother is also shown.
 #| layout-ncol: 2
 #| fig-subcap:
 #|   - Black partner
