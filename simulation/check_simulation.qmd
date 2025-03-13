@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "uneven_hypo_baseline"
+  sim: "hypo_progress_low_resilient"
   sheet_id: "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 format:
   html:
@@ -759,7 +759,7 @@ pop |>
 pop |>
   filter(nearest_gen_locus == 1) |>
   filter((max(dob) - dob) < 100) |>
-  mutate(ancestry_group1 = cut_interval(ancestry_group1, n = 20)) |>
+  mutate(ancestry_group1 = cut_width(ancestry_group1, width = 0.05, boundary = 0.5)) |> #cut_interval(ancestry_group1, n = 20)) |>
   group_by(ancestry_group1) |>
   summarize(prop_group1 = mean(group == 1),
             prop_group2 = mean(group == 2),
@@ -777,4 +777,30 @@ pop |>
        size = "Sample size")+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+#| label: fig-ancestry-model
+#| fig-cap: Probability of being assigned to a given group among first generation biracial individuals based on a multinomial model predicting group choice as a cubic function of the proportion of ancestry from group 1.
+
+model_data <- pop |>
+  filter(nearest_gen_locus == 1) |>
+  filter((max(dob) - dob) < 100)
+
+model <- multinom(factor(group) ~ ancestry_group1+I(ancestry_group1^2)+I(ancestry_group1^3), 
+                  data = model_data)
+
+pred_data <- tibble(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005))
+df_pred <- predict(model, newdata = pred_data, type = "probs") |>
+  as_tibble() |>
+  mutate(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005)) |> 
+  pivot_longer(cols = 1:3, names_to = "group", values_to = "prop")
+
+ggplot(df_pred, aes(x = ancestry_group1, y = prop, group = group, color = group))+
+      geom_line(size = 1.5, alpha = 0.6)+
+      scale_y_continuous(labels = scales::percent, limits = c(0,1))+
+      scale_color_manual(values = my_palette)+
+      labs(x = "proportion of ancestry from group A",
+           y = "probability of being classified with given group")+
+      theme_bw()
 ```

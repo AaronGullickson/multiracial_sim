@@ -15,7 +15,8 @@ packages = c(
   "fs", # for filesystem interaction
   "future", # for how SOCSIM process is run
   "quarto", # for automating parameterized reports
-  "googlesheets4" # for using google sheets to track simulation parameters
+  "googlesheets4", # for using google sheets to track simulation parameters
+  "nnet" # for multinomial models
 )
 
 package.check <- lapply(packages, FUN = function(x) {
