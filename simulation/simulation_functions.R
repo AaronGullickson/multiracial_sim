@@ -395,11 +395,11 @@ calculate_ancestry <- function(pop,
           inheritance["inherit_g1_intercept"]+
             inheritance["inherit_g1_slope"] * x$ancestry_group1+
             inheritance["inherit_g1_slope_sq"] * x$ancestry_group1^2+
-            inheritance["inherit_g1_slope_cube"] * x$ancestry_group1^2,
+            inheritance["inherit_g1_slope_cube"] * x$ancestry_group1^3,
           inheritance["inherit_g2_intercept"]+
             inheritance["inherit_g2_slope"] * x$ancestry_group1+
             inheritance["inherit_g2_slope_sq"] * x$ancestry_group1^2+
-            inheritance["inherit_g2_slope_cube"] * x$ancestry_group1^2,
+            inheritance["inherit_g2_slope_cube"] * x$ancestry_group1^3,
           0)
         probs <- exp(lor)/sum(exp(lor))  
         # now sample a group
