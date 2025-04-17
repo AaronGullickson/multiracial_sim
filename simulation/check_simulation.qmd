@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "hypo_progress_low_resilient"
+  sim: "hypo_progress_new_people"
   sheet_id: "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 format:
   html:
@@ -782,15 +782,19 @@ pop |>
 ```{r}
 #| label: fig-ancestry-model
 #| fig-cap: Probability of being assigned to a given group among first generation biracial individuals based on a multinomial model predicting group choice as a cubic function of the proportion of ancestry from group 1.
+#| error: true
+
+# We allow errors here because if we are in a case where everyone is assigned
+# to one group this will break
 
 model_data <- pop |>
   filter(nearest_gen_locus == 1) |>
   filter((max(dob) - dob) < 100)
 
-model <- multinom(factor(group) ~ ancestry_group1+I(ancestry_group1^2)+I(ancestry_group1^3), 
+model <- multinom(group ~ ancestry_group1+I(ancestry_group1^2)+I(ancestry_group1^3), 
                   data = model_data)
 
-pred_data <- tibble(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005))
+ pred_data <- tibble(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005))
 df_pred <- predict(model, newdata = pred_data, type = "probs") |>
   as_tibble() |>
   mutate(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005)) |> 
