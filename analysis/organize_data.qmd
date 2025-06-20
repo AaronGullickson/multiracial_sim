@@ -34,8 +34,11 @@ organize_sim_pop_data <- function(sim_name) {
   ancestry <- read_csv(here(sim_folder, "ancestry.csv"))
   
   pop <- code_population(pop, ancestry) |>
-    mutate(growth = str_split_i(sim_name, "_", 1),
-           regime = str_split_i(sim_name, "_", 2))
+    mutate(base_regime = str_split_i(sim_name, "_", 1),
+           mar_growth = str_split_i(sim_name, "_", 2),
+           scenario = paste(str_split_i(sim_name, "_", 3), 
+                            str_split_i(sim_name, "_", 4),
+                            sep = "_"))
 
   return(pop)
 }
@@ -44,6 +47,7 @@ organize_sim_pop_data <- function(sim_name) {
 
 ```{r}
 #| label: organize-intermarriage-benchmark-data
+#| eval: false
 
 # even scenario
 intermar_even <- get_sim_parameters("even_intermar_benchmark", 
@@ -96,6 +100,7 @@ intermar <- calculate_lor(mar) |>
 
 ```{r}
 #| label: get-all-sims
+#| output: false
 
 sim_names <- googlesheets4::sheet_names(sheet_id)
 sim_names <- sim_names[!str_detect(sim_names, "IGNORE$") & 
@@ -103,15 +108,13 @@ sim_names <- sim_names[!str_detect(sim_names, "IGNORE$") &
                          !str_detect(sim_names, "baseline$")]
 
 sims_pop <- map(sim_names, organize_sim_pop_data) |>
-  bind_rows() |>
-  # for now we will drop the decelerate scenario
-  filter(growth != "decelerate")
+  bind_rows()
 ```
 
 
 ```{r}
 #| label: save-data
 
-save(intermar, sims_pop, 
+save(sims_pop, 
      file = here("data", "data_constructed", "analytical_data.RData"))
 ```
