@@ -26,7 +26,11 @@ package.check <- lapply(packages, FUN = function(x) {
   }
 })
 
-# install rsocsim
+# install rsocsim - installing a particular version that works. The newer versions
+# are completely breaking the sim, due to some substantial changes in file paths. 
+# At some point, I should try to figure out if I can get them working right with 
+# the architecture we have but the old sims were working so its not clear its 
+# worth it.
 if(!require(rsocsim)) {
-   devtools::install_github("MPIDR/rsocsim")
+   devtools::install_github("MPIDR/rsocsim@edac34ac647f47f1d6b1c94eca76fe574250d523")
 }
