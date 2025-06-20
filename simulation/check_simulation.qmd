@@ -1,7 +1,7 @@
 ---
 title: "Simulation Diagnostics"
 params:
-  sim: "hypo_progress_new_people"
+  sim: "uneven_immig_baseline"
   sheet_id: "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
 format:
   html:
@@ -571,17 +571,19 @@ fractions <- pop |>
   # theoretical mixedness if only one event
   mutate(mixedness_theoretical = 1-(2^(2*nearest_gen_locus)-2^(nearest_gen_locus+1)+2)/(2^(2*nearest_gen_locus)))
 
-pop |>
-  filter(!is.na(nearest_gen_locus)) |>
-  ggplot(aes(x = nearest_gen_locus, y = mixedness))+
-  scale_x_continuous(breaks = 1:max_gen)+
-  geom_jitter(alpha = 0.01)+
-  geom_point(data = fractions, (aes(y = mixedness_actual)), 
-             color = "blue", size = 2)+
-  geom_point(data = fractions, (aes(y = mixedness_theoretical)), 
-             color = "red", size = 2)+
-  labs(x = "nearest generational locus")+
-  theme_bw()
+if(nrow(fractions) > 0) {
+  pop |>
+    filter(!is.na(nearest_gen_locus)) |>
+    ggplot(aes(x = nearest_gen_locus, y = mixedness))+
+    scale_x_continuous(breaks = 1:max_gen)+
+    geom_jitter(alpha = 0.01)+
+    geom_point(data = fractions, (aes(y = mixedness_actual)), 
+               color = "blue", size = 2)+
+    geom_point(data = fractions, (aes(y = mixedness_theoretical)), 
+               color = "red", size = 2)+
+    labs(x = "nearest generational locus")+
+    theme_bw()
+}
 ```
 
 ```{r}
@@ -598,6 +600,7 @@ fractions <- pop |>
   # theoretical mixedness if only one event
   mutate(mixedness_theoretical = 1-(2^(2*nearest_gen_locus)-2^(nearest_gen_locus+1)+2)/(2^(2*nearest_gen_locus)))
 
+if(nrow(fractions) > 0) {
 pop |>
   filter(!is.na(nearest_gen_locus)) |>
   ggplot(aes(x = nearest_gen_locus, y = mixedness))+
@@ -610,6 +613,7 @@ pop |>
   facet_wrap(~group)+
   labs(x = "nearest generational locus")+
   theme_bw()
+}
 ```
 
 ```{r}
@@ -756,27 +760,29 @@ pop |>
 ```{r}
 #| label: fig-ancestry-rules
 #| fig-cap: Probability of being assigned to a given group among first generation biracial individuals as a function of proportion of ancestry from group 1 for the final 100 years of the simulation.
-pop |>
-  filter(nearest_gen_locus == 1) |>
-  filter((max(dob) - dob) < 100) |>
-  mutate(ancestry_group1 = cut_width(ancestry_group1, width = 0.05, boundary = 0.5)) |> #cut_interval(ancestry_group1, n = 20)) |>
-  group_by(ancestry_group1) |>
-  summarize(prop_group1 = mean(group == 1),
-            prop_group2 = mean(group == 2),
-            prop_group3 = mean(group == 3),
-            n = n()) |>
-  pivot_longer(cols = starts_with("prop_"), names_prefix = "prop_") |>
-  ggplot(aes(x = ancestry_group1, y = value, group = name, color = name))+
-  geom_point(aes(size = n), alpha = 0.4)+
-  geom_smooth(se = FALSE, aes(weight = n))+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = my_palette)+
-  labs(x = "proportion of ancestry from group 1 (equal interval bins)", 
-       y = "probability of being assigned to group",
-       color = "group assignment",
-       size = "Sample size")+
-  theme_bw()+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+if(sum(pop$nearest_gen_locus == 1, na.rm = TRUE) > 0) {
+  pop |>
+    filter(nearest_gen_locus == 1) |>
+    filter((max(dob) - dob) < 100) |>
+    mutate(ancestry_group1 = cut_width(ancestry_group1, width = 0.05, boundary = 0.5)) |>
+    group_by(ancestry_group1) |>
+    summarize(prop_group1 = mean(group == 1),
+              prop_group2 = mean(group == 2),
+              prop_group3 = mean(group == 3),
+              n = n()) |>
+    pivot_longer(cols = starts_with("prop_"), names_prefix = "prop_") |>
+    ggplot(aes(x = ancestry_group1, y = value, group = name, color = name))+
+    geom_point(aes(size = n), alpha = 0.4)+
+    geom_smooth(se = FALSE, aes(weight = n))+
+    scale_y_continuous(labels = scales::percent)+
+    scale_color_manual(values = my_palette)+
+    labs(x = "proportion of ancestry from group 1 (equal interval bins)", 
+         y = "probability of being assigned to group",
+         color = "group assignment",
+         size = "Sample size")+
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
 ```
 
 ```{r}
@@ -791,20 +797,22 @@ model_data <- pop |>
   filter(nearest_gen_locus == 1) |>
   filter((max(dob) - dob) < 100)
 
-model <- multinom(group ~ ancestry_group1+I(ancestry_group1^2)+I(ancestry_group1^3), 
-                  data = model_data)
-
- pred_data <- tibble(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005))
-df_pred <- predict(model, newdata = pred_data, type = "probs") |>
-  as_tibble() |>
-  mutate(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005)) |> 
-  pivot_longer(cols = 1:3, names_to = "group", values_to = "prop")
-
-ggplot(df_pred, aes(x = ancestry_group1, y = prop, group = group, color = group))+
-      geom_line(size = 1.5, alpha = 0.6)+
-      scale_y_continuous(labels = scales::percent, limits = c(0,1))+
-      scale_color_manual(values = my_palette)+
-      labs(x = "proportion of ancestry from group A",
-           y = "probability of being classified with given group")+
-      theme_bw()
+if(nrow(model_data) > 0) {
+  model <- multinom(group ~ ancestry_group1+I(ancestry_group1^2)+I(ancestry_group1^3), 
+                    data = model_data)
+  
+  pred_data <- tibble(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005))
+  df_pred <- predict(model, newdata = pred_data, type = "probs") |>
+    as_tibble() |>
+    mutate(ancestry_group1 = seq(from = 0.01, to = 0.99, by =0.005)) |> 
+    pivot_longer(cols = 1:3, names_to = "group", values_to = "prop")
+  
+  ggplot(df_pred, aes(x = ancestry_group1, y = prop, group = group, color = group))+
+    geom_line(size = 1.5, alpha = 0.6)+
+    scale_y_continuous(labels = scales::percent, limits = c(0,1))+
+    scale_color_manual(values = my_palette)+
+    labs(x = "proportion of ancestry from group A",
+         y = "probability of being classified with given group")+
+    theme_bw()
+}
 ```
