@@ -98,7 +98,7 @@ To experiment with possible values, we built a [shiny app](https://aaron-gullick
 #|   - Low peak, resilient
 #|   - Low peak, decay
 
-plot_classification <- function(scenario_name) {
+calculate_probs <- function(scenario_name) {
   parameters <- range_read(
     "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8",
     range = paste(scenario_name, "A8:L9", sep="!")
@@ -122,17 +122,32 @@ plot_classification <- function(scenario_name) {
   tibble(group = factor(rep(c("A", "B", "AB"), each = length(prop_a)),
                         levels = c("A", "B", "AB")),
          prop_a = rep(prop_a, 3), 
-         prob = c(p_a, p_b, p_ab)) |>
-    ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
-    geom_line(linewidth = 1.5)+
-    scale_y_continuous(labels = scales::percent)+
-    labs(x = "proportion of group A ancestry",
-         y = "probability of group membership",
-         color = "membership")+
-    theme_bw()
+         prob = c(p_a, p_b, p_ab))
 }
 
 gs4_deauth()
+probs_high_resilient <- calculate_probs("hypo_progress_high_resilient") |>
+  mutate(peak = "high", decline = "resilient")
+probs_low_resilient <- calculate_probs("hypo_progress_low_resilient") |>
+  mutate(peak = "low", decline = "resilient")
+probs_high_decay <- calculate_probs("hypo_progress_high_decay") |>
+  mutate(peak = "high", decline = "decay")
+probs_low_decay <- calculate_probs("hypo_progress_low_decay") |>
+  mutate(peak = "low", decline = "decay")
+
+probs_high_resilient |>
+  bind_rows(probs_low_resilient,
+            probs_high_decay, 
+            probs_low_decay) |>
+  ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
+  geom_line(linewidth = 1.5)+
+  facet_grid(peak~decline)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "proportion of group A ancestry",
+       y = "probability of group membership",
+       color = "membership")+
+  theme_bw()
+
 plot_classification("hypo_progress_high_resilient")
 plot_classification("hypo_progress_high_decay")
 plot_classification("hypo_progress_low_resilient")
