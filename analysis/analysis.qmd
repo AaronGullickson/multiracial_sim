@@ -20,11 +20,11 @@ load(here("data", "data_constructed", "analytical_data.RData"))
 #| label: set-palettes
 
 palette_scenario <- c(
-  "absorbing state"       = "#E63946",   # strong red
-  "high peak, resilient"  = "#457B9D",   # steel blue
-  "high peak, decay"      = "#1D3557",   # midnight blue
-  "low peak, resilient"   = "#2A9D8F",   # soft orange
-  "low peak, decay"       = "#1B4332"    # warm yellow
+  "absorbing state"       = "goldenrod",   
+  "high peak, resilient"  = "royalblue",   
+  "high peak, decay"      = "navy",   
+  "low peak, resilient"   = "coral",  
+  "low peak, decay"       = "orangered"    
 )
 
 palette_mar_growth <- c(
@@ -33,9 +33,9 @@ palette_mar_growth <- c(
 )
 
 palette_base_regime <- c(
-  "hypodescent"  = "goldenrod",  # neon cyan
-  "hyperdescent" = "royalblue",  # electric violet
-  "immigration"  = "maroon"   # biotech magenta
+  "hypodescent"  = "goldenrod",  
+  "hyperdescent" = "royalblue",  
+  "immigration"  = "maroon"   
 )
 
 palette_group <- c(
@@ -51,7 +51,6 @@ palette_gen <- c(
   "4th+ gen" = "gold",
   "Unmixed"  = "grey30"
 )
-
 ```
 
 ```{r}
