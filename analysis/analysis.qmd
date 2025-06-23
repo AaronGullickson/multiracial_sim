@@ -16,6 +16,25 @@ source(here("utils","functions.R"))
 load(here("data", "data_constructed", "analytical_data.RData"))
 ```
 
+```{r}
+#| label: clean-up-labels
+
+sims_pop <- sims_pop |>
+  mutate(
+    group = factor(group, levels = 1:3, labels = c("A", "B", "AB")),
+    base_regime = factor(
+      base_regime, 
+      levels = c("hypo", "hyper", "immig"),
+      labels = c("hypodescent", "hyperdescent", "immigration")
+    ),
+    scenario = str_replace(scenario, "_", " peak, "),
+    scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
+    scenario = factor(
+      scenario,
+      levels = c("absorbing state", "high peak, resilient", "high peak, decay",
+                 "low peak, resilient", "low peak, decay")))
+```
+
 # Intermarriage benchmarks
 
 ```{r}
@@ -34,6 +53,93 @@ ggplot(intermar, aes(x = exogamy, y = lor,
 ```
 
 @fig-intermar-exogamy-compare plots the exogamy parameter of each simulation period in the benchmark tests versus the actual log odds ratio of group intermarriage in that same period. As I expected, the log odds ratio used in the simulation is almost exactly half the odds of the cross product log odds ratio. That linear relationship may start to moderate at the most extreme values, but in general its a very good fit. It also produces the exact same estimates regardless of group size. 
+
+
+# Simulation Structure
+
+## Baseline Regimes
+
+We run three different baseline simulations for 300 years to get a baseline population and genealogical history. In all three simulations we start with two groups, `A` and `B`. Group A is majority group at 85% of the population and group B makes up the remaining 15% of the population. 
+
+The three baseline simulations for the first 300 years are:
+
+- **hypodescent regime**: unions between A and B are very rare and invidiuals from such mixed unions are always identified as members of group B. 
+- **hyperdescent regime**: unions between A and B are very rare and individuals from such mixed unions are always identified as members of group A.
+- **immigration regime**: unions between A and B are non-existent, simulating a situation where the first contact between A and B is in the novel period. 
+
+## Novel Period
+
+After 300 years, we introduce a shift into each simulation and continue the simulation for another 150 years. This shift is defined by two factors - the rate of intermarriage between groups and the probability of group identification among individuals from mixed unions. 
+
+### Scenarios for Intermarriage Rates
+
+We consider two different scenarios here:
+
+- **progress**: The log of the intermarriage odds will increase linearly until there is no barrier to intermarraige (log odds of zero) after 100 years and will then continue on at 0 for the remaining fifty years.
+- **plateau**" The log of the intermarriage odds will be cut in half in the first 25 years of the period and then will remaing steady for the remainder of the simulation. 
+
+Because we will now introduce a new group of `AB` individuals into the simulation who identify as mixed group, we also need a rate of intermarriage between this group and the two component groups. For each time period we use half the log of the intermarriage odds between `A` and `B` for the intermarriage of `AB` individuals to either group. 
+
+### Probabilities of Group Classification
+
+The second factor we consider is the probability that individuals who are the product of a mixed union will identify as either members of `A`, `B` or a mixed group of `AB`. We treat these probabilities as a function of the proportion of `A` ancestry for a given individual.^[We could alternatively treat it as a function of the proportion of `B` ancestry but this would simply reverse parameter estimates and give the same results as the two are perfectly collinear in a two group population.] To estimate these probabilities, we first consider what the probability of `AB` membership would be for a "first generation" biracial person (one parent of each group), a "second generation" biracial person (one grandparent from one group and three grandparents from the other group), and a "third generation" biracial person (one great grandparent from one group, and seven great grandpaents from the other group). In addition, to these probabilities, we also consider what the ratio of the probabilities would be for single race identification in the second and third generation when one group consistutes the majority of ancestry (e.g. what is the ratio of probabilities for a second generation biracial person to identify as `B` rather than `A` when that person has three `B` grandparents and one `A` grandparent). 
+
+From these parameters, we can identify five distinct probabilities for each group at a certain value of the proportion `A` ancestry. We then fit a multinomial model to these points using the proportion of `A` ancestry as well is square and cubic values. This model can then be used to predict the relevant probabilities at any proportion of `A` ancestry. 
+
+To experiment with possible values, we built a [shiny app](https://aaron-gullickson.shinyapps.io/classification_gen_shiny/) to explore possiblities. The ultimate values we chose come from the limited literature we have on this topic. @fig-scenarios-classification illustrates the four scenarios that we ultimately consider. Thes four scenarios are arranged along two dimensions. The first dimension is the height of the peak for biracial identification for a first generation biracial. We consider a **high** peak of 75% and a **low** peak of 40%. The second dimension is the degree of decline in succeeding generations. In the **resilient** case, we use stepwise declines of 10% and 25% from this peak to the second and third generations, respectively. In the **decay** case, we use 50% stepwise declines for both generations. For all four scenarios, we use a second generation ratio of 10 and a third generation ratio of 25.
+
+```{r}
+#| label: fig-scenarios-classification
+#| fig-cap: The probability of group membership for an individual who is the child of a mixed group union
+#| layout-ncol: 2
+#| fig-subcap:
+#|   - High peak, resilient
+#|   - High peak, decay
+#|   - Low peak, resilient
+#|   - Low peak, decay
+
+plot_classification <- function(scenario_name) {
+  parameters <- range_read(
+    "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8",
+    range = paste(scenario_name, "A8:L9", sep="!")
+  ) |>
+    select(starts_with("inherit"))
+  prop_a <- seq(from = 0.01, to= 0.99, by = 0.01)
+  y_a <- parameters$inherit_g1_intercept+
+    parameters$inherit_g1_slope*prop_a+
+    parameters$inherit_g1_slope_sq*(prop_a^2)+
+    parameters$inherit_g1_slope_cube*(prop_a^3)
+  y_b <- parameters$inherit_g2_intercept+
+    parameters$inherit_g2_slope*prop_a+
+    parameters$inherit_g2_slope_sq*(prop_a^2)+
+    parameters$inherit_g2_slope_cube*(prop_a^3)
+  y_ab <- 0 * prop_a
+  denom <- (exp(y_a)+exp(y_b)+exp(y_ab))
+  p_a <- exp(y_a)/denom
+  p_b <- exp(y_b)/denom
+  p_ab <- exp(y_ab)/denom
+  
+  tibble(group = factor(rep(c("A", "B", "AB"), each = length(prop_a)),
+                        levels = c("A", "B", "AB")),
+         prop_a = rep(prop_a, 3), 
+         prob = c(p_a, p_b, p_ab)) |>
+    ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
+    geom_line(linewidth = 1.5)+
+    scale_y_continuous(labels = scales::percent)+
+    labs(x = "proportion of group A ancestry",
+         y = "probability of group membership",
+         color = "membership")+
+    theme_bw()
+}
+
+gs4_deauth()
+plot_classification("hypo_progress_high_resilient")
+plot_classification("hypo_progress_high_decay")
+plot_classification("hypo_progress_low_resilient")
+plot_classification("hypo_progress_low_decay")
+```
+
+In addition to these four scenarios, we also considered an "absorbing state" case in which all individuals from mixed unions identify as `AB` and all of their descendants remain in the `AB` population. 
 
 # Population sizes
 
@@ -65,19 +171,19 @@ total_pop_group <- total_pop |>
 ```{r}
 
 total_pop_group |>
-  filter(group == 3) |>
+  filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
   geom_line(linewidth = 1.3, alpha = 0.7)+
   facet_grid(base_regime~mar_growth)+
   scale_y_continuous(labels = scales::percent)+
-  labs(y = "share of population identifying as multiracial")+
+  labs(y = "share of population identifying as biracial")+
   theme_bw()
 ```
 
 ```{r}
 
 total_pop_group |>
-  filter(group == 3) |>
+  filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = mar_growth, color = mar_growth))+
   geom_line(linewidth = 1.3, alpha = 0.7)+
   facet_grid(scenario~base_regime)+
@@ -89,7 +195,7 @@ total_pop_group |>
 ```{r}
 
 total_pop_group |>
-  filter(group == 3) |>
+  filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = base_regime, color = base_regime))+
   geom_line(linewidth = 1.3, alpha = 0.7)+
   facet_grid(scenario~mar_growth)+
@@ -101,7 +207,7 @@ total_pop_group |>
 ```{r}
 
 total_pop_group |>
-  filter(group == 3 & base_regime == "hypo") |>
+  filter(group == "AB" & base_regime == "hypodescent") |>
   ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
   geom_line(linewidth = 1.3, alpha = 0.7)+
   facet_grid(~mar_growth)+
@@ -126,7 +232,7 @@ sims_pop |>
 
 ```{r}
 sims_pop |>
-  filter(dob >= 325 & group == 3) |>
+  filter(dob >= 325 & group == "AB") |>
   mutate(year = floor(dob)) |>
   group_by(year, base_regime, mar_growth, scenario) |>
   summarize(gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
@@ -151,7 +257,7 @@ sims_summary_decade <- sims_pop |>
 #| fig-cap: Mean generational locus of mixing by decade of birth and group
 
 sims_summary_decade |>
-  filter(base_regime == "hypo") |>
+  filter(base_regime == "hypodescent") |>
   ggplot(aes(x = decade_birth, 
              y = nearest_gen_locus,
              group = group, 
@@ -163,7 +269,7 @@ sims_summary_decade |>
   theme_bw()
 
 sims_summary_decade |>
-  filter(base_regime == "hyper") |>
+  filter(base_regime == "hyperdescent") |>
   ggplot(aes(x = decade_birth, 
              y = nearest_gen_locus,
              group = group, 
@@ -175,7 +281,7 @@ sims_summary_decade |>
   theme_bw()
 
 sims_summary_decade |>
-  filter(base_regime == "immig") |>
+  filter(base_regime == "immigration") |>
   ggplot(aes(x = decade_birth, 
              y = nearest_gen_locus,
              group = group, 
@@ -195,7 +301,7 @@ sims_summary_decade |>
 #| fig-cap: Mean level of mixedness by decade of birth and group. Mixedness is measured by Simpson's diversity index and is maximized at 0.5.
 
 sims_summary_decade |>
-  filter(base_regime == "hypo") |>
+  filter(base_regime == "hypodescent") |>
   ggplot(aes(x = decade_birth, 
              y = mixedness,
              group = group, 
@@ -207,7 +313,7 @@ sims_summary_decade |>
   theme_bw()
 
 sims_summary_decade |>
-  filter(base_regime == "hyper") |>
+  filter(base_regime == "hyperdescent") |>
   ggplot(aes(x = decade_birth, 
              y = mixedness,
              group = group, 
@@ -219,7 +325,7 @@ sims_summary_decade |>
   theme_bw()
 
 sims_summary_decade |>
-  filter(base_regime == "immig") |>
+  filter(base_regime == "immigration") |>
   ggplot(aes(x = decade_birth, 
              y = mixedness,
              group = group, 
@@ -253,7 +359,7 @@ sims_pop |>
                                    "4th+ gen", "Unmixed"))) |>
   filter(decade_birth >= 300) |>
   filter(gen != "4th+ gen" & gen != "Unmixed") |>
-  filter(base_regime == "hypo") |>
+  filter(base_regime == "hypodescent") |>
   ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
   #geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam", alpha = 0.7)+
