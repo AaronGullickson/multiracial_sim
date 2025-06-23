@@ -17,6 +17,29 @@ load(here("data", "data_constructed", "analytical_data.RData"))
 ```
 
 ```{r}
+#| label: set-palettes
+
+palette_scenario <- c(
+  "absorbing state"       = "#E63946",   # strong red
+  "high peak, resilient"  = "#457B9D",   # steel blue
+  "high peak, decay"      = "#1D3557",   # midnight blue
+  "low peak, resilient"   = "#2A9D8F",   # soft orange
+  "low peak, decay"       = "#1B4332"    # warm yellow
+)
+
+palette_mar_growth <- c(
+  "progress" = "tomato",
+  "plateau"  = "navy"
+)
+
+palette_base_regime <- c(
+  "hypodescent"  = "goldenrod",  # neon cyan
+  "hyperdescent" = "royalblue",  # electric violet
+  "immigration"  = "maroon"   # biotech magenta
+)
+```
+
+```{r}
 #| label: clean-up-labels
 
 sims_pop <- sims_pop |>
@@ -140,18 +163,13 @@ probs_high_resilient |>
             probs_high_decay, 
             probs_low_decay) |>
   ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
-  geom_line(linewidth = 1.5)+
+  geom_line(linewidth = 1.25)+
   facet_grid(peak~decline)+
   scale_y_continuous(labels = scales::percent)+
   labs(x = "proportion of group A ancestry",
        y = "probability of group membership",
        color = "membership")+
   theme_bw()
-
-plot_classification("hypo_progress_high_resilient")
-plot_classification("hypo_progress_high_decay")
-plot_classification("hypo_progress_low_resilient")
-plot_classification("hypo_progress_low_decay")
 ```
 
 In addition to these four scenarios, we also considered an "absorbing state" case in which all individuals from mixed unions identify as `AB` and all of their descendants remain in the `AB` population. 
@@ -184,52 +202,53 @@ total_pop_group <- total_pop |>
 ```
 
 ```{r}
+#| label: fig-biracial-pop-scenario
+#| fig-cap: The percent of the population identified as biracial, across different classification scenarios
 
 total_pop_group |>
   filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
-  geom_line(linewidth = 1.3, alpha = 0.7)+
+  geom_line(linewidth = 1, alpha = 0.7)+
   facet_grid(base_regime~mar_growth)+
   scale_y_continuous(labels = scales::percent)+
-  labs(y = "share of population identifying as biracial")+
+  scale_color_manual(values = palette_scenario)+
+  labs(y = "share of population identifying as biracial",
+       color = "classification\nscenario")+
   theme_bw()
 ```
 
 ```{r}
+#| label: fig-biracial-pop-mar-growth
+#| fig-cap: The percent of the population identified as biracial, across different mixed union growth scenarios
 
 total_pop_group |>
   filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = mar_growth, color = mar_growth))+
-  geom_line(linewidth = 1.3, alpha = 0.7)+
-  facet_grid(scenario~base_regime)+
+  geom_line(linewidth = 1, alpha = 0.6)+
+  facet_grid(base_regime~scenario)+
   scale_y_continuous(labels = scales::percent)+
-  labs(y = "share of population")+
+  scale_color_manual(values = palette_mar_growth)+
+  labs(y = "share of population identifying as biracial", 
+       color = "mixed union\nscenario")+
   theme_bw()
 ```
 
 ```{r}
+#| label: fig-biracial-pop-scenario
+#| fig-cap: The percent of the population identified as biracial, across different baseline regimes
 
 total_pop_group |>
   filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = base_regime, color = base_regime))+
-  geom_line(linewidth = 1.3, alpha = 0.7)+
-  facet_grid(scenario~mar_growth)+
+  geom_line(linewidth = 1, alpha = 0.6)+
+  facet_grid(mar_growth~scenario)+
   scale_y_continuous(labels = scales::percent)+
-  labs(y = "share of population")+
+  scale_color_manual(values = palette_base_regime)+
+  labs(y = "share of population identifying as biracial",
+       color = "baseline\nregime")+
   theme_bw()
 ```
 
-```{r}
-
-total_pop_group |>
-  filter(group == "AB" & base_regime == "hypodescent") |>
-  ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
-  geom_line(linewidth = 1.3, alpha = 0.7)+
-  facet_grid(~mar_growth)+
-  scale_y_continuous(labels = scales::percent)+
-  labs(y = "share of population")+
-  theme_bw()
-```
 # Generational Locus
 
 ```{r}
