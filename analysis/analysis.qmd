@@ -129,12 +129,6 @@ To experiment with possible values, we built a [shiny app](https://aaron-gullick
 ```{r}
 #| label: fig-scenarios-classification
 #| fig-cap: The probability of group membership for an individual who is the child of a mixed group union
-#| layout-ncol: 2
-#| fig-subcap:
-#|   - High peak, resilient
-#|   - High peak, decay
-#|   - Low peak, resilient
-#|   - Low peak, decay
 
 calculate_probs <- function(scenario_name) {
   parameters <- range_read(
