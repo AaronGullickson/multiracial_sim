@@ -1,3 +1,17 @@
+# This script will read in simulation parameter data from an external
+# google sheet located here:
+# https://docs.google.com/spreadsheets/d/18jeYYzzQxIGWYdt7H9VWyo1T1yrUQt_jlydeE2f2uCs/edit?gid=654203504#gid=654203504
+# Each simulation is tracked on a different tab in the overall file. 
+# The script will run each simulation and the diagnostic report and place the 
+# output in the data_constructed and _products directory, respectively.
+
+# only run this script when we are rendering the entire project
+# comment out to source this script interactively
+if (!nzchar(Sys.getenv("QUARTO_PROJECT_RENDER_ALL"))) {
+  #quit()
+}
+
+
 library(here)
 source(here("utils", "check_packages.R"))
 source(here("utils", "functions.R"))
@@ -13,6 +27,12 @@ if(dir_exists(base_folder)) {
   dir_delete(base_folder)
 }
 dir_create(base_folder)
+
+# output path for the reports
+output_path <- here("_products", "sim_diagnostics")
+if(!dir_exists(output_path)) {
+  dir_create(output_path)
+}
 
 # lets randomize the seed each time this is run to see how much results vary
 seed <- sample(1:100, 1)
@@ -93,4 +113,27 @@ for(sim_name in sim_names) {
                  ancestry = ancestry,
                  fert_multiplier = fert_multiplier,
                  seed = seed)
+  
+  # Prepare diagnostic report within a try/catch
+  tryCatch({
+    # render report and then move it
+    report_name <- paste0("diagnostics_", sim_name, ".html")
+    quarto_render(input = here("simulation", "check_simulation.qmd"), 
+                  output_format = "html",
+                  output_file = report_name,
+                  execute_params = list(sim = sim_name, sheet_id = sheet_id))
+    file_move(here("simulation", report_name), here(output_path, report_name))
+    
+  }, error = function(e) {
+    sim_path <- here(base_folder, sim_name)
+    if (!dir_exists(sim_path)) {
+      dir_create(sim_path)
+    }
+    
+    log_file <- file.path(sim_path, "error_render.log")
+    cat("Render Error:\n", conditionMessage(e), "\n\n", file = log_file)
+    tb <- capture.output(traceback())
+    cat("Traceback:\n", paste(tb, collapse = "\n"), "\n\n", file = log_file, 
+        append = TRUE)
+  })
 }
