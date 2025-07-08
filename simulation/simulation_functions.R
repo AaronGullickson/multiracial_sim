@@ -47,7 +47,8 @@ run_simulation <- function(sim_name,
                            segment_df, 
                            mar = NULL,
                            ancestry = NULL,
-                           fert_multiplier = 1) {
+                           fert_multiplier = 1,
+                           seed = 42) {
   
   ##  Create some additional things where necessary ##
   
