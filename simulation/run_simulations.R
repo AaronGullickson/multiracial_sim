@@ -8,7 +8,7 @@
 # only run this script when we are rendering the entire project
 # comment out to source this script interactively
 if (!nzchar(Sys.getenv("QUARTO_PROJECT_RENDER_ALL"))) {
-  quit()
+  #quit()
 }
 
 # Load libraries and basics ----------------------------------------------
@@ -21,9 +21,10 @@ source(here("simulation", "simulation_functions.R"))
 # base folder for the sim data
 base_folder = here("data", "data_constructed", "sims")
 # check to see if base folder exists, and if not, create it
-if(!dir_exists(base_folder)) {
-  dir_create(base_folder)
+if(dir_exists(base_folder)) {
+  dir_delete(base_folder)
 }
+dir_create(base_folder)
 
 # output path for the reports
 output_path <- here("_products", "sim_diagnostics")
@@ -44,7 +45,7 @@ googlesheets4::gs4_deauth()
 # Create starter pop ------------------------------------------------------
 
 # Set size of initial population
-size_opop <-  50000
+size_opop <- 1000 #50000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim_opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
@@ -92,11 +93,16 @@ for(sim_name in sim_names) {
     next
   }
   
+  # read data from googlesheets
+  sim_param <- get_sim_parameters(sim_name, sheet_id)
+  
+  # annoying but something about the future processing is not clearing properly
+  # between runs, so I need to clear it manually here.
+  future::plan(sequential)
+  gc()
+  
   tryCatch(
     expr = {
-      # read data from googlesheets
-      sim_param <- get_sim_parameters(sim_name, sheet_id)
-      
       # get starting pop stuff
       if(is.na(sim_param$start$starting_sim)) {
         pop_start <- presim_opop |>
@@ -116,6 +122,9 @@ for(sim_name in sim_names) {
                                         sim_param$start$starting_sim, 
                                         "ancestry.csv"))
       }
+      
+      # just for testing
+      sim_param$segments$segment_length <- 10
       
       # run the simulation
       run_simulation(sim_name, 
@@ -144,10 +153,20 @@ for(sim_name in sim_names) {
     error = function(err) {
       #if we hit an error here, report the error in a file.log and 
       #move on to the next simulation
-      if(!dir_exists(here(base_folder, sim_name))) {
-        dir_create(here(base_folder, sim_name))
+      sim_path <- here(base_folder, sim_name)
+      if (!dir_exists(sim_path)) {
+        dir_create(sim_path)
       }
-      cat(paste(err, sep="\n"), 
-          file = here(base_folder, sim_name, "error.log"))
+      
+      log_file <- file.path(sim_path, "error.log")
+      
+      # Capture the error message
+      cat("Error:\n", conditionMessage(err), "\n\n", file = log_file, 
+          append = TRUE)
+      
+      # Capture the traceback
+      tb <- capture.output(traceback())
+      cat("Traceback:\n", paste(tb, collapse = "\n"), "\n\n", file = log_file, 
+          append = TRUE)
     })
 }
