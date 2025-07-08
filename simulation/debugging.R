@@ -56,19 +56,33 @@ for(sim_name in sim_names) {
 
   # get sim parameters
   sim_param <- get_sim_parameters(sim_name, sheet_id)
-  
-  # get starting population
-  pop_start <- presim_opop |>
-    mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
-                          prob = c(sim_param$start$group1_prop, 
-                                   1 - sim_param$start$group1_prop)))
-  
-  mar <- NULL
-  ancestry <- NULL
-  fert_multiplier <- sim_param$start$fert_multiplier
   segment_df <- sim_param$segments
-  segment_df$segment_length <- 10
+  fert_multiplier <- sim_param$start$fert_multiplier
   
+  # get starting data
+  if(is.na(sim_param$start$starting_sim)) {
+    pop_start <- presim_opop |>
+      mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
+                            prob = c(sim_param$start$group1_prop, 
+                                     1 - sim_param$start$group1_prop)))
+    mar <- NULL
+    ancestry <- NULL
+    segment_df$segment_length <- 10
+  } else {
+    pop_start <- read_csv(here(base_folder, 
+                               sim_param$start$starting_sim, 
+                               "final_pop.csv"))
+    mar <- read_csv(here(base_folder, 
+                         sim_param$start$starting_sim,
+                         "final_mar.csv"))
+    ancestry <- read_csv(here(base_folder, 
+                              sim_param$start$starting_sim, 
+                              "ancestry.csv"))
+    segment_df$segment_length <- 2
+  }
+
+
+  # reset future so we don't get shenanigans
   future::plan(sequential)
   gc()
   
