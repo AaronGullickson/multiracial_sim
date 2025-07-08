@@ -133,13 +133,11 @@ run_simulation <- function(sim_name,
       
       # get the new pop and mar data - the default path of these functions 
       # is borked in current rsocsim so we provide our own
-      pop <- read_opop(
-        fn = here(sim_folder, paste0("sim_results_", seed, "_/result.opop"))
-      ) |> as_tibble()
-      mar <- read_omar(
-        fn = here(sim_folder, paste0("sim_results_", seed, "_/result.omar"))
-      ) |>
-        as_tibble()
+      result_folder <- here(sim_folder, paste0("sim_results_", seed, "_"))
+      result_opop <- here(result_folder, "result.opop")
+      result_omar <- here(result_folder, "result.omar")
+      pop <- read_opop(fn = result_opop) |> as_tibble()
+      mar <- read_omar(fn = result_omar) |> as_tibble()
       
       # find the new kids and measure their ancestry, group, etc.
       new_kids <- calculate_ancestry(pop, ancestry, inheritance)
@@ -524,3 +522,4 @@ create_new_simulation <- function(sheet_id,
                              col_names = FALSE)
   
 }
+
