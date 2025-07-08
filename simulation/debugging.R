@@ -3,9 +3,12 @@ source(here("utils", "check_packages.R"))
 source(here("utils", "functions.R"))
 source(here("simulation", "simulation_functions.R"))
 
+
+# Set up base information -------------------------------------------------
+
 # base folder for the sim data
 base_folder = here("data", "data_constructed", "sims")
-# check to see if base folder exists, and if not, create it
+# remove old base folder and create new one
 if(dir_exists(base_folder)) {
   dir_delete(base_folder)
 }
@@ -14,6 +17,10 @@ dir_create(base_folder)
 # lets randomize the seed each time this is run to see how much results vary
 seed <- sample(1:100, 1)
 set.seed(seed)
+
+# set up google sheet for reading
+sheet_id <- "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
+googlesheets4::gs4_deauth()
 
 # Create starter pop ------------------------------------------------------
 
@@ -36,14 +43,21 @@ presim_opop$fem <- sample(0:1, nrow(presim_opop), replace = TRUE)
 # Add random dates of birth (max age around 70)
 presim_opop$dob <- sample(360:1200, nrow(presim_opop), replace = TRUE)
 
-sheet_id <- "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8"
-googlesheets4::gs4_deauth()
 
-for(sim_name in c("uneven_hypo_baseline", "uneven_hyper_baseline")) {
+# Run the sims ------------------------------------------------------------
 
-  #sim_name <- "uneven_hypo_baseline"
+sim_names <- googlesheets4::sheet_names(sheet_id)
+
+for(sim_name in sim_names) {
+
+  if(str_detect(sim_name, "IGNORE$")) {
+    next
+  }
+
+  # get sim parameters
   sim_param <- get_sim_parameters(sim_name, sheet_id)
   
+  # get starting population
   pop_start <- presim_opop |>
     mutate(group = sample(1:2, nrow(presim_opop), replace = T, 
                           prob = c(sim_param$start$group1_prop, 
@@ -51,12 +65,12 @@ for(sim_name in c("uneven_hypo_baseline", "uneven_hyper_baseline")) {
   
   mar <- NULL
   ancestry <- NULL
-  fert_multiplier <- 1.15
+  fert_multiplier <- sim_param$start$fert_multiplier
   segment_df <- sim_param$segments
   segment_df$segment_length <- 10
   
-  future::plan(sequential)  # or multisession/workers again
-  gc()                      # force cleanup
+  future::plan(sequential)
+  gc()
   
   run_simulation(sim_name, 
                  pop_start = pop_start,
