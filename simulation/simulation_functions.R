@@ -80,25 +80,31 @@ run_simulation <- function(sim_name,
     
   ## file management ##
   
+  sim_folder <- here(base_folder, sim_name)
+
   # set up the directory for output 
-  if(dir_exists(here(base_folder, sim_name))) {
-    dir_delete(here(base_folder, sim_name))
+  if(dir_exists(sim_folder)) {
+    dir_delete(sim_folder)
+    dir_create(sim_folder)
+  } else {
+    dir_create(sim_folder)
   }
-  
-  folder <- create_simulation_folder(simulation_name = sim_name, 
-                                     basefolder = base_folder)
-  
+
   # presim files
-  write.table(pop_start, here(folder, "presim.opop"), 
+  write.table(pop_start, here(sim_folder, "presim.opop"), 
               row.names = F, col.names = F)
-  write.table(mar, here(folder, "presim.omar"), 
+  write.table(mar, here(sim_folder, "presim.omar"), 
               row.names = F, col.names = F)
   
   # create rate file
   file_copy(here("simulation", "parameter_files", "basic_rates"), 
-            here(folder, "basic_rates"))
+            here(sim_folder, "basic_rates"))
   # add fertility rates
-  create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
+  create_fertility_rates(here(sim_folder, "basic_rates"), fert_multiplier)
+  
+  # add sup file
+  file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
+            here(sim_folder, "run.sup"))
   
   ## start the sim ##
   for(i in 1:nrow(segment_df)) {
@@ -114,29 +120,25 @@ run_simulation <- function(sim_name,
       select(starts_with("lodds")) |>
       unlist(use.names = TRUE)
     
+    # iterate through one year at a time
     year <- 0
     while(year < segment_df$segment_length[i]) {
-      # update sup file
-      file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
-                here(folder, "run.sup"), overwrite = TRUE)
-      cat("\nduration", 12, "\n", file = here(folder, "run.sup"),
-      append = TRUE)
-      cat("include basic_rates\n", file = here(folder, "run.sup"),
-          append = TRUE)
-      cat("run\n", file = here(folder, "run.sup"),
-          append = TRUE)
       
       # update final month, we always go one year at a time
       month <- month + 12
       
       # run the simulation - future is needed not to screw up other sims without
       # restarting R
-      socsim(folder, "run.sup", seed = seed, process_method = "future")
+      socsim(sim_folder, "run.sup", seed = seed, process_method = "future")
       
-      # get the new pop and mar data
-      pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
-        as_tibble()
-      mar <- rsocsim::read_omar(folder, "run.sup", seed) |>
+      # get the new pop and mar data - the default path of these functions 
+      # is borked in current rsocsim so we provide our own
+      pop <- read_opop(
+        fn = here(sim_folder, paste0("sim_results_", seed, "_/result.opop"))
+      ) |> as_tibble()
+      mar <- read_omar(
+        fn = here(sim_folder, paste0("sim_results_", seed, "_/result.omar"))
+      ) |>
         as_tibble()
       
       # find the new kids and measure their ancestry, group, etc.
@@ -162,9 +164,9 @@ run_simulation <- function(sim_name,
       pop$mstat[new_marriages$hpid] <- 4
       
       # make the result of last run the new presim
-      write.table(pop, here(folder, "presim.opop"), 
+      write.table(pop, here(sim_folder, "presim.opop"), 
                   row.names = F, col.names = F)
-      write.table(mar, here(folder, "presim.omar"), 
+      write.table(mar, here(sim_folder, "presim.omar"), 
                   row.names = F, col.names = F)
       
       year <- year + 1
@@ -172,9 +174,9 @@ run_simulation <- function(sim_name,
   }
   
   # write out final results
-  write_csv(pop, here(folder, "final_pop.csv"))
-  write_csv(mar, here(folder, "final_mar.csv"))
-  write_csv(ancestry, here(folder, "ancestry.csv"))
+  write_csv(pop, here(sim_folder, "final_pop.csv"))
+  write_csv(mar, here(sim_folder, "final_mar.csv"))
+  write_csv(ancestry, here(sim_folder, "ancestry.csv"))
   
 }
 
