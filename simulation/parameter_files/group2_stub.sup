@@ -1,8 +1,8 @@
 ***************************************************************************
-* Beginning of Supervisory file for SOCSIM microsimulation for 2 Group 
-* simulation. The actual segment information is specified programmatically.
-* All children inherit group 4 so that we can determine programmatically by 
-* R how to reassign them.
+* Supervisory file for SOCSIM microsimulation for 2 Group simulation. We run
+* each microsimulation for one year and then assign marriages and group id of
+* newborns in R before running again. All children initially inherit fake 
+* group 4 so that we can determine programmatically by R how to reassign them.
 *
 * Group assignment
 * Group 1: primary group
@@ -18,3 +18,7 @@ marriage_queues 2
 child_inherits_group 4
 
 ***************************************************************************
+
+duration 12 
+include basic_rates
+run
