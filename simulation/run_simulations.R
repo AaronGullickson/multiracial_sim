@@ -22,7 +22,6 @@ source(here("simulation", "simulation_functions.R"))
 
 # base folder for the sim data
 base_folder = here("data", "data_constructed", "sims")
-# remove old base folder and create new one
 if(dir_exists(base_folder)) {
   dir_delete(base_folder)
 }
@@ -30,12 +29,13 @@ dir_create(base_folder)
 
 # output path for the reports
 output_path <- here("_products", "sim_diagnostics")
-if(!dir_exists(output_path)) {
-  dir_create(output_path)
+if(dir_exists(output_path)) {
+  dir_delete(output_path)
 }
+dir_create(output_path)
 
 # lets randomize the seed each time this is run to see how much results vary
-seed <- sample(1:100, 1)
+seed <- 39 #sample(1:100, 1)
 set.seed(seed)
 
 # set up google sheet for reading
