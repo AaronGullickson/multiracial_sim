@@ -8,7 +8,7 @@
 # only run this script when we are rendering the entire project
 # comment out to source this script interactively
 if (!nzchar(Sys.getenv("QUARTO_PROJECT_RENDER_ALL"))) {
-  #quit()
+  quit()
 }
 
 
@@ -45,7 +45,7 @@ googlesheets4::gs4_deauth()
 # Create starter pop ------------------------------------------------------
 
 # Set size of initial population
-size_opop <-  50000
+size_opop <-  1000
 
 # Create data.frame with 14 columns and nrows = size_opop
 presim_opop <- setNames(data.frame(matrix(data = 0, ncol = 14, nrow = size_opop)), 
@@ -114,13 +114,11 @@ for(sim_name in sim_names) {
   # Prepare diagnostic report within a try/catch
   tryCatch({
     # render report and then move it
-    report_name <- paste0("diagnostics_", sim_name, ".html")
     quarto_render(input = here("simulation", "check_simulation.qmd"), 
                   output_format = "html",
-                  output_file = report_name,
                   execute_params = list(sim = sim_name, sheet_id = sheet_id))
-    file_move(here("simulation", report_name), here(output_path, report_name))
-    
+    file_move(here("simulation", "check_simulation.html"), 
+              here(output_path,  paste0("diagnostics_", sim_name, ".html")))
   }, error = function(e) {
     sim_path <- here(base_folder, sim_name)
     if (!dir_exists(sim_path)) {
