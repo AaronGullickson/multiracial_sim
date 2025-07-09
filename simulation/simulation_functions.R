@@ -106,6 +106,11 @@ run_simulation <- function(sim_name,
   file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
             here(sim_folder, "run.sup"))
   
+  # pathways to results
+  result_folder <- here(sim_folder, paste0("sim_results_", seed, "_"))
+  result_opop <- here(result_folder, "result.opop")
+  result_omar <- here(result_folder, "result.omar")
+  
   ## start the sim ##
   for(i in 1:nrow(segment_df)) {
     
@@ -128,16 +133,17 @@ run_simulation <- function(sim_name,
       month <- month + 12
       
       # run the simulation - future is needed not to screw up other sims without
-      # restarting R
+      # restarting R.
       socsim(sim_folder, "run.sup", seed = seed, process_method = "future")
       
-      # get the new pop and mar data - the default path of these functions 
-      # is borked in current rsocsim so we provide our own
-      result_folder <- here(sim_folder, paste0("sim_results_", seed, "_"))
-      result_opop <- here(result_folder, "result.opop")
-      result_omar <- here(result_folder, "result.omar")
+      # get the new pop and mar data - be sure to make sure simulation is 
+      # done before proceeding
+      wait_for_file(result_opop)
+      wait_for_file(result_omar)
       pop <- read_opop(fn = result_opop) |> as_tibble()
       mar <- read_omar(fn = result_omar) |> as_tibble()
+      # now remove the result folder to avoid artifacts
+      dir_delete(result_folder)
       
       # find the new kids and measure their ancestry, group, etc.
       new_kids <- calculate_ancestry(pop, ancestry, inheritance)
@@ -230,8 +236,8 @@ get_married <- function(pop, lodds, month_current, mid_max) {
     select(dad, gmom_frat, gdad_frat)
   
   singles <- singles |>
-    left_join(maternal) |>
-    left_join(fraternal)
+    left_join(maternal, by = "mom") |>
+    left_join(fraternal, by = "dad")
   
   # break singles into men and women - restrict age a little differently
   # for each group
@@ -364,8 +370,8 @@ calculate_ancestry <- function(pop,
   
   # create the new_kids object for all kids with group == 3
   new_kids <- pop |> filter(group == 4) |>
-    left_join(moms) |>
-    left_join(dads) |>
+    left_join(moms, by = "mom") |>
+    left_join(dads, by = "pop") |>
     select(pid, 
            starts_with("group"), 
            starts_with("ancestry"), 
@@ -523,3 +529,34 @@ create_new_simulation <- function(sheet_id,
   
 }
 
+# with future in use, its possible to start reading the file before the 
+# sim is done, so we set up a function to check that the file is done writing
+# by checking that its size is not going up anymore
+wait_for_file <- function(filepath, timeout = 60, stable_wait = 0.5) {
+  start_time <- Sys.time()
+  last_size <- -1
+  stable_count <- 0
+  
+  repeat {
+    if (file.exists(filepath)) {
+      current_size <- file.info(filepath)$size
+      if (!is.na(current_size) && current_size > 0) {
+        # If stable for two consecutive checks, consider it done
+        if (current_size == last_size) {
+          stable_count <- stable_count + 1
+        } else {
+          stable_count <- 0
+        }
+        last_size <- current_size
+        
+        if (stable_count >= 2) break
+      }
+    }
+    
+    if (as.numeric(Sys.time() - start_time, units = "secs") > timeout) {
+      stop("Timeout waiting for file: ", filepath)
+    }
+    
+    Sys.sleep(stable_wait)
+  }
+}
