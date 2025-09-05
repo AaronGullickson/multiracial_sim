@@ -35,6 +35,8 @@ organize_sim_pop_data <- function(sim_name) {
   
   pop <- code_population(pop, ancestry) |>
     mutate(base_regime = str_split_i(sim_name, "_", 1),
+           pop_share = if_else(is.na(str_split_i(sim_name, "_", 5)), "uneven",
+                               "even"),
            mar_growth = str_split_i(sim_name, "_", 2),
            scenario = paste(str_split_i(sim_name, "_", 3), 
                             str_split_i(sim_name, "_", 4),
