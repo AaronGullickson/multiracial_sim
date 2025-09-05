@@ -32,6 +32,17 @@ author:
         region: OR
         country: USA
         postal-code: 97405
+  - name: Aliya Saperstein
+    orcid: 0000-0001-7237-8131
+    email: asaper@stanford.edu
+    attributes:
+      corresponding: false
+    affiliations:
+      - id: stanford
+        name: Stanford University
+        department: Sociology
+
+        
   
 execute: 
   freeze: false
