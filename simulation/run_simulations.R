@@ -123,7 +123,8 @@ for(sim_name in sim_names) {
                      segment_df = sim_param$segments,
                      mar = mar_start,
                      ancestry = ancestry_start,
-                     fert_multiplier = sim_param$start$fert_multiplier)
+                     fert_multiplier = sim_param$start$fert_multiplier,
+                     seed = seed)
       
       # now create the report
       # annoyingly, I have to set the working directory here to get it to work. 
