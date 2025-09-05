@@ -189,7 +189,7 @@ In addition to these four scenarios, we also considered an "absorbing state" cas
 #| label: count-pop-group
 #| message: false
 
-total_pop_group <- map(300:450, function(x) {
+total_pop_group <- map(300:500, function(x) {
   sims_pop |>
     get_pop_alive(x) |>
     group_by(group, base_regime, mar_growth, scenario) |>
