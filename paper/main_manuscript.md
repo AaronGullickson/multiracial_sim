@@ -75,10 +75,7 @@ The remaining scenarios are divided along two dimensions. We assume that the lik
 
 Our scenarios are thus defined by the probability of AB identification at the peak and the degree to which this kind of identification declines as ancestry moves away from the peak. 
 
-
-
-
-Reference category: 85/15, progress, absorbing state
+---
 
 By design, the simulations we use here are simplified representations that allow us to understanding population dynamics and may not reflect real populations. However, the simulation approach we use here is developed to be intentionally extensible to more complex scenarios.
 
