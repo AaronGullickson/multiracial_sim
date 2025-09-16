@@ -32,3 +32,54 @@ source(here("utils","functions.R"))
 
 {{< include main_manuscript.md >}}
 
+
+```{r}
+#| label: fig-scenarios
+#| fig-cap: Four different group assignment scenarios for individuals of mixed parentage as a function of the proportion of their group A ancestry
+#| fig-subcap:
+#|    - "High peak, resilient"
+#|    - "High peak, decay"
+#|    - "Low peak, resilient"
+#|    - "Low peak, decay"
+#| layout-ncol: 2
+
+plot_group_probs <- function(a_param, b_param) {
+  
+  prop_a <- seq(from = 0.005, to = 0.995, by = 0.005)
+
+  tibble(prop_a, 
+         lor_a = a_param[1] + a_param[2] * prop_a + a_param[3] * prop_a^2 + a_param[4] * prop_a^3,
+         lor_b = b_param[1] + b_param[2] * prop_a + b_param[3] * prop_a^2 + b_param[4] * prop_a^3,
+         lor_ab = rep(0, length(prop_a)),
+         prob_a = exp(lor_a) / (exp(lor_a) + exp(lor_b) + exp(lor_ab)),
+         prob_b = exp(lor_b) / (exp(lor_a) + exp(lor_b) + exp(lor_ab)),
+         prob_ab = exp(lor_ab) / (exp(lor_a) + exp(lor_b) + exp(lor_ab))) |>
+    select(prop_a, starts_with("prob_")) |>
+    pivot_longer(cols = starts_with("prob_"), names_prefix = "prob_",
+                 names_to = "group", values_to = "prob") |>
+    mutate(group = str_to_upper(group),
+           group = factor(group, levels = c("A", "B", "AB"))) |>
+    ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
+    geom_line(size = 1)+
+    scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+    labs(x = "proportion group A ancestry", 
+         y = "probability of group assignment")+
+    theme_bw()
+}
+
+# high resilient
+plot_group_probs(a_param = c(-4.132, 6.113, -4.924, 3.713),
+                 b_param = c(0.881, -8.661, 9.544, -6.34))
+
+# high decay
+plot_group_probs(a_param = c(-0.085, -15.448, 30.642, -12.46),
+                 b_param = c(2.412, -6.265, -12.038, 16.068))
+
+# low resilient
+plot_group_probs(a_param = c(-3.562, 9.362, -7.244, 2.776),
+                 b_param = c(1.269, -2.795, 0.214, -2.142))
+
+# low decay
+plot_group_probs(a_param = c(-0.65, -4.209, 11.594, -3.497),
+                 b_param = c(2.956, -5.734, -5.348, 7.796))
+```
