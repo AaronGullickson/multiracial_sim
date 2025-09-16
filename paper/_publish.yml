@@ -1,0 +1,4 @@
+- source: main_manuscript.qmd
+  quarto-pub:
+    - id: 4f646b8f-d5ce-4dff-a6a3-bf83d1aea491
+      url: https://aarongullickson.quarto.pub/paper-manuscript
