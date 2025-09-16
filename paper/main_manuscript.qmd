@@ -19,7 +19,7 @@ format:
 #     include-in-header: 
 #       text: |
 #         \usepackage{dcolumn}
-  submittable-docx: default
+#  submittable-docx: default
 ---
 
 ```{r}
