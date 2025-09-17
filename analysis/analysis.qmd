@@ -32,10 +32,9 @@ palette_mar_growth <- c(
   "plateau"  = "navy"
 )
 
-palette_base_regime <- c(
-  "hypodescent"  = "goldenrod",  
-  "hyperdescent" = "royalblue",  
-  "immigration"  = "maroon"   
+palette_pop_share <- c(
+  "even"  = "goldenrod",  
+  "uneven" = "royalblue"
 )
 
 palette_group <- c(
@@ -59,11 +58,7 @@ palette_gen <- c(
 sims_pop <- sims_pop |>
   mutate(
     group = factor(group, levels = 1:3, labels = c("A", "B", "AB")),
-    base_regime = factor(
-      base_regime, 
-      levels = c("hypo", "hyper", "immig"),
-      labels = c("hypodescent", "hyperdescent", "immigration")
-    ),
+    pop_share = factor(pop_share, levels = c("even", "uneven")),
     scenario = str_replace(scenario, "_", " peak, "),
     scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
     scenario = factor(
@@ -157,13 +152,13 @@ calculate_probs <- function(scenario_name) {
 }
 
 gs4_deauth()
-probs_high_resilient <- calculate_probs("hypo_progress_high_resilient") |>
+probs_high_resilient <- calculate_probs("even_progress_high_resilient") |>
   mutate(peak = "high", decline = "resilient")
-probs_low_resilient <- calculate_probs("hypo_progress_low_resilient") |>
+probs_low_resilient <- calculate_probs("even_progress_low_resilient") |>
   mutate(peak = "low", decline = "resilient")
-probs_high_decay <- calculate_probs("hypo_progress_high_decay") |>
+probs_high_decay <- calculate_probs("even_progress_high_decay") |>
   mutate(peak = "high", decline = "decay")
-probs_low_decay <- calculate_probs("hypo_progress_low_decay") |>
+probs_low_decay <- calculate_probs("even_progress_low_decay") |>
   mutate(peak = "low", decline = "decay")
 
 probs_high_resilient |>
@@ -189,17 +184,17 @@ In addition to these four scenarios, we also considered an "absorbing state" cas
 #| label: count-pop-group
 #| message: false
 
-total_pop_group <- map(300:450, function(x) {
+total_pop_group <- map(300:500, function(x) {
   sims_pop |>
     get_pop_alive(x) |>
-    group_by(group, base_regime, mar_growth, scenario) |>
+    group_by(group, pop_share, mar_growth, scenario) |>
     summarize(year = x, population = n()) |>
     ungroup()
 }) |>
   bind_rows()
 
 total_pop <- total_pop_group |>
-  group_by(year, base_regime, mar_growth, scenario) |>
+  group_by(year, pop_share, mar_growth, scenario) |>
   summarize(population = sum(population))
 
 # add share to pop by group
@@ -207,7 +202,7 @@ total_pop_group <- total_pop |>
   rename(pop_total = population) |>
   right_join(total_pop_group) |>
   mutate(share = population / pop_total) |>
-  select(year, group, base_regime, mar_growth, scenario, population, share)
+  select(year, group, pop_share, mar_growth, scenario, population, share)
 ```
 
 ```{r}
@@ -218,7 +213,7 @@ total_pop_group |>
   filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
   geom_line(linewidth = 1, alpha = 0.7)+
-  facet_grid(base_regime~mar_growth)+
+  facet_grid(pop_share~mar_growth)+
   scale_y_continuous(labels = scales::percent)+
   scale_color_manual(values = palette_scenario)+
   labs(y = "share of population identifying as biracial",
@@ -234,7 +229,7 @@ total_pop_group |>
   filter(group == "AB") |>
   ggplot(aes(x = year, y = share, group = mar_growth, color = mar_growth))+
   geom_line(linewidth = 1, alpha = 0.6)+
-  facet_grid(base_regime~scenario)+
+  facet_grid(pop_share~scenario)+
   scale_y_continuous(labels = scales::percent)+
   scale_color_manual(values = palette_mar_growth)+
   labs(y = "share of population identifying as biracial", 
@@ -248,11 +243,11 @@ total_pop_group |>
 
 total_pop_group |>
   filter(group == "AB") |>
-  ggplot(aes(x = year, y = share, group = base_regime, color = base_regime))+
+  ggplot(aes(x = year, y = share, group = pop_share, color = pop_share))+
   geom_line(linewidth = 1, alpha = 0.6)+
   facet_grid(mar_growth~scenario)+
   scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_base_regime)+
+  scale_color_manual(values = palette_pop_share)+
   labs(y = "share of population identifying as biracial",
        color = "baseline\nregime")+
   theme_bw()
@@ -267,12 +262,12 @@ total_pop_group |>
 sims_pop |>
   filter(dob >= 200) |>
   mutate(year = floor(dob)) |>
-  group_by(year, base_regime, mar_growth, scenario) |>
+  group_by(year, pop_share, mar_growth, scenario) |>
   summarize(gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
   ggplot(aes(x = year, y = gen_locus, group = scenario, color = scenario))+
   geom_vline(xintercept = 300, linetype = 2)+
   geom_smooth(se = FALSE, alpha = 0.6)+
-  facet_grid(base_regime~mar_growth)+
+  facet_grid(pop_share~mar_growth)+
   scale_color_manual(values = palette_scenario)+
   labs(y = "mean generational locus", 
        color = "classification\nscenario")+
@@ -284,7 +279,7 @@ sims_pop |>
 #| label: calculate-decade-stats
 sims_summary_ancestry <- sims_pop |>
   mutate(year = floor(dob)) |>
-  group_by(year, mar_growth, base_regime, scenario, group) |>
+  group_by(year, mar_growth, pop_share, scenario, group) |>
   summarize(nearest_gen_locus = mean(nearest_gen_locus, na.rm = TRUE),
             mixedness = mean(mixedness)) |>
   ungroup()
@@ -296,11 +291,11 @@ sims_summary_ancestry <- sims_pop |>
 
 sims_summary_ancestry |>
   filter(year >= 300 & group == "AB") |>
-  group_by(year, base_regime, mar_growth, scenario) |>
+  group_by(year, pop_share, mar_growth, scenario) |>
   summarize(gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
   ggplot(aes(x = year, y = gen_locus, group = scenario, color = scenario))+
   geom_smooth(se = FALSE)+
-  facet_grid(base_regime~mar_growth)+
+  facet_grid(pop_share~mar_growth)+
   scale_color_manual(values = palette_scenario)+
   labs(x = "year of birth",
        y = "mean generational locus",
@@ -315,12 +310,11 @@ sims_summary_ancestry |>
 #| fig-cap: Mean generational locus for individuals by year of birth and group. Results are smoothed using a loess smoother.
 #| layout-ncol: 1
 #| fig-subcap:
-#|   - Hypodescent regime
-#|   - Hyperdescent regime
-#|   - Immigration regime
+#|   - Even population share
+#|   - Uneven population share
 
 sims_summary_ancestry |>
-  filter(base_regime == "hypodescent" & year >= 300) |>
+  filter(pop_share == "even" & year >= 300) |>
   ggplot(aes(x = year,  y = nearest_gen_locus, group = group, color = group))+
   geom_smooth(se = FALSE)+
   facet_grid(mar_growth~scenario)+
@@ -330,17 +324,7 @@ sims_summary_ancestry |>
   theme_bw()
 
 sims_summary_ancestry |>
-  filter(base_regime == "hyperdescent" & year >= 300) |>
-  ggplot(aes(x = year,  y = nearest_gen_locus, group = group, color = group))+
-  geom_smooth(se = FALSE)+
-  facet_grid(mar_growth~scenario)+
-  scale_color_manual(values = palette_group)+
-  labs(x = "year of birth", 
-       y = "mean nearest generational locus")+
-  theme_bw()
-
-sims_summary_ancestry |>
-  filter(base_regime == "immigration" & year >= 300) |>
+  filter(pop_share == "uneven" & year >= 300) |>
   ggplot(aes(x = year,  y = nearest_gen_locus, group = group, color = group))+
   geom_smooth(se = FALSE)+
   facet_grid(mar_growth~scenario)+
@@ -357,14 +341,14 @@ sims_summary_ancestry |>
 #| fig-cap: Mean mixedness for individuals by year of birth and group. Results are smoothed using a loess smoother.
 #| layout-ncol: 1
 #| fig-subcap:
-#|   - Hypodescent regime
-#|   - Hyperdescent regime
-#|   - Immigration regime
+#|   - Even population share
+#|   - Uneven population share
 
 sims_summary_ancestry |>
-  filter(base_regime == "hypodescent" & year >= 300) |>
+  filter(pop_share == "even" & year >= 300) |>
   ggplot(aes(x = year,  y = mixedness, group = group, color = group))+
-  geom_smooth(se = FALSE)+
+  geom_line()+
+  #geom_smooth(se = FALSE)+
   facet_grid(mar_growth~scenario)+
   scale_color_manual(values = palette_group)+
   labs(x = "year of birth", 
@@ -372,19 +356,9 @@ sims_summary_ancestry |>
   theme_bw()
 
 sims_summary_ancestry |>
-  filter(base_regime == "hyperdescent" & year >= 300) |>
+  filter(pop_share == "uneven" & year >= 300) |>
   ggplot(aes(x = year,  y = mixedness, group = group, color = group))+
-  geom_smooth(se = FALSE)+
-  facet_grid(mar_growth~scenario)+
-  scale_color_manual(values = palette_group)+
-  labs(x = "year of birth", 
-       y = "mean mixedness")+
-  theme_bw()
-
-sims_summary_ancestry |>
-  filter(base_regime == "immigration" & year >= 300) |>
-  ggplot(aes(x = year,  y = mixedness, group = group, color = group))+
-  geom_smooth(se = FALSE)+
+  geom_line()+
   facet_grid(mar_growth~scenario)+
   scale_color_manual(values = palette_group)+
   labs(x = "year of birth", 
@@ -397,7 +371,7 @@ sims_summary_ancestry |>
 #| label: calc-gen-share
 
 gen_share <- sims_pop |>
-  group_by(mar_growth, base_regime, scenario, decade_birth) |>
+  group_by(mar_growth, pop_share, scenario, dob) |>
   summarize(n = n(),
             punmixed = sum(is.na(nearest_gen_locus)) / n, 
             p1 = sum(nearest_gen_locus == 1, na.rm = TRUE) / n,
@@ -405,69 +379,27 @@ gen_share <- sims_pop |>
             p3 = sum(nearest_gen_locus == 3, na.rm = TRUE) / n,
             p4plus = sum(nearest_gen_locus >= 4, na.rm = TRUE) / n) |>
   ungroup() |>
-  select(mar_growth, base_regime, scenario, decade_birth, starts_with("p")) |>
-  pivot_longer(cols = starts_with("p"), names_to = "gen", values_to = "prop") |>
+  select(mar_growth, pop_share, scenario, dob, starts_with("p")) |>
+  pivot_longer(cols = c(punmixed, p1, p2, p3, p4plus), 
+               names_to = "gen", values_to = "prop") |>
   mutate(gen = factor(gen, levels = c("p1", "p2", "p3", "p4plus", "punmixed"),
                         labels = c("1st gen", "2nd gen", "3rd gen", 
                                    "4th+ gen", "Unmixed")))
-```
-
-```{r}
-#| label: fig-nearest-locus-trend-hypo
-#| fig-cap: Share of each generational locus over time (in decade groups), in scenarios using a hypodescent baseline regime. 
 
 gen_share |>
-  filter(decade_birth >= 300) |>
-  filter(gen != "4th+ gen" & gen != "Unmixed") |>
-  filter(base_regime == "hypodescent") |>
-  ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
-  geom_line(linewidth = 1, alpha = 0.9)+
-  facet_grid(mar_growth ~ scenario)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_gen)+
-  labs(x = "year of birth (at decade intervals)", 
-       y = "share of population",
-       color = "generational\nlocus")+
+  filter(pop_share == "even" & dob > 300) |>
+  ggplot(aes(x = dob, y = prop, color = gen, group = gen))+
+  geom_smooth(se = FALSE)+
+  facet_grid(mar_growth~scenario)+
   theme_bw()
-```
-
-```{r}
-#| label: fig-nearest-locus-trend-hyper
-#| fig-cap: Share of each generational locus over time (in decade groups), in scenarios using a hyperdescent baseline regime
 
 gen_share |>
-  filter(decade_birth >= 300) |>
-  filter(gen != "4th+ gen" & gen != "Unmixed") |>
-  filter(base_regime == "hyperdescent") |>
-  ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
-  geom_line(linewidth = 1, alpha = 0.9)+
-  facet_grid(mar_growth ~ scenario)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_gen)+
-  labs(x = "year of birth (at decade intervals)", 
-       y = "share of population",
-       color = "generational\nlocus")+
-  theme_bw()
+  filter(pop_share == "uneven" & dob > 300) |>
+  ggplot(aes(x = dob, y = prop, color = gen, group = gen))+
+  geom_smooth(se = FALSE)+
+  facet_grid(mar_growth~scenario)+theme_bw()
 ```
 
-```{r}
-#| label: fig-nearest-locus-trend-immig
-#| fig-cap: Share of each generational locus over time (in decade groups), in scenarios using an immigraiton baseline regime
-
-gen_share |>
-  filter(decade_birth >= 300) |>
-  filter(gen != "4th+ gen" & gen != "Unmixed") |>
-  filter(base_regime == "immigration") |>
-  ggplot(aes(x = decade_birth, y = prop, group = gen, color = gen))+
-  geom_line(linewidth = 1, alpha = 0.9)+
-  facet_grid(mar_growth ~ scenario)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_gen)+
-  labs(x = "year of birth (at decade intervals)", 
-       y = "share of population",
-       color = "generational\nlocus")+
-  theme_bw()
-```
 
 
 

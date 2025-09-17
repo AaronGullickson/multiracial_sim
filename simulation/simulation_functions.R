@@ -80,25 +80,36 @@ run_simulation <- function(sim_name,
     
   ## file management ##
   
+  sim_folder <- here(base_folder, sim_name)
+
   # set up the directory for output 
-  if(dir_exists(here(base_folder, sim_name))) {
-    dir_delete(here(base_folder, sim_name))
+  if(dir_exists(sim_folder)) {
+    dir_delete(sim_folder)
+    dir_create(sim_folder)
+  } else {
+    dir_create(sim_folder)
   }
-  
-  folder <- create_simulation_folder(simulation_name = sim_name, 
-                                     basefolder = base_folder)
-  
+
   # presim files
-  write.table(pop_start, here(folder, "presim.opop"), 
+  write.table(pop_start, here(sim_folder, "presim.opop"), 
               row.names = F, col.names = F)
-  write.table(mar, here(folder, "presim.omar"), 
+  write.table(mar, here(sim_folder, "presim.omar"), 
               row.names = F, col.names = F)
   
   # create rate file
   file_copy(here("simulation", "parameter_files", "basic_rates"), 
-            here(folder, "basic_rates"))
+            here(sim_folder, "basic_rates"))
   # add fertility rates
-  create_fertility_rates(here(folder, "basic_rates"), fert_multiplier)
+  create_fertility_rates(here(sim_folder, "basic_rates"), fert_multiplier)
+  
+  # add sup file
+  file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
+            here(sim_folder, "run.sup"))
+  
+  # pathways to results
+  result_folder <- here(sim_folder, paste0("sim_results_", seed, "_"))
+  result_opop <- here(result_folder, "result.opop")
+  result_omar <- here(result_folder, "result.omar")
   
   ## start the sim ##
   for(i in 1:nrow(segment_df)) {
@@ -114,30 +125,25 @@ run_simulation <- function(sim_name,
       select(starts_with("lodds")) |>
       unlist(use.names = TRUE)
     
+    # iterate through one year at a time
     year <- 0
     while(year < segment_df$segment_length[i]) {
-      # update sup file
-      file_copy(here("simulation", "parameter_files", "group2_stub.sup"), 
-                here(folder, "run.sup"), overwrite = TRUE)
-      cat("\nduration", 12, "\n", file = here(folder, "run.sup"),
-      append = TRUE)
-      cat("include basic_rates\n", file = here(folder, "run.sup"),
-          append = TRUE)
-      cat("run\n", file = here(folder, "run.sup"),
-          append = TRUE)
       
       # update final month, we always go one year at a time
       month <- month + 12
       
       # run the simulation - future is needed not to screw up other sims without
-      # restarting R
-      socsim(folder, "run.sup", seed = seed, process_method = "future")
+      # restarting R.
+      socsim(sim_folder, "run.sup", seed = seed, process_method = "future")
       
-      # get the new pop and mar data
-      pop <- rsocsim::read_opop(folder, "run.sup", seed) |> 
-        as_tibble()
-      mar <- rsocsim::read_omar(folder, "run.sup", seed) |>
-        as_tibble()
+      # get the new pop and mar data - be sure to make sure simulation is 
+      # done before proceeding
+      wait_for_file(result_opop)
+      wait_for_file(result_omar)
+      pop <- read_opop(fn = result_opop) |> as_tibble()
+      mar <- read_omar(fn = result_omar) |> as_tibble()
+      # now remove the result folder to avoid artifacts
+      dir_delete(result_folder)
       
       # find the new kids and measure their ancestry, group, etc.
       new_kids <- calculate_ancestry(pop, ancestry, inheritance)
@@ -162,9 +168,9 @@ run_simulation <- function(sim_name,
       pop$mstat[new_marriages$hpid] <- 4
       
       # make the result of last run the new presim
-      write.table(pop, here(folder, "presim.opop"), 
+      write.table(pop, here(sim_folder, "presim.opop"), 
                   row.names = F, col.names = F)
-      write.table(mar, here(folder, "presim.omar"), 
+      write.table(mar, here(sim_folder, "presim.omar"), 
                   row.names = F, col.names = F)
       
       year <- year + 1
@@ -172,9 +178,9 @@ run_simulation <- function(sim_name,
   }
   
   # write out final results
-  write_csv(pop, here(folder, "final_pop.csv"))
-  write_csv(mar, here(folder, "final_mar.csv"))
-  write_csv(ancestry, here(folder, "ancestry.csv"))
+  write_csv(pop, here(sim_folder, "final_pop.csv"))
+  write_csv(mar, here(sim_folder, "final_mar.csv"))
+  write_csv(ancestry, here(sim_folder, "ancestry.csv"))
   
 }
 
@@ -230,8 +236,8 @@ get_married <- function(pop, lodds, month_current, mid_max) {
     select(dad, gmom_frat, gdad_frat)
   
   singles <- singles |>
-    left_join(maternal) |>
-    left_join(fraternal)
+    left_join(maternal, by = "mom") |>
+    left_join(fraternal, by = "dad")
   
   # break singles into men and women - restrict age a little differently
   # for each group
@@ -364,8 +370,8 @@ calculate_ancestry <- function(pop,
   
   # create the new_kids object for all kids with group == 3
   new_kids <- pop |> filter(group == 4) |>
-    left_join(moms) |>
-    left_join(dads) |>
+    left_join(moms, by = "mom") |>
+    left_join(dads, by = "pop") |>
     select(pid, 
            starts_with("group"), 
            starts_with("ancestry"), 
@@ -521,4 +527,36 @@ create_new_simulation <- function(sheet_id,
                              range = paste(sim_name, "A7", sep="!"),
                              col_names = FALSE)
   
+}
+
+# with future in use, its possible to start reading the file before the 
+# sim is done, so we set up a function to check that the file is done writing
+# by checking that its size is not going up anymore
+wait_for_file <- function(filepath, timeout = 60, stable_wait = 0.5) {
+  start_time <- Sys.time()
+  last_size <- -1
+  stable_count <- 0
+  
+  repeat {
+    if (file.exists(filepath)) {
+      current_size <- file.info(filepath)$size
+      if (!is.na(current_size) && current_size > 0) {
+        # If stable for two consecutive checks, consider it done
+        if (current_size == last_size) {
+          stable_count <- stable_count + 1
+        } else {
+          stable_count <- 0
+        }
+        last_size <- current_size
+        
+        if (stable_count >= 2) break
+      }
+    }
+    
+    if (as.numeric(Sys.time() - start_time, units = "secs") > timeout) {
+      stop("Timeout waiting for file: ", filepath)
+    }
+    
+    Sys.sleep(stable_wait)
+  }
 }
