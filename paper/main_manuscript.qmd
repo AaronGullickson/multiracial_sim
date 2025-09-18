@@ -10,6 +10,7 @@ csl: ../bibliography/chicago-parenthetical.csl
 format:
   aog-article-pdf:
     keep-tex: false
+    fig-pos: "h"
     include-in-header: 
       text: |
         \usepackage{dcolumn}
@@ -111,18 +112,18 @@ total_pop_group <- total_pop |>
 
 {{< include main_manuscript.md >}}
 
+# References
+
+::: {#refs}
+:::
+
+# Tables and Figures
 
 ```{r}
 #| label: fig-scenarios
 #| fig-cap: Four different group assignment scenarios for individuals of mixed parentage as a function of the proportion of their group A ancestry
-#| fig-subcap:
-#|    - "High peak, resilient"
-#|    - "High peak, decay"
-#|    - "Low peak, resilient"
-#|    - "Low peak, decay"
-#| layout-ncol: 2
 
-plot_group_probs <- function(a_param, b_param) {
+get_group_probs <- function(a_param, b_param) {
   
   prop_a <- seq(from = 0.005, to = 0.995, by = 0.005)
 
@@ -137,30 +138,40 @@ plot_group_probs <- function(a_param, b_param) {
     pivot_longer(cols = starts_with("prob_"), names_prefix = "prob_",
                  names_to = "group", values_to = "prob") |>
     mutate(group = str_to_upper(group),
-           group = factor(group, levels = c("A", "B", "AB"))) |>
-    ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
-    geom_line(size = 1)+
-    scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
-    labs(x = "proportion group A ancestry", 
-         y = "probability of group assignment")+
-    theme_bw()
+           group = factor(group, levels = c("A", "B", "AB")))
 }
 
 # high resilient
-plot_group_probs(a_param = c(-4.132, 6.113, -4.924, 3.713),
-                 b_param = c(0.881, -8.661, 9.544, -6.34))
+gp_hr <- get_group_probs(a_param = c(-4.132, 6.113, -4.924, 3.713),
+                         b_param = c(0.881, -8.661, 9.544, -6.34)) |>
+  mutate(scenario_peak = "high peak", scenario_decline = "resilient")
 
 # high decay
-plot_group_probs(a_param = c(-0.085, -15.448, 30.642, -12.46),
-                 b_param = c(2.412, -6.265, -12.038, 16.068))
+gp_hd <- get_group_probs(a_param = c(-0.085, -15.448, 30.642, -12.46),
+                 b_param = c(2.412, -6.265, -12.038, 16.068)) |>
+  mutate(scenario_peak = "high peak", scenario_decline = "decay")
 
 # low resilient
-plot_group_probs(a_param = c(-3.562, 9.362, -7.244, 2.776),
-                 b_param = c(1.269, -2.795, 0.214, -2.142))
+gp_lr <- get_group_probs(a_param = c(-3.562, 9.362, -7.244, 2.776),
+                 b_param = c(1.269, -2.795, 0.214, -2.142)) |>
+  mutate(scenario_peak = "low peak", scenario_decline = "resilient")
 
 # low decay
-plot_group_probs(a_param = c(-0.65, -4.209, 11.594, -3.497),
-                 b_param = c(2.956, -5.734, -5.348, 7.796))
+gp_ld <- get_group_probs(a_param = c(-0.65, -4.209, 11.594, -3.497),
+                 b_param = c(2.956, -5.734, -5.348, 7.796)) |>
+  mutate(scenario_peak = "low peak", scenario_decline = "decay")
+
+bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
+  mutate(scenario_decline = factor(scenario_decline, 
+                                   levels = c("resilient", "decay"))) |>
+  ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
+  geom_line(size = 1)+
+  facet_grid(scenario_decline~scenario_peak)+
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  scale_color_manual(values = palette_group)+
+  labs(x = "proportion group A ancestry", 
+       y = "probability of group assignment")+
+  theme_bw()
 ```
 
 
