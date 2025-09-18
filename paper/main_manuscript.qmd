@@ -245,6 +245,7 @@ ancestry_prop |>
   geom_line()+
   facet_grid(mar_growth~scenario)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_group)+
   labs(x = "year of birth", y = "mean shar of group A ancestry")+
   theme_bw()
 
@@ -255,6 +256,7 @@ ancestry_prop |>
   geom_line()+
   facet_grid(mar_growth~scenario)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_group)+
   labs(x = "year of birth", y = "mean share of group A ancestry")+
   theme_bw()
 
@@ -265,6 +267,7 @@ ancestry_prop |>
   geom_line()+
   facet_grid(mar_growth~scenario)+  
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_group)+
   labs(x = "year of birth", y = "mean share of group B ancestry")+
   theme_bw()
 
@@ -275,6 +278,7 @@ ancestry_prop |>
   geom_line()+
   facet_grid(mar_growth~scenario)+
   scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_group)+
   labs(x = "year of birth", y = "mean share of group B ancestry")+
   theme_bw()
 ```
