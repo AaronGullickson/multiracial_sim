@@ -28,6 +28,85 @@ format:
 library(here)
 source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
+load(here("data", "data_constructed", "analytical_data.RData"))
+```
+
+```{r}
+#| label: set-palettes
+
+palette_scenario <- c(
+  "absorbing state"       = "goldenrod",   
+  "high peak, resilient"  = "royalblue",   
+  "high peak, decay"      = "navy",   
+  "low peak, resilient"   = "coral",  
+  "low peak, decay"       = "orangered"    
+)
+
+palette_mar_growth <- c(
+  "progress" = "tomato",
+  "plateau"  = "navy"
+)
+
+palette_pop_share <- c(
+  "even"  = "goldenrod",  
+  "uneven" = "royalblue"
+)
+
+palette_group <- c(
+  "A"  = "navy",
+  "B"  = "tomato",
+  "AB" = "gold"
+)
+
+palette_gen <- c(
+  "1st gen"  = "tomato",
+  "2nd gen"  = "darkgreen",
+  "3rd gen"  = "navy",
+  "4th+ gen" = "gold",
+  "Unmixed"  = "grey30"
+)
+```
+
+
+```{r}
+#| label: clean-up-labels
+
+sims_pop <- sims_pop |>
+  mutate(
+    group = factor(group, levels = 1:3, labels = c("A", "B", "AB")),
+    pop_share = factor(pop_share, levels = c("uneven", "even"), 
+                       labels = c("uneven (85/15)", "even (50/50)")),
+    scenario = str_replace(scenario, "_", " peak, "),
+    scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
+    scenario = factor(
+      scenario,
+      levels = c("absorbing state", "high peak, resilient", "high peak, decay",
+                 "low peak, resilient", "low peak, decay")))
+```
+
+```{r}
+#| label: count-pop-group
+#| include: false
+
+total_pop_group <- map(300:500, function(x) {
+  sims_pop |>
+    get_pop_alive(x) |>
+    group_by(group, pop_share, mar_growth, scenario) |>
+    summarize(year = x, population = n()) |>
+    ungroup()
+}) |>
+  bind_rows()
+
+total_pop <- total_pop_group |>
+  group_by(year, pop_share, mar_growth, scenario) |>
+  summarize(population = sum(population))
+
+# add share to pop by group
+total_pop_group <- total_pop |>
+  rename(pop_total = population) |>
+  right_join(total_pop_group) |>
+  mutate(share = population / pop_total) |>
+  select(year, group, pop_share, mar_growth, scenario, population, share)
 ```
 
 {{< include main_manuscript.md >}}
@@ -82,4 +161,120 @@ plot_group_probs(a_param = c(-3.562, 9.362, -7.244, 2.776),
 # low decay
 plot_group_probs(a_param = c(-0.65, -4.209, 11.594, -3.497),
                  b_param = c(2.956, -5.734, -5.348, 7.796))
+```
+
+
+```{r}
+#| label: fig-biracial-pop-scenario
+#| fig-cap: The percent of the population identified as biracial (AB), across different scenarios
+
+total_pop_group |>
+  filter(group == "AB") |>
+  ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
+  geom_line(linewidth = 1, alpha = 0.7)+
+  facet_grid(pop_share~mar_growth)+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_scenario)+
+  labs(y = "share of population identifying as biracial",
+       color = "classification\nscenario")+
+  theme_bw()
+```
+
+
+```{r}
+#| label: fig-biracial-share-scenario
+#| fig-cap: The size of the biracial population at the conclusion of the simulation as a fraction of the absorbing state scenario
+
+total_pop_group |>
+  filter(scenario == "absorbing state") |>
+  rename(share_absorbing = share) |>
+  select(year, group, pop_share, mar_growth, share_absorbing) |>
+  right_join(total_pop_group, 
+             by = c("year", "group", "pop_share", "mar_growth")) |>
+  mutate(prop_absorb = share/share_absorbing) |>
+  filter(group == "AB", year == 500, scenario != "absorbing state") |>
+  ggplot(aes(x = scenario, y = prop_absorb))+
+  geom_segment(aes(yend = 0))+
+  geom_point()+
+  facet_grid(pop_share~mar_growth)+
+  coord_flip()+
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  labs(y = "Size of biracial (AB) population as fraction of absorbing state scenario",
+       x = NULL)+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-group-dist
+#| fig-cap: The distribution of groups over time, across different classification scenarios. All cases use the "progress" scenario for intergroup partnering.
+#| fig-height: 7
+
+total_pop_group |>
+  filter(mar_growth == "progress") |>
+  ggplot(aes(x = year, y = share, fill = group))+
+  facet_grid(scenario~pop_share)+
+  geom_area(color = NA)+
+  scale_fill_manual(values = palette_group)+
+  scale_y_continuous(labels = scales::percent)+
+  theme_bw()+
+  theme(panel.grid = element_blank(), panel.grid.major.x = element_blank())
+          
+```
+
+```{r}
+#| label: fig-ancestry-share
+#| fig-cap: Mean proportion of Group A and B ancestry by identified group among new births over time
+#| fig-subcap:
+#|    - "Uneven (85/15), Group A"
+#|    - "Even (50/50), Group A"
+#|    - "Uneven (85/15), Group B"
+#|    - "Even (50/50), Group B"
+#| layout-ncol: 2
+
+ancestry_prop <- sims_pop |>
+  filter(dob >= 300) |>
+  mutate(year = floor(dob)) |>
+  group_by(year, group, pop_share, mar_growth, scenario) |>
+  summarize(prop_a = mean(ancestry_group1),
+            prop_b = mean(ancestry_group2))
+
+ancestry_prop |>
+  filter(pop_share == "uneven (85/15)" & scenario != "absorbing state") |>
+  ggplot(aes(x = year, y = prop_a, group = group, color = group))+
+  geom_hline(yintercept = 0.85, linetype = 2)+
+  geom_line()+
+  facet_grid(mar_growth~scenario)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth", y = "mean shar of group A ancestry")+
+  theme_bw()
+
+ancestry_prop |>
+  filter(pop_share == "even (50/50)", scenario != "absorbing state") |>
+  ggplot(aes(x = year, y = prop_a, group = group, color = group))+
+  geom_hline(yintercept = 0.5, linetype = 2)+
+  geom_line()+
+  facet_grid(mar_growth~scenario)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth", y = "mean share of group A ancestry")+
+  theme_bw()
+
+ancestry_prop |>
+  filter(pop_share == "uneven (85/15)", scenario != "absorbing state") |>
+  ggplot(aes(x = year, y = prop_b, group = group, color = group))+
+  geom_hline(yintercept = 0.15, linetype = 2)+
+  geom_line()+
+  facet_grid(mar_growth~scenario)+  
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth", y = "mean share of group B ancestry")+
+  theme_bw()
+
+ancestry_prop |>
+  filter(pop_share == "even (50/50)", scenario != "absorbing state") |>
+  ggplot(aes(x = year, y = prop_b, group = group, color = group))+
+  geom_hline(yintercept = 0.5, linetype = 2)+
+  geom_line()+
+  facet_grid(mar_growth~scenario)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(x = "year of birth", y = "mean share of group B ancestry")+
+  theme_bw()
 ```
