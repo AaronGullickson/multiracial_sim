@@ -42,6 +42,28 @@ organize_sim_pop_data <- function(sim_name) {
 
   return(pop)
 }
+
+organize_sim_mar_data <- function(sim_name) {
+  
+  sim_folder = here("data", "data_constructed", "sims", sim_name)
+  
+  if(!dir_exists(sim_folder)) {
+     return(NULL)
+  }
+  
+  pop <- read_csv(here(sim_folder, "final_pop.csv"))
+  mar <- read_csv(here(sim_folder, "final_mar.csv"))
+  ancestry <- read_csv(here(sim_folder, "ancestry.csv"))
+  
+  pop <- code_population(pop, ancestry)
+  mar <- get_marriages(pop, mar) |>
+    mutate(pop_share = str_split_i(sim_name, "_", 1),
+           mar_growth = str_split_i(sim_name, "_", 2),
+           scenario = paste(str_split_i(sim_name, "_", 3), 
+                            str_split_i(sim_name, "_", 4),
+                            sep = "_"))
+}
+
 ```
 
 
@@ -99,7 +121,7 @@ intermar <- calculate_lor(mar) |>
 ```
 
 ```{r}
-#| label: get-all-sims
+#| label: get-all-sim-pops
 #| output: false
 
 sim_names <- googlesheets4::sheet_names(sheet_id)
@@ -111,10 +133,23 @@ sims_pop <- map(sim_names, organize_sim_pop_data) |>
   bind_rows()
 ```
 
+```{r}
+#| label: get-all-sim-mars
+#| output: false
+
+sim_names <- googlesheets4::sheet_names(sheet_id)
+sim_names <- sim_names[!str_detect(sim_names, "IGNORE$") & 
+                         !str_detect(sim_names, "benchmark$") &
+                         !str_detect(sim_names, "baseline$")]
+
+sims_mar <- map(sim_names, organize_sim_mar_data) |>
+  bind_rows()
+```
+
 
 ```{r}
 #| label: save-data
 
-save(sims_pop, 
+save(sims_pop, sims_mar,
      file = here("data", "data_constructed", "analytical_data.RData"))
 ```
