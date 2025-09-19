@@ -27,7 +27,7 @@ SOCSIM includes the ability to simulate multigroup populations. However, the exi
 
 Our procedure for partnering individuals uses a conditional logit model approach [@gullickson_counterfactual_2021]. For every single woman <!-- TODO: add the age limit here -->, we choose up to fifty potential single male partners who do not share any of the same grandparents.^[Because the focus of our simulation is on the intergenerational inheritance of group ancestry, we only model heterosexual partnerships.] We score each potential union using a log-odds model that accounts for the age difference between the partners and whether the potential union involves an intergroup partnership. The parameters for intergroup partnership allow us to control the frequency of intergroup partnership within the simulation. 
 
-The actual match is chosen randomly with weights that correspond to the log-odds score of each potential match. If multiple woman select the same male partner, the actual match is chosen randomly. We also allow for the potential that a woman will forego a union in a given year if there are relatively few high scoring potential matches available. We confirm that the actual patterns of group partnership match the expectations of our input model and produce similar distributions of age at marriage across group endogamous and exogamous unions. Further details on the approach are available in the supplementary appendix. 
+The actual match is chosen randomly with weights that correspond to the log-odds score of each potential match. If multiple woman select the same male partner, the actual match is chosen randomly. We also allow for the potential that a woman will forego a union in a given year if there are relatively few high scoring potential matches available. We confirm that the actual patterns of group partnership match the expectations of our input model and produce similar distributions of age at partnering across group endogamous and exogamous unions. Further details on the approach are available in the supplementary appendix. 
 
 In terms of partnering, we do not distinguish marriages from extra-marital types of unions. However, to reduce overall complexity of the simulation, we do not model union dissolution. Therefore, once  partnered, individuals remain partnered until one partner dies. Although this is an unrealistic assumption for modern populations, modeling union dissolution would add substantial complexity with little benefit to our goals. The one limitation of not modeling union dissolution is that we underestimate the intergroup diversity of nuclear and extended family networks. However, this diversity is not the focus of our simulation. 
 
@@ -45,7 +45,7 @@ We also ignore the potential for *intragenerational* group switching. Research o
 
 ## Scenarios
 
-We develop a total of twenty simulations along three different dimensions: the initial relative size of groups, the degree of intergroup marriage over time, and the pattern of group assignment.
+We develop a total of twenty simulations along three different dimensions: the initial relative size of groups, the degree of intergroup partnering over time, and the pattern of group assignment.
 
 ### Initial group size
 
@@ -53,13 +53,15 @@ Since most empirical cases of multiethnic populations will involve majority-mino
 
 To understand better how relative group size might affect the intergroup dynamics we are studying, we also run a second set of scenarios in which Groups A and B are of equal size.
 
-### Intermarriage rates
+### Intergroup partnering
 
-We create two different scenarios for intermarriage rates. In both cases, the initial period is loosely modeled on intermarriage patterns in the US from the 1960s, when intermarriage rates began to increase exponentially from an extremely rare baseline. We also found that the $\alpha$ parameters below are equal to half the cross-product odds ratios that are often used to measure intermarriage. We set the initial baseline for A-B intermarriage at $\alpha = -5$. We then allow for a "progress" trend in which this the $\alpha$ parameter is reduced linearly to zero over the next 100 years at which point it remains constant. Because this measure is on the log-scale, this approach indicates exponential growth in intermarriage until exogamy is as likely as endogamy (accounting for group size).
+We create two different scenarios for the frequency of intergroup partnering. In both cases, the initial period is loosely modeled on intermarriage patterns in the US from the 1960s, when intermarriage rates began to increase exponentially from an extremely rare baseline. We set the initial baseline for A-B partnering to a log-odds ratio of -5, which makes intergroup partnering extremely rare.^[The log odds ratios used here come from a conditional logit model and are equal to half of what one would expect from the log odds ratios computed as a cross-product of husband by wife's race.] We then allow for a "progress" trend in which this log-odds ratio is reduced linearly to zero over the next 100 years, at which point it remains constant. This scenario implies exponential growth in intergroup partnering until exogamy is as likely as endogamy, accounting for group size differences. This scenario matches a more "post-racial" vision of intergroup dynamics in which the barriers to intergroup partnering are completely removed. 
 
-The second scenario is a "plateau" trend in which $\alpha$ is cut in half after 25 years and then remains constant. In this scenario, the barriers to intermarriage are substantially reduced but exogamy remains rarer than endogamy. 
+The second scenario is a "plateau" trend in which the log-odds ratio is cut in half after 25 years and then remains constant. Like the progress scenario, this scenario implies exponential growth in intergroup partnering initially. However, it assumes that that intergroup partnering will still remain less common than intragroup partnering. This difference could result from a variety of real world issues such as residential segregation, cultural differences, etc.
 
-In both scenarios, we set the A-AB and B-AB $\alpha$ values to be equal to half the A-B $\alpha$ values, with the assumption that these types of intergroup unions will be easier to cross, since they involve both some degree of endogamy and exogamy. <!-- We can cite Gullickson and Bratter soon hopefully on this one -->
+<!-- TODO: we could estimate lors and outmarriage rates empirically across scenarios and show them here --> 
+
+In both scenarios, we set the A-AB and B-AB log-odds ratios to be equal to half the A-B values in each year. Such unions involve both some degree of exogamy and endogamy, and we therefore assume that they will be more frequent than A-B partnering. <!-- We can cite Gullickson and Bratter soon hopefully on this one -->
 
 ### Group assignment
 
@@ -71,7 +73,7 @@ In the remaining scenarios, we model group assignment as a function of the propo
 
 In developing these scenarios, we rely on the scant empirical data on how high or low these probabilities are likely to be.  In particular, @morning_generational_2018b and @xu_gender_2021b both estimate the probability of multiracial identification by the generational loci of multiraciality from data collected by the Pew Research Center. Both studies indicate that the highest values for multiracial identification among first generation individuals is around 70-80%, while most values tend to cluster around 40% or less. @xu_gender_2021b at all show that, with the exception of individuals of Latino ancestry, these probabilities are cut in half for second or higher generation individuals. @morning_generational_2018b further divide groups by second and third+ generation, and while they see somewhat less decline in the second generation, they find very steep declines for the third+ generation. Our "decay" scenario is based on the assumption that the decline these probabilities will be cut in half in each of the second and third generation, while the "resilient" scenario assumes more gradual declines of 10% and 25% in the second and third generation, respectively. 
 
-Our approach to these scenarios is simplified in two important ways. First, all scenarios produce symmetric curves around the peak. We do not assume that one ancestry will be more dominant or "sticky" in determining identification than the other, as suggested by the historical "one drop rule" of the US. Although it may be interesting to model the consequence of such asymmetry in future extensions, we consider this to be a second order issue to the goals of the current research, and incorporating such asymmetry would necessitate more scenarios than we can realistically accommodate here. Second, unlike intergroup marriage, the identification scenarios here are not phased in from some other baseline. Rather, we immediately switch from a system in which there was no intergroup union and therefore no need for a system of group assignment, to these new scenarios. In real social systems, we are more likely to observe a gradual transition from some other identification regime (e.g. hypodescent, hyperdescent) toward the new regimes identified by these scenarios. To the extent that those old regimes disallowed mixed ancestry identification, our approach will somewhat overestimate the relative growth of the mixed group population over time because we switch immediately to the new regime. 
+Our approach to these scenarios is simplified in two important ways. First, all scenarios produce symmetric curves around the peak. We do not assume that one ancestry will be more dominant or "sticky" in determining identification than the other, as suggested by the historical "one drop rule" of the US. Although it may be interesting to model the consequence of such asymmetry in future extensions, we consider this to be a second order issue to the goals of the current research, and incorporating such asymmetry would necessitate more scenarios than we can realistically accommodate here. Second, unlike intergroup partnering, the identification scenarios here are not phased in from some other baseline. Rather, we immediately switch from a system in which there was no intergroup union and therefore no need for a system of group assignment, to these new scenarios. In real social systems, we are more likely to observe a gradual transition from some other identification regime (e.g. hypodescent, hyperdescent) toward the new regimes identified by these scenarios. To the extent that those old regimes disallowed mixed ancestry identification, our approach will somewhat overestimate the relative growth of the mixed group population over time because we switch immediately to the new regime. 
 
 ---
 
@@ -112,15 +114,24 @@ Somewhat ironically, then, the result of a more liberal trend in intergroup part
 
 ## Partnership Modeling
 
-We then calculate the log-odds, , of a marriage between potential husband $h$ and potential wife $w$ according to the following formula:
+The algorithm for determining who partners with who is based on reverse-engineering a conditional logit model approach used in the study of assortative mating [@gullickson_counterfactual_2021]. For each single woman in the population, we sample up to fifty potential single male partners to construct a potential choice set. We score each potential union of woman $w$ and man $m$ by a log-odds determined as follows:
 
-$$log(O_{hw}) = 0.072 (\textit{age}_h-\textit{age}_w) - 0.014 (\textit{age}_h-\textit{age}_w)^2 + \alpha_{hw}$$
- The age difference parameters are derived from @gullickson_counterfactual_2021 and produce a parabolic function of spousal age difference that is maximized when the husband is 2.76 years older than the wife. The $\alpha$ parameter is determined by group exogamy. When both potential partners are from the same group, this parameter is zero. For all other cases, $\alpha$ will be negative to indicate a lower likelihood of group exogamy than endogamy. We have three cases of intermarriage, an A-B intermarriage between the two primary groups, and two cases of intermarriage between either primary group and the mixed group, A-AB and B-AB. We develop different values for $\alpha$ across all of these cases in the scenarios discussed below. 
+$$log(O_{mw}) = 0.072 (\textit{age}_m-\textit{age}_w) - 0.014 (\textit{age}_m-\textit{age}_w)^2 + \alpha_{mw}$$
 
-To determine the actual marriage chosen, we sample from the available possibilities with weight equal to $O_{hw}$. This approach is equivalent to a conditional logit model approach in which the probability for a specific match $i$ would be given by:
+ The age difference parameters are derived from @gullickson_counterfactual_2021 and produce a parabolic function of spousal age difference that is maximized when the man is 2.76 years older than the woman. The $\alpha$ parameter addresses group exogamy where $g_m$ and $g_w$ are the groups for the man and woman, respectively. as follows:
+ 
+ $$\alpha_{mw} = \begin{cases}
+  0 & \text{if } g_m = g_w\\
+  \alpha & \text{if } (g_m = A \text{ and } g_w = B) \text{ or } (g_m = B \text{ and } g_w = A)\\
+  \alpha/2 & \text{else} 
+  \end{cases}$$
+ 
+ When both potential partners are from the same group, this parameter is zero. For intergroup partnering between the primary groups of A and B, we use a value of $\alpha$ and for intergroup partnering between A-AB or B-AB, we use half that value. We develop different values for $\alpha$ over time across scenarios as discussed in the main paper. 
+
+To determine the actual marriage chosen, we sample from the available possibilities with weight equal to $O_{mw}$. This approach is equivalent to a conditional logit model approach in which the probability for a specific match $i$ from the available choice set would be given by:
 
 $$\frac{e^{O_i}}{\sum_{k=1}^{J} e^{O_j}}$$
-Using this routine, it is possible for the same husband to be chosen by two different women. In such cases, we remove duplicate selections randomly (better luck next time, ladies).  We also found in practice that it was necessary to set a benchmark for situations in which none of the possible husbands crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a husband and these women remain single for the next year. <!-- TODO: discuss how this algorithm produces reasonable marriage statistics across all types of marriages -->
+Using this routine, it is possible for the same male partner to be chosen by two different women. In such cases, we remove duplicate selections randomly (better luck next time, ladies).  We also found in practice that it was necessary to set a benchmark for situations in which none of the possible husbands crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a husband and these women remain single for the next year. <!-- TODO: discuss how this algorithm produces reasonable marriage statistics across all types of marriages -->
 
 ## Generating group assignment scenarios
 
