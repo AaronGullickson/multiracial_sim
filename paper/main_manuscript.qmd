@@ -121,7 +121,7 @@ total_pop_group <- total_pop |>
 
 ```{r}
 #| label: fig-marriage-lor
-#| label: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via GAM. 
+#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via GAM. 
 
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
@@ -274,7 +274,7 @@ total_pop_group |>
 
 ```{r}
 #| label: fig-out-marriage
-#| label: Estimated share of all unions that are A-B intergroup unions over time by initial group size, marriage growth scenario, and classification scenario. Smoothed lines are estimated via GAM. 
+#| fig-cap: Estimated share of all unions that are A-B intergroup unions over time by initial group size, marriage growth scenario, and classification scenario. Smoothed lines are estimated via GAM. 
 
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
@@ -314,6 +314,7 @@ ggplot(mar_summary, aes(year, out12, group = scenario, color = scenario))+
   labs(y = "Share of all unions that are A-B intergroup unions")+
   theme_bw()
 ```
+
 
 ```{r}
 #| label: fig-ancestry-share
