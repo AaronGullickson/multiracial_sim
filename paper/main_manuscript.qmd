@@ -120,6 +120,46 @@ total_pop_group <- total_pop |>
 # Tables and Figures
 
 ```{r}
+#| label: fig-marriage-lor
+#| label: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via GAM. 
+
+mar_summary <- sims_mar |>
+  filter(year >= 300) |>
+  mutate(decade = floor(year/10)*10+5) |>
+  group_by(year, pop_share, mar_growth) |>
+  summarize(n11 = sum(hgroup == 1 & wgroup == 1),
+            n22 = sum(hgroup == 2 & wgroup == 2),
+            n33 = sum(hgroup == 3 & wgroup == 3),
+            n12 = sum(hgroup == 1 & wgroup == 2),
+            n21 = sum(hgroup == 2 & wgroup == 1),
+            n13 = sum(hgroup == 1 & wgroup == 3),
+            n31 = sum(hgroup == 3 & wgroup == 1),
+            n23 = sum(hgroup == 2 & wgroup == 3),
+            n32 = sum(hgroup == 3 & wgroup == 2),
+            lor12 = log(n12) + log(n21) - log(n11) - log(n22),
+            lor13 = log(n13) + log(n31) - log(n11) - log(n33),
+            lor23 = log(n23) + log(n32) - log(n22) - log(n33),
+            out_all = (n12+n21+n13+n31+n23+n32)/(n11+n22+n33+n12+n21+n13+n31+n23+n32),
+            out1 = (n12+n21+n13+n31)/(2*n11+n12+n21+n13+n31),
+            out2 = (n12+n21+n23+n32)/(2*n22+n12+n21+n23+n32),
+            out3 = (n13+n23+n23+n32)/(2*n33+n13+n23+n23+n32)) |>
+  mutate(mar_growth = factor(mar_growth, levels = c("progress", "plateau")))
+
+mar_summary |>
+  filter(lor12 != Inf & lor12 != -Inf) |>
+  ggplot(aes(year, lor12, group = pop_share, color = pop_share))+
+  geom_point(alpha = 0.3)+
+  geom_smooth(se = FALSE, method = "gam")+
+  facet_wrap(~mar_growth)+
+  scale_color_manual(values = palette_pop_share)+
+  #scale_y_continuous(limits = c(-10, 0.1))+
+  labs(y = "log odds ratio of A-B intergroup union",
+       color = "group share")+
+  theme_bw()
+```
+
+
+```{r}
 #| label: fig-scenarios
 #| fig-cap: Four different group assignment scenarios for individuals of mixed parentage as a function of the proportion of their group A ancestry
 
@@ -230,6 +270,49 @@ total_pop_group |>
   theme_bw()+
   theme(panel.grid = element_blank(), panel.grid.major.x = element_blank())
           
+```
+
+```{r}
+#| label: fig-out-marriage
+#| label: Estimated share of all unions that are A-B intergroup unions over time by initial group size, marriage growth scenario, and classification scenario. Smoothed lines are estimated via GAM. 
+
+mar_summary <- sims_mar |>
+  filter(year >= 300) |>
+  mutate(decade = floor(year/10)*10+5) |>
+  group_by(year, pop_share, mar_growth, scenario) |>
+  summarize(n11 = sum(hgroup == 1 & wgroup == 1),
+            n22 = sum(hgroup == 2 & wgroup == 2),
+            n33 = sum(hgroup == 3 & wgroup == 3),
+            n12 = sum(hgroup == 1 & wgroup == 2),
+            n21 = sum(hgroup == 2 & wgroup == 1),
+            n13 = sum(hgroup == 1 & wgroup == 3),
+            n31 = sum(hgroup == 3 & wgroup == 1),
+            n23 = sum(hgroup == 2 & wgroup == 3),
+            n32 = sum(hgroup == 3 & wgroup == 2),
+            lor12 = log(n12) + log(n21) - log(n11) - log(n22),
+            lor13 = log(n13) + log(n31) - log(n11) - log(n33),
+            lor23 = log(n23) + log(n32) - log(n22) - log(n33),
+            out_all = (n12+n21+n13+n31+n23+n32)/(n11+n22+n33+n12+n21+n13+n31+n23+n32),
+            out1 = (n12+n21+n13+n31)/(2*n11+n12+n21+n13+n31),
+            out2 = (n12+n21+n23+n32)/(2*n22+n12+n21+n23+n32),
+            out3 = (n13+n23+n23+n32)/(2*n33+n13+n23+n23+n32),
+            out12 = (n12+n21)/((n11+n22+n33+n12+n21+n13+n31+n23+n32))) |>
+  mutate(mar_growth = factor(mar_growth, levels = c("progress", "plateau")),
+         scenario = str_replace(scenario, "_", " peak, "),
+         scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
+         scenario = factor(
+           scenario,
+           levels = c("absorbing state", "high peak, resilient", "high peak, decay",
+                      "low peak, resilient", "low peak, decay")))
+         
+
+ggplot(mar_summary, aes(year, out12, group = scenario, color = scenario))+
+  geom_smooth(se = FALSE, method = "gam")+
+  facet_grid(pop_share~mar_growth)+
+  scale_color_manual(values = palette_scenario)+
+  scale_y_continuous(labels = scales::percent)+
+  labs(y = "Share of all unions that are A-B intergroup unions")+
+  theme_bw()
 ```
 
 ```{r}
