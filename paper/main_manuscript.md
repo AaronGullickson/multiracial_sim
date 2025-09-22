@@ -43,7 +43,7 @@ We develop a total of twenty simulations along three different dimensions: the i
 
 ### Initial group size
 
-Since most empirical cases of multigroup populations will involve majority-minority populations, our primary interest is a simulation that begins with a population that is m85% members of Group A and 15% members of group B. This share may shift slightly as a result of random chance during the "run in" period of the simulation but should remain relatively stable until we introduce intergroup dynamics. 
+Since most empirical cases of multigroup populations will involve majority-minority populations, our primary interest is a simulation that begins with a population that is 85% members of Group A and 15% members of group B. This share may shift slightly as a result of random chance during the "run in" period of the simulation but should remain relatively stable until we introduce intergroup dynamics. 
 
 To understand better how relative group size might affect the intergroup dynamics we are studying, we also run a second set of scenarios in which Groups A and B are of equal size.
 
