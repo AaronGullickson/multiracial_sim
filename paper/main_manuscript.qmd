@@ -6,7 +6,7 @@ keywords: [keyword1, keyword2]
 thanks: Thanks to everyone for checking this out.
 reference-section-title: References
 bibliography: ../bibliography/project.bib
-csl: ../bibliography/chicago-parenthetical.csl
+csl: ../bibliography/apa-5th-edition.csl
 format:
   aog-article-pdf:
     keep-tex: false
