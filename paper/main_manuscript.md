@@ -1,5 +1,7 @@
 # Abstract
 
+An Abstract
+
 # Introduction
 
 \<*Something catchy perhaps contrasting popular understandings of U.S. population projections: the optimistic "browning of America" version popular in the 1990s and the more pessimistic "coming majority-minority society" version more common today...both of which hinge on assumptions about future growth of the multiracial population*.\>
