@@ -26,3 +26,5 @@ analysis/check_simulation_files
 simulation/inheritance_shiny/rsconnect/*
 simulation/classification_gen_shiny/rsconnect/*
 
+
+**/*.quarto_ipynb
