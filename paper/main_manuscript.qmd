@@ -231,30 +231,6 @@ total_pop_group |>
   theme_bw()
 ```
 
-
-```{r}
-#| label: fig-biracial-share-scenario
-#| fig-cap: The size of the biracial population at the conclusion of the simulation as a fraction of the absorbing state scenario
-
-total_pop_group |>
-  filter(scenario == "absorbing state") |>
-  rename(share_absorbing = share) |>
-  select(year, group, pop_share, mar_growth, share_absorbing) |>
-  right_join(total_pop_group, 
-             by = c("year", "group", "pop_share", "mar_growth")) |>
-  mutate(prop_absorb = share/share_absorbing) |>
-  filter(group == "AB", year == 500, scenario != "absorbing state") |>
-  ggplot(aes(x = scenario, y = prop_absorb))+
-  geom_segment(aes(yend = 0))+
-  geom_point()+
-  facet_grid(pop_share~mar_growth)+
-  coord_flip()+
-  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
-  labs(y = "Size of biracial (AB) population as fraction of absorbing state scenario",
-       x = NULL)+
-  theme_bw()
-```
-
 ```{r}
 #| label: fig-group-dist
 #| fig-cap: The distribution of groups over time, across different classification scenarios. All cases use the "progress" scenario for intergroup partnering.
@@ -297,7 +273,9 @@ mar_summary <- sims_mar |>
             out2 = (n12+n21+n23+n32)/(2*n22+n12+n21+n23+n32),
             out3 = (n13+n23+n23+n32)/(2*n33+n13+n23+n23+n32),
             out12 = (n12+n21)/((n11+n22+n33+n12+n21+n13+n31+n23+n32))) |>
-  mutate(mar_growth = factor(mar_growth, levels = c("progress", "plateau")),
+  mutate(mar_growth = factor(mar_growth, levels = c("plateau", "progress")),
+         pop_share = factor(pop_share, levels = c("uneven", "even"),
+                            labels = c("uneven (85/15)", "even (50/50)")),
          scenario = str_replace(scenario, "_", " peak, "),
          scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
          scenario = factor(
@@ -315,6 +293,28 @@ ggplot(mar_summary, aes(year, out12, group = scenario, color = scenario))+
   theme_bw()
 ```
 
+```{r}
+#| label: fig-biracial-share-scenario
+#| fig-cap: The size of the biracial population at the conclusion of the simulation as a fraction of the absorbing state scenario
+
+total_pop_group |>
+  filter(scenario == "absorbing state") |>
+  rename(share_absorbing = share) |>
+  select(year, group, pop_share, mar_growth, share_absorbing) |>
+  right_join(total_pop_group, 
+             by = c("year", "group", "pop_share", "mar_growth")) |>
+  mutate(prop_absorb = share/share_absorbing) |>
+  filter(group == "AB", year == 500, scenario != "absorbing state") |>
+  ggplot(aes(x = scenario, y = prop_absorb))+
+  geom_segment(aes(yend = 0))+
+  geom_point()+
+  facet_grid(pop_share~mar_growth)+
+  coord_flip()+
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  labs(y = "Size of biracial (AB) population as fraction of absorbing state scenario",
+       x = NULL)+
+  theme_bw()
+```
 
 ```{r}
 #| label: fig-ancestry-share
