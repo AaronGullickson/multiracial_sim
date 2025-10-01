@@ -1,9 +1,9 @@
 ---
 title: "The Dynamics of Population Mixing: A Simulation Approach"
 shorttitle: Dynamics of Population Mixing
-keywords:
-  - keyword1
-  - keyword2
+#keywords:
+#  - keyword1
+#  - keyword2
 thanks: Thanks to everyone for checking this out.
 reference-section-title: References
 bibliography: ../bibliography/project.bib
