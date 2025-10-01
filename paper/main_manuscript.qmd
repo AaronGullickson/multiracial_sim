@@ -121,6 +121,7 @@ total_pop_group <- total_pop |>
 
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
+  mutate(year = year - 300) |>
   mutate(decade = floor(year/10)*10+5) |>
   group_by(year, pop_share, mar_growth) |>
   summarize(n11 = sum(hgroup == 1 & wgroup == 1),
@@ -213,16 +214,17 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
 
 ```{r}
 #| label: fig-biracial-pop-scenario
-#| fig-cap: The percent of the population identified as biracial (AB), across different scenarios
+#| fig-cap: The percent of the population identified as mixed (AB), across different scenarios
 
 total_pop_group |>
   filter(group == "AB") |>
+  mutate(year = year - 300) |>
   ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
   geom_line(linewidth = 1, alpha = 0.7)+
   facet_grid(pop_share~mar_growth)+
   scale_y_continuous(labels = scales::percent)+
   scale_color_manual(values = palette_scenario)+
-  labs(y = "share of population identifying as biracial",
+  labs(y = "share of population identifying as mixed (AB)",
        color = "classification\nscenario")+
   theme_bw()
 ```
@@ -234,11 +236,13 @@ total_pop_group |>
 
 total_pop_group |>
   filter(mar_growth == "progress") |>
+  mutate(year = year - 300) |>
   ggplot(aes(x = year, y = share, fill = group))+
   facet_grid(scenario~pop_share)+
   geom_area(color = NA)+
   scale_fill_manual(values = palette_group)+
   scale_y_continuous(labels = scales::percent)+
+  labs(y = NULL)+
   theme_bw()+
   theme(panel.grid = element_blank(), panel.grid.major.x = element_blank())
           
@@ -250,6 +254,7 @@ total_pop_group |>
 
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
+  mutate(year = year - 300) |>
   mutate(decade = floor(year/10)*10+5) |>
   group_by(year, pop_share, mar_growth, scenario) |>
   summarize(n11 = sum(hgroup == 1 & wgroup == 1),
@@ -291,7 +296,7 @@ ggplot(mar_summary, aes(year, out12, group = scenario, color = scenario))+
 
 ```{r}
 #| label: fig-biracial-share-scenario
-#| fig-cap: The size of the biracial population at the conclusion of the simulation as a fraction of the absorbing state scenario
+#| fig-cap: The size of the mixed (AB) population at the conclusion of the simulation as a fraction of that size in the absorbing state scenario
 
 total_pop_group |>
   filter(scenario == "absorbing state") |>
@@ -307,7 +312,7 @@ total_pop_group |>
   facet_grid(pop_share~mar_growth)+
   coord_flip()+
   scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
-  labs(y = "Size of biracial (AB) population as fraction of absorbing state scenario",
+  labs(y = "Size of mixed (AB) population as fraction of absorbing state scenario",
        x = NULL)+
   theme_bw()
 ```
@@ -324,7 +329,7 @@ total_pop_group |>
 
 ancestry_prop <- sims_pop |>
   filter(dob >= 300) |>
-  mutate(year = floor(dob)) |>
+  mutate(year = floor(dob) - 300) |>
   group_by(year, group, pop_share, mar_growth, scenario) |>
   summarize(prop_a = mean(ancestry_group1),
             prop_b = mean(ancestry_group2))
