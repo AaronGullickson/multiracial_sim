@@ -7,7 +7,7 @@ keywords:
 thanks: Thanks to everyone for checking this out.
 reference-section-title: References
 bibliography: ../bibliography/project.bib
-csl: ../bibliography/apa-5th-edition.csl
+csl: ../bibliography/chicago-parenthetical.csl
 filters:
   - abstract-section
 format:
