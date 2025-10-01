@@ -1,8 +1,9 @@
 ---
-title: "Paper Manuscript"
-shorttitle: "Paper"
-#abstract: An Abstract
-keywords: [keyword1, keyword2]
+title: "The Dynamics of Population Mixing: A Simulation Approach"
+shorttitle: Dynamics of Population Mixing
+keywords:
+  - keyword1
+  - keyword2
 thanks: Thanks to everyone for checking this out.
 reference-section-title: References
 bibliography: ../bibliography/project.bib
@@ -12,17 +13,10 @@ filters:
 format:
   aog-article-pdf:
     keep-tex: false
-    fig-pos: "h"
-    include-in-header: 
+    fig-pos: h
+    include-in-header:
       text: |
         \usepackage{dcolumn}
-#  submittable-pdf:
-#     keep-tex: false
-#     fig-pos: "!t"
-#     include-in-header: 
-#       text: |
-#         \usepackage{dcolumn}
-#  submittable-docx: default
 ---
 
 ```{r}
