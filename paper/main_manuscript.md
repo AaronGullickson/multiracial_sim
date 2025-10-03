@@ -1,6 +1,8 @@
 # Abstract
 
-An Abstract
+<!-- Keep in mind, we have a 150 world limit here, currently 142 -->
+
+The population processes involved in the growth of a self-identified multiracial population are complex and depend on a variety of social factors not easily captured in standard demographic projection methods. In this article, we use a microsimulation approach of a two group population to explore how variation in relative group size, the frequency of intergroup partnering, and the probability of self-identification all contribute to the growth of a self-identified multiracial population over a 200 year simulation period. The results show that under most realistic scenarios, the tendency for mixed ancestry lineages to fold back into single race identification leads to modest growth in the multiracial population compared to what could be possible.  Furthermore, in cases of unequal group size, the most liberal scenarios can lead to the growth of the majority population at the expense of both the minority and multiracial population. 
 
 # Introduction
 
