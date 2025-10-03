@@ -1,6 +1,7 @@
 ---
 title: "The Dynamics of Population Mixing: A Simulation Approach"
 shorttitle: Dynamics of Population Mixing
+shortauthors: Gullickson and Saperstein
 #keywords:
 #  - keyword1
 #  - keyword2
