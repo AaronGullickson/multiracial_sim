@@ -5,7 +5,7 @@ shortauthors: Gullickson and Saperstein
 #keywords:
 #  - keyword1
 #  - keyword2
-thanks: Thanks to everyone for checking this out.
+thanks: Prepared for the 2026 Annual Meeting Population Association of America
 reference-section-title: References
 bibliography: ../bibliography/project.bib
 csl: ../bibliography/chicago-parenthetical.csl
@@ -118,7 +118,7 @@ total_pop_group <- total_pop |>
 
 ```{r}
 #| label: fig-marriage-lor
-#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via GAM. 
+#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via Generalized Additive Model (GAM). 
 
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
@@ -159,7 +159,7 @@ mar_summary |>
 
 ```{r}
 #| label: fig-scenarios
-#| fig-cap: Four different group assignment scenarios for individuals of mixed parentage as a function of the proportion of their group A ancestry
+#| fig-cap: Four group assignment scenarios for individuals of mixed parentage as a function of the proportion of their group A ancestry
 
 get_group_probs <- function(a_param, b_param) {
   
@@ -215,7 +215,7 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
 
 ```{r}
 #| label: fig-biracial-pop-scenario
-#| fig-cap: The percent of the population identified as mixed (AB), across different scenarios
+#| fig-cap: The percent of the population identified as mixed (AB), across scenarios
 
 total_pop_group |>
   filter(group == "AB") |>
@@ -226,7 +226,7 @@ total_pop_group |>
   scale_y_continuous(labels = scales::percent)+
   scale_color_manual(values = palette_scenario)+
   labs(y = "share of population identifying as mixed (AB)",
-       color = "classification\nscenario")+
+       color = "scenario")+
   theme_bw()
 ```
 
@@ -251,7 +251,7 @@ total_pop_group |>
 
 ```{r}
 #| label: fig-out-marriage
-#| fig-cap: Estimated share of all unions that are A-B intergroup unions over time by initial group size, marriage growth scenario, and classification scenario. Smoothed lines are estimated via GAM. 
+#| fig-cap: Estimated share of all unions that are A-B intergroup unions over time by initial group size and scenario. Smoothed lines are estimated via GAM. 
 
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
