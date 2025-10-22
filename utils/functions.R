@@ -65,12 +65,22 @@ get_life_expectancy <- function(rates) {
 calculate_lor <- function(marriages) {
   marriages |>
     group_by(decade_mar) |>
-    summarize(n12 = sum(hgroup == 1 & wgroup ==2),
-              n21 = sum(hgroup == 2 & wgroup ==1),
-              n11 = sum(hgroup == 1 & wgroup ==1),
+    summarize(n11 = sum(hgroup == 1 & wgroup ==1),
               n22 = sum(hgroup == 2 & wgroup ==2),
-              lor = log((n12 * n21) / (n11 * n22))) |>
-    select(decade_mar, lor)
+              n33 = sum(hgroup == 3 & wgroup ==3),
+              n12 = sum(hgroup == 1 & wgroup ==2),
+              n21 = sum(hgroup == 2 & wgroup ==1),
+              n13 = sum(hgroup == 1 & wgroup ==3),
+              n31 = sum(hgroup == 3 & wgroup ==1),
+              n32 = sum(hgroup == 3 & wgroup ==2),
+              n23 = sum(hgroup == 2 & wgroup ==3),
+              lor12 = log((n12 * n21) / (n11 * n22)),
+              lor13 = log((n13 * n31) / (n11 * n33)),
+              lor23 = log((n32 * n23) / (n33 * n22))) |>
+    select(decade_mar, starts_with("lor")) |>
+    pivot_longer(cols = starts_with("lor"), names_to = "intermar", 
+                 values_to = "lor", names_prefix = "lor") |>
+    mutate(lor = ifelse(is.na(lor) | lor == -Inf | lor == Inf, NA, lor))
   #|>
    # filter(lor > -Inf)
 }
