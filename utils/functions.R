@@ -81,8 +81,6 @@ calculate_lor <- function(marriages) {
     pivot_longer(cols = starts_with("lor"), names_to = "intermar", 
                  values_to = "lor", names_prefix = "lor") |>
     mutate(lor = ifelse(is.na(lor) | lor == -Inf | lor == Inf, NA, lor))
-  #|>
-   # filter(lor > -Inf)
 }
 
 # Data cleaning functions -------------------------------------------------
