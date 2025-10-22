@@ -260,16 +260,34 @@ get_married <- function(pop, lodds, month_current, mid_max) {
     select(hpid, group_h, age_h, hprior, mom_h, dad_h, starts_with("gmom_"),
            starts_with("gdad_"))
   
+  
+  # to avoid problems of finite sampling when any of the groups are small
+  # I want to do stratified group sampling, with a minimum of one 
+  # case from each group if any exist in the population. To do that, I figure
+  # out here how big each group sample should be
+  n_choices <- 100
+  group_sizes <- single_men |> 
+    count(group_h) |>
+    mutate(prop = n / sum(n),
+           n_draw = pmax(round(n_choices * prop), 1))
+  
   # speed dating!
   matches <- single_women |>
     # women do the choosing
     group_by(wpid) |>
     group_split() |> 
     map(function(x) {
-      # sample 50 partners for each woman
-      choice_set <- single_men |> 
-        slice_sample(n = 50) |> 
-        bind_cols(x) |>
+      choice_set <- group_sizes |>
+        # stratified sampling by group
+        group_split(group_h) |> # 
+        map(\(grp) {
+          sub <- single_men |> filter(group_h == grp$group_h)
+          # if n_draw is larger than available just take everyone from group
+          slice_sample(sub, n = min(nrow(sub), grp$n_draw))
+        }) |>
+        list_rbind() |>
+        # add back in woman's characteristics
+        bind_cols(x) |> 
         # calculate covariates and odds ratios using Dem Research article numbers
         mutate(age_diff = age_h - age_w,
                exogamy = group_h != group_w,
