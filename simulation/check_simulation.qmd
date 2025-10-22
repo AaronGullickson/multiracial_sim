@@ -359,7 +359,7 @@ mar |>
 tab_lor <- mar |>
   calculate_lor()
 
-ggplot(tab_lor, aes(x = decade_mar, y = lor, group = 1))+
+ggplot(tab_lor, aes(x = decade_mar, y = lor, group = intermar))+
   geom_point()+
   geom_smooth(se = FALSE)+
   labs(x = "year (in decade intervals)", y = "log odds ratio of intermarriage")+
