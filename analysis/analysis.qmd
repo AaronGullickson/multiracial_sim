@@ -118,7 +118,7 @@ The second factor we consider is the probability that individuals who are the pr
 
 From these parameters, we can identify five distinct probabilities for each group at a certain value of the proportion `A` ancestry. We then fit a multinomial model to these points using the proportion of `A` ancestry as well is square and cubic values. This model can then be used to predict the relevant probabilities at any proportion of `A` ancestry. 
 
-To experiment with possible values, we built a [shiny app](https://aaron-gullickson.shinyapps.io/classification_gen_shiny/) to explore possiblities. The ultimate values we chose come from the limited literature we have on this topic. @fig-scenarios-classification illustrates the four scenarios that we ultimately consider. Thes four scenarios are arranged along two dimensions. The first dimension is the height of the peak for biracial identification for a first generation biracial. We consider a **high** peak of 75% and a **low** peak of 40%. The second dimension is the degree of decline in succeeding generations. In the **resilient** case, we use stepwise declines of 10% and 25% from this peak to the second and third generations, respectively. In the **decay** case, we use 50% stepwise declines for both generations. For all four scenarios, we use a second generation ratio of 10 and a third generation ratio of 25.
+To experiment with possible values, we built a [shiny app](https://aaron-gullickson.shinyapps.io/classification_gen_shiny/) to explore possibilities. The ultimate values we chose come from the limited literature we have on this topic. @fig-scenarios-classification illustrates the four scenarios that we ultimately consider. Thes four scenarios are arranged along two dimensions. The first dimension is the height of the peak for biracial identification for a first generation biracial. We consider a **high** peak of 75% and a **low** peak of 40%. The second dimension is the degree of decline in succeeding generations. In the **resilient** case, we use stepwise declines of 10% and 25% from this peak to the second and third generations, respectively. In the **decay** case, we use 50% stepwise declines for both generations. For all four scenarios, we use a second generation ratio of 10 and a third generation ratio of 25.
 
 ```{r}
 #| label: fig-scenarios-classification
@@ -152,13 +152,13 @@ calculate_probs <- function(scenario_name) {
 }
 
 gs4_deauth()
-probs_high_resilient <- calculate_probs("even_progress_high_resilient") |>
+probs_high_resilient <- calculate_probs("uneven_plateau_high_resilient") |>
   mutate(peak = "high", decline = "resilient")
-probs_low_resilient <- calculate_probs("even_progress_low_resilient") |>
+probs_low_resilient <- calculate_probs("uneven_plateau_low_resilient") |>
   mutate(peak = "low", decline = "resilient")
-probs_high_decay <- calculate_probs("even_progress_high_decay") |>
+probs_high_decay <- calculate_probs("uneven_plateau_high_decay") |>
   mutate(peak = "high", decline = "decay")
-probs_low_decay <- calculate_probs("even_progress_low_decay") |>
+probs_low_decay <- calculate_probs("uneven_plateau_low_decay") |>
   mutate(peak = "low", decline = "decay")
 
 probs_high_resilient |>
