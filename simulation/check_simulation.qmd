@@ -362,6 +362,7 @@ tab_lor <- mar |>
 ggplot(tab_lor, aes(x = decade_mar, y = lor, group = intermar, color = intermar))+
   geom_point()+
   geom_smooth(se = FALSE)+
+  scale_color_manual(values = my_palette)+
   labs(x = "year (in decade intervals)", y = "log odds ratio of intermarriage")+
   theme_bw()
 ```
