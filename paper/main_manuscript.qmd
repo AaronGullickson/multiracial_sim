@@ -53,6 +53,12 @@ palette_group <- c(
   "AB" = "gold"
 )
 
+palette_intermar <- c(
+  "A-B"  = "navy",
+  "A-AB"  = "tomato",
+  "B-AB" = "gold"
+)
+
 palette_gen <- c(
   "1st gen"  = "tomato",
   "2nd gen"  = "darkgreen",
@@ -175,8 +181,8 @@ We create two different scenarios for the frequency of intergroup partnering. In
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
   mutate(year = year - 300) |>
-  mutate(decade = floor(year/10)*10+5) |>
-  group_by(year, pop_share, mar_growth) |>
+  mutate(year5 = floor(year/5)*5+2.5) |>
+  group_by(year5, pop_share, mar_growth, scenario) |>
   summarize(n11 = sum(hgroup == 1 & wgroup == 1),
             n22 = sum(hgroup == 2 & wgroup == 2),
             n33 = sum(hgroup == 3 & wgroup == 3),
@@ -193,18 +199,40 @@ mar_summary <- sims_mar |>
             out1 = (n12+n21+n13+n31)/(2*n11+n12+n21+n13+n31),
             out2 = (n12+n21+n23+n32)/(2*n22+n12+n21+n23+n32),
             out3 = (n13+n23+n23+n32)/(2*n33+n13+n23+n23+n32)) |>
-  mutate(mar_growth = factor(mar_growth, levels = c("progress", "plateau")))
+  mutate(lor12 = if_else(is.na(lor12) | lor12 == Inf | lor12 == -Inf, NA, lor12),
+         lor13 = if_else(is.na(lor13) | lor13 == Inf | lor13 == -Inf, NA, lor13),
+         lor23 = if_else(is.na(lor23) | lor23 == Inf | lor23 == -Inf, NA, lor23),
+         mar_growth = factor(mar_growth, levels = c("progress", "plateau")),
+         pop_share = factor(pop_share, levels = c("even", "uneven")),
+         scenario = str_replace(scenario, "_", " peak, "),
+         scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
+         scenario = factor(
+           scenario,
+           levels = c("absorbing state", "high peak, resilient", "high peak, decay",
+                      "low peak, resilient", "low peak, decay"))) |>
+  select(year5, pop_share, mar_growth, scenario, starts_with("lor"), 
+         starts_with("out"))
 
 mar_summary |>
-  filter(lor12 != Inf & lor12 != -Inf) |>
-  ggplot(aes(year, lor12, group = pop_share, color = pop_share))+
+  pivot_longer(cols = starts_with("lor"), names_prefix = "lor", 
+               names_to = "type", values_to = "lor") |>
+  mutate(type = case_when(type == "12" ~ "A-B",
+                          type == "13" ~ "A-AB",
+                          type == "23" ~ "B-AB"),
+         type = factor(type, levels = c("A-B", "A-AB", "B-AB")),
+         pop_share = factor(pop_share, levels = c("uneven", "even"), 
+                       labels = c("uneven (85/15)", "even (50/50)"))) |>
+  ggplot(aes(year5, lor, group = type, color = type, shape = scenario))+
+  geom_hline(yintercept = c(-10, 0), linetype = 2)+
   geom_point(alpha = 0.3)+
   geom_smooth(se = FALSE, method = "gam")+
-  facet_wrap(~mar_growth)+
-  scale_color_manual(values = palette_pop_share)+
+  facet_grid(pop_share~mar_growth)+
+  scale_color_manual(values = palette_intermar)+
+  scale_shape_manual(values = c(19, 15, 17, 18, 3))+
   #scale_y_continuous(limits = c(-10, 0.1))+
   labs(y = "log odds ratio of A-B intergroup union",
-       color = "group share")+
+       x = "year",
+       color = "type")+
   theme_bw()
 ```
 
