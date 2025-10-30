@@ -8,9 +8,7 @@ project:
     - simulation/run_simulations.R          # run the simulations
   render:
     # if analysis is split into multiple docs, add them here
-    - analysis/organize_acs_data.qmd
     - analysis/organize_data.qmd
-    - analysis/analysis_intermarriage.qmd
     - analysis/analysis.qmd
     - paper/
     - presentation/
