@@ -228,42 +228,49 @@ In the remaining scenarios, we model group assignment as a function of the propo
 #| label: fig-scenarios
 #| fig-cap: Four group assignment scenarios for individuals of mixed parentage as a function of the proportion of their group A ancestry
 
-get_group_probs <- function(a_param, b_param) {
+calculate_probs <- function(scenario_name) {
+  parameters <- range_read(
+    "1ad-fJUCjRy_zslI2MMce8UaolepG536-IZr1yNNIuZ8",
+    range = paste(scenario_name, "A8:L9", sep="!")
+  ) |>
+    select(starts_with("inherit"))
+  prop_a <- seq(from = 0.01, to= 0.99, by = 0.01)
+  y_a <- parameters$inherit_g1_intercept+
+    parameters$inherit_g1_slope*prop_a+
+    parameters$inherit_g1_slope_sq*(prop_a^2)+
+    parameters$inherit_g1_slope_cube*(prop_a^3)
+  y_b <- parameters$inherit_g2_intercept+
+    parameters$inherit_g2_slope*prop_a+
+    parameters$inherit_g2_slope_sq*(prop_a^2)+
+    parameters$inherit_g2_slope_cube*(prop_a^3)
+  y_ab <- 0 * prop_a
+  denom <- (exp(y_a)+exp(y_b)+exp(y_ab))
+  p_a <- exp(y_a)/denom
+  p_b <- exp(y_b)/denom
+  p_ab <- exp(y_ab)/denom
   
-  prop_a <- seq(from = 0.005, to = 0.995, by = 0.005)
-
-  tibble(prop_a, 
-         lor_a = a_param[1] + a_param[2] * prop_a + a_param[3] * prop_a^2 + a_param[4] * prop_a^3,
-         lor_b = b_param[1] + b_param[2] * prop_a + b_param[3] * prop_a^2 + b_param[4] * prop_a^3,
-         lor_ab = rep(0, length(prop_a)),
-         prob_a = exp(lor_a) / (exp(lor_a) + exp(lor_b) + exp(lor_ab)),
-         prob_b = exp(lor_b) / (exp(lor_a) + exp(lor_b) + exp(lor_ab)),
-         prob_ab = exp(lor_ab) / (exp(lor_a) + exp(lor_b) + exp(lor_ab))) |>
-    select(prop_a, starts_with("prob_")) |>
-    pivot_longer(cols = starts_with("prob_"), names_prefix = "prob_",
-                 names_to = "group", values_to = "prob") |>
-    mutate(group = str_to_upper(group),
-           group = factor(group, levels = c("A", "B", "AB")))
+  tibble(group = factor(rep(c("A", "B", "AB"), each = length(prop_a)),
+                        levels = c("A", "B", "AB")),
+         prop_a = rep(prop_a, 3), 
+         prob = c(p_a, p_b, p_ab))
 }
 
+gs4_deauth()
+
 # high resilient
-gp_hr <- get_group_probs(a_param = c(-4.132, 6.113, -4.924, 3.713),
-                         b_param = c(0.881, -8.661, 9.544, -6.34)) |>
+gp_hr <- calculate_probs("uneven_plateau_high_resilient") |>
   mutate(scenario_peak = "high peak", scenario_decline = "resilient")
 
 # high decay
-gp_hd <- get_group_probs(a_param = c(-0.085, -15.448, 30.642, -12.46),
-                 b_param = c(2.412, -6.265, -12.038, 16.068)) |>
+gp_hd <- calculate_probs("uneven_plateau_high_decay") |>
   mutate(scenario_peak = "high peak", scenario_decline = "decay")
 
 # low resilient
-gp_lr <- get_group_probs(a_param = c(-3.562, 9.362, -7.244, 2.776),
-                 b_param = c(1.269, -2.795, 0.214, -2.142)) |>
+gp_lr <- calculate_probs("uneven_plateau_low_resilient") |>
   mutate(scenario_peak = "low peak", scenario_decline = "resilient")
 
 # low decay
-gp_ld <- get_group_probs(a_param = c(-0.65, -4.209, 11.594, -3.497),
-                 b_param = c(2.956, -5.734, -5.348, 7.796)) |>
+gp_ld <- calculate_probs("uneven_plateau_low_decay") |>
   mutate(scenario_peak = "low peak", scenario_decline = "decay")
 
 bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
