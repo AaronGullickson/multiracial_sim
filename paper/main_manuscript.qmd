@@ -110,69 +110,7 @@ total_pop_group <- total_pop |>
   select(year, group, pop_share, mar_growth, scenario, population, share)
 ```
 
-# Abstract
-
-<!-- Keep in mind, we have a 150 world limit here, currently 142 -->
-
-The population processes involved in the growth of a self-identified multiracial population are complex and depend on a variety of social factors not easily captured in standard demographic projection methods. In this article, we use a microsimulation approach of a two group population to explore how variation in relative group size, the frequency of intergroup partnering, and the probability of self-identification all contribute to the growth of a self-identified multiracial population over a 200 year simulation period. The results show that under most realistic scenarios, the tendency for mixed ancestry lineages to fold back into single race identification leads to modest growth in the multiracial population compared to what could be possible.  Furthermore, in cases of unequal group size, the most liberal scenarios can lead to the growth of the majority population at the expense of both the minority and multiracial population. 
-
-# Introduction
-
-The racial demography of the US has undergone rapid transformation over the past half century, leading to a more diverse population, but the future end state of this transformation is uncertain and debated [@lichter_integration_2013a; @frey_diversity_2015a]. A key factor in this transformation has been the emergence of a self-identified and federally recognized multiracial population driven by a "biracial baby boom" beginning in the 1960s, when interracial marriage began to increase in frequency. Combined with changing immigration flows, these population dynamics are often proclaimed to be producing a "browning of America" or a "majority-minority society," which is seen as a harbinger of a post-racial future by some, and a source of political anxiety for others [@hollinger_concept_2011a; @craig_racial_2018a]. Regardless, the nature of this transformation hinges critically on assumptions about the future growth of a multiracial population.  The underlying, but often unspoken, assumption in discussions of multiraciality is that multiracial status is an "absorbing state" - racial mixing creates more mixed people until we all become mixed.
-
-However, the nature of the population dynamics involved in the growth of a self-identified multiracial population are complex and depend on several inputs, such as interracial marriage rates and identification choices. Importantly, the potential for individuals of mixed ancestry to "fold" back into single race categories across generations is an oft neglected aspect of this process [@song_generational_2017a]. This process is not easily incorporated into standard demographic projection techniques, and therefore we have relatively little analytical insight into how these dynamics work to produce multiracial populations. In this article, we address this shortcoming with a microsimulation approach.  We develop a a series of ideal type scenarios for a two group population that develop over the course of 200 years and vary by starting group size, frequency of intergroup partnership, and the likelihood of multiracial classification. The microsimulation approach tracks the family tree of every single member of the population, allowing us to distinguish mixed ancestry from multiracial identification.
-
-By running these simulations for a long period of time, we are able to reveal population dynamics that are likely a better reflection of long term trends than current understandings. Our results show that even under high rates of interracial partnership, continued growth of the multiracial population is strongly dependent not only on the relative group size of the starting populations but also the prevailing racial classification "regime," or norms for translating mixed ancestry into racial self-identification [@xu_gender_2021b]. We find that even in the most liberal circumstances of intergroup partnership and racial self-identification, the population identifying as mixed is unlikely to surpass 50% of the population, after 200 years of simulation. In many of our scenarios, this share never even reaches 20% of the population, and is in decline in some scenarios by the end of the simulation period. In combination with current crackdowns on immigration, these findings suggest that the long foretold "majority-minority society" may be further off than some have predicted.
-
-# Background
-
-The enumeration and growth of the multiracial population represents one of the greatest potential catalysts for change in US racial dynamics over the last half century. Although multiraciality is not a new phenomenon, a "biracial baby boom" of individuals whose parents cross racial lines from the late 20th century and early 21st century has led to changes in official race reporting in the US and greater questioning of racial categories at large [@dacosta_multiracial_2020b].
-
-However, this biracial baby boom does not adequately reflect the long term processes that will determine the future of multiraciality in the US. Like the original baby boom, the biracial baby boom is driven by rapid historic change that generates cohort-specific distortions of stable population dynamics. Specifically, the biracial baby boom moved the "generational loci" of multiraciality to be dominated by individuals who were "first generation" offspring of parents that identified with different racial groups [@morning_generational_2018b; @song_generational_2017a]. The experience of multiraciality will be most salient for this generation. Much of the academic literature on multiraciality has focused on the experiences of these individuals [see @xu_gender_2021b].
-
-Today, as the children of that boom grow into adulthood, they have begun to form their own families, most commonly with individuals of a single racial identification shared with the biracial person [@bratter_will_2007b; @littlejohn_race_2019b; @gullickson_blurring_2025a]. These families will produce a new generation of children for whom the generational loci of multiraciality will be more distant and thus likely less salient. Over time, this multigenerational process will likely result in a more fractured and diverse mosaic for our understanding of contemporary multiraciality than the "absorbing state" of mixed racial identification often imagined in the discourse on the biracial baby boom and the increasing racial diversity of the US.
-
-Debates about how to count and classify the growing population of Americans with mixed racial ancestry also have a technical side, with important implications for the production of demographic projections. After researchers raised concerns over its public trumpeting of the potential for a coming "majority-minority society" [@craig_racial_2018a; @levy_racial_2021a; @sohoni_coming_2022a], the US Census Bureau modified the language and tone of its press releases, but it has not changed a fundamental assumption that undergirds such predictions. Census Bureau projections assume that Americans born to parents who are classified as different races should all be counted as non-White for the purpose of estimating future population sizes. This assumption is both influential and unfounded for many individuals with mixed White ancestry [@alba_what_2018a].
-
-We build on these strands of research by formally modeling the major population processes at play. In doing so, our current aim is to explore the interplay of various factors in (re)producing "mixed" populations, not to yield definitive future population estimates. Rather, we consider how relational characteristics between two groups -- such as starting group size, intergroup partnership trends, and norms around group assignment -- interact to shape long-run population dynamics. We ask how much each of these factors influences the growth of a mixed population, with a special focus on variation in patterns of classification: the social rules that, often informally, govern how people translate known mixed ancestry into (multi)racial self-identification.
-
-# Data and Methods
-
-To answer our research question, we turn to a microsimulation approach [@zagheni_microsimulation_2015a]. Specifically, we use the SOCSIM program to simulate individual life course events over a 500 year simulation period from an initial population of 50,000 individuals. SOCSIM was developed in the 1970s at the University of California, Berkeley to allow for the microsimulation of populations based on a set of demographic rates [@hammel_socsim_1976a]. Importantly, microsimulation preserves the kinship relationship between every individual in the microsimulation, which is critical for our approach.
-
-We use SOCSIM to build a simulation using two primary groups, A and B, and a third "mixed" group, AB. The first 300 years of the simulation are a "run in" to establish stable population characteristics, in which we do not allow intergroup partnership between group A and B.[^fn-hypohyper] For the final 200 years of the simulation we allow intergroup partnering and simulate the group membership assignment of mixed-group births, using several different scenarios as described below.[^fn-group]
-
-[^fn-hypohyper]: As a supplementary analysis, we plan to explore alternate scenarios in which a norm of hypodescent or hyperdescent applies for this run in period, in which intergroup partnerships is very rare and all progeny from such unions are identified as belonging to the majority or minority group, respectively.
-
-[^fn-group]: We use "group" rather than race for the remainder of the article because, although the analysis is motivated by group dynamics in the United State that are seen as racialized, the patterns we describe here are applicable more broadly to societies where groups might be defined along a variety of ethnic, racial, or national lines.
-
-SOCSIM can simulate multigroup populations, but the existing algorithms to determine both the frequency of intergroup partnering and the group membership of mixed-group births are both too limited for our current purposes. To overcome this challenge, we combined SOCSIM with our own algorithms (written in R) for partnering and group membership. We allow SOCSIM to run in single year increments, following its usual procedures to determine deaths and births within the population. At the end of each simulated year, we then use our own algorithms to partner up single individuals and assign a group to any new births during the year. Throughout the simulation, we use age specific mortality rates based on US life tables from the year 2000 [@hmd_human_2025]. We similarly use baseline age specific fertility rates from the US in 2000 [@hfd_human_2025], but apply a constant multiplier to each rate to ensure a roughly stationary population throughout the simulation.
-
-Our procedure for partnering individuals uses a conditional logit model approach [@gullickson_counterfactual_2021c]. For every single woman, <!-- TODO: add the age limit here --> we choose up to fifty potential single men who do not share any of the same grandparents.[^fn-marriage] We score each potential union by the age difference between the partners and whether the potential union involves an intergroup partnership. The actual match is chosen randomly with weights that correspond to the score of each potential match, with some possibility that no match is made. To reduce overall complexity of the simulation, we do not model union dissolution. Once partnered, individuals remain partnered until one partner dies.[^fn-union-dissolution] Further details on the approach are available in the supplementary appendix.
-
-[^fn-marriage]: We only model heterosexual partnerships because the focus of our simulation is on the intergenerational inheritance of group ancestry. We also do not distinguish marriages from extra-marital unions.
-
-[^fn-union-dissolution]: Although this is an unrealistic assumption for modern populations, modeling union dissolution would add substantial complexity with little benefit to our goals. The one limitation of not modeling union dissolution is that we underestimate the intergroup diversity of nuclear and extended family networks. However, this diversity is not the focus of our simulation.
-
-We also use our own algorithm to determine the group membership of any children born in the previous year. When these children are born to parents of the same group, the child is automatically assigned to that group (e.g. the child of two A parents is assigned to A). In cases where the parents are assigned to different groups, the child could plausibly be assigned to any of the three groups, A, B, or AB. In such cases, we use a multinomial logit model to determine the probability of membership in each group based on a third degree polynomial of the proportion of the child's ancestors that are members of group A. The supplementary appendix provides details on this modeling approach.
-
-This approach is intended to allow for a great deal of flexibility, but it does not currently account for all possible processes that could affect long-run racial population dynamics. First, we apply the same fertility and mortality rates across our three population groups rather than allowing them to differ. Second, probabilistic group assignment is only triggered at birth (and when a person's parents are self-identified as belonging to different groups). This eliminates the possibility of *intragenerational* group switching. Research on multiracial identity has emphasized that switching racial self-identification over time is common in the contemporary U.S. [@liebler_americas_2017c]. Nevertheless, such individual "racial fluidity" seems to offset at the population level with relatively even flows between categories [@saperstein_recognizing_2025]. This "churn" in identification is unlikely to shape our estimates.[^fn-multistate] Broader period shifts in identification among people with distant mixed ancestry have also shaped the US racial landscape, including both the "ethnic renewal" of American Indian populations in the late 20th century [@eschbach_changing_1993b; @nagel_american_1995a] and the "passing" of light skinned black individuals into whiteness in the early 20th century [@williamson_new_1980a, pp. 100-103; @dahis_choosing_2019a]. Incorporating additional complexities such as these would be an important topic for future research.
-
-[^fn-multistate]: Efforts to incorporate identity switching using multistate modeling also are in their infancy [@muniz_racial_2024], though with notable attempts related to population projection for Australia's indigenous peoples [@raymer_multistate_2018a].
-
-## Scenarios
-
-We develop a total of twenty simulations that vary along three different dimensions: the initial relative group size, the degree of intergroup partnering over time, and the pattern of group assignment.
-
-### Initial group size
-
-Since most empirical cases of multigroup populations will involve populations of unequal size (i.e., a majority and a minority group), our primary interest is a simulation that begins with a population that is 85% members of Group A and 15% members of group B. This share may shift slightly as a result of random chance during the run in period of the simulation but should remain relatively stable until we introduce intergroup dynamics.
-
-To understand better how relative group size might affect the intergroup dynamics we are studying, we also run a second set of scenarios in which Groups A and B start at equal size.
-
-### Intergroup partnering
-
-We create two different scenarios for the frequency of intergroup partnering. In both cases, the initial period is loosely modeled on intermarriage patterns in the US from the 1960s, when intermarriage rates began to increase exponentially from an extremely low baseline. The two scenarios that we envision are shown in @fig-marriage-lor, which shows the estimated log-odds ratios of A-B intergroup unions estimated by the cross-product resulting from the cross-tabulation of each partner's group membership. For both scenarios, we start with a very low log odds ratio of -10, which makes intergroup partnering extremely rare.
+{{< include main_manuscript.md >}}
 
 ```{r}
 #| label: fig-marriage-lor
@@ -236,21 +174,6 @@ mar_summary |>
   theme_bw()
 ```
 
-In the "progress" scenario, this log-odds ratio is reduced linearly to zero over the next 100 years, at which point it remains constant. This scenario implies exponential growth in intergroup partnering until exogamy is as likely as endogamy, accounting for group size differences. This scenario corresponds to a "post-racial" vision of intergroup dynamics in which the barriers to intergroup partnering are ultimately removed and group membership does not play a role in partnering decisions.
-
-In the second "plateau" scenario, the log-odds ratio is cut in half after 25 years and then remains constant. Like the progress scenario, this scenario implies exponential growth in intergroup partnering initially. However, it assumes that intergroup partnering will remain less common than intragroup partnering. The persistence of this gap could reflect ongoing structural issues (e.g. residential segregation, inequality), lingering cultural differentiation, or racialized individual preferences.
-
-In both scenarios, we set the A-AB and B-AB log-odds ratios to be equal to half the A-B values in each year, implying that some boundaries will make these unions less common than endogamous unions. However, because such unions involve both some degree of exogamy and endogamy, we assume that they will be more frequent than A-B partnering. Estimates of the partnering choices of multiracial individuals in the American Community Survey by @gullickson_blurring_2025a suggest that a halving of the odds ratio provides a reasonable approximation to this reduced social distance.
-
-Our scenarios are built around changes in the odds ratio rather than measures such as the proportion of intergroup unions which are highly dependent on group size. As @fig-marriage-lor shows, this approach leads to estimates that are functionally equivalent across simulations with different initial group sizes, aside from some random noise. Importantly, the actual share of intergroup unions will depend substantially on relative group size, as we show below.
-
-### Group assignment
-
-We consider five different scenarios for group assignment. The first scenario, which we refer to as the "absorbing state," is the one most often envisioned in popular discourse on multiraciality. In this scenario, the probability of AB identification for a child from a mixed union is 100%. Once a person becomes mixed, all of their descendants will remain mixed. In such a scenario, the mixed group becomes an absorbing state and the entire population must at some point become mixed. Although this scenario is more theoretical than probable, it gives us an important baseline from which to compare more realistic scenarios.
-
-In the remaining scenarios, we model group assignment as a function of the proportion of group A ancestry. We assume that the likelihood of AB identification will be maximized when an individual shares ancestry equally from both groups A and B, and that as the share of group ancestry moves in either direction from this point, the likelihood of AB identification will decrease and the likelihood will increase of identifying as a member of the primary group with which the person shares more ancestry.
-
-@fig-scenarios shows the probabilities of group assignment arising from the four scenarios that we develop. These four scenarios are based on the combination of two parameters. First, we vary the height of the peak of AB identification and consider a "high" peak of around 75% and a "low" peak of around 40%. This peak value corresponds to the likelihood of mixed identification for a first-generation biracial person. Second, we vary the degree to which AB identification declines as the ancestry share moves away from parity. In the "resilient" case, the decline is more gradual and AB identification continues to be a substantial fraction of cases even when ancestry shifts heavily in favor of one group. In the "decay" case, the decline across generations is more rapid and the likelihood of AB identification approaches zero as the ancestry share of one group approaches 100%.
 
 ```{r}
 #| label: fig-scenarios
@@ -314,21 +237,6 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
   theme_bw()
 ```
 
-
-In developing these scenarios, we rely on existing empirical data on how high or low these probabilities are likely to be. In particular, @morning_generational_2018b and @xu_gender_2021b both estimate the probability of multiracial identification by the generational loci of multiraciality from data collected by the Pew Research Center. Both studies indicate that the highest values for multiracial identification among first generation individuals is around 70-80%, while most values tend to cluster around 40% or less. @xu_gender_2021b show that, with the exception of Latino-ancestry individuals, these probabilities are cut in half for second generation multiracial individuals and beyond. @morning_generational_2018b further divide groups by second and third+ generation, and while they see somewhat less decline in the second generation, they find very steep declines for the third+ generation. Our "decay" scenario is based on the assumption that the probabilities will be cut in half in each of the second and third generation, while the "resilient" scenario assumes more gradual declines of 10% and 25% in the second and third generation, respectively. Details on how we use these values to model the curve shown in @fig-scenarios are provided in the supplementary appendix.
-
-Our approach to these scenarios is simplified in two important ways. First, all scenarios produce symmetric curves around the peak. We do not assume that one ancestry will be more dominant or "sticky" in determining identification than the other, as suggested by the historical "one drop rule" of the US. Modeling the consequence of such asymmetry could be incorporated in future extensions, but is secondary to the goals of the current research, and incorporating such asymmetry would necessitate more scenarios than we can realistically accommodate here. Second, unlike intergroup partnering, the identification scenarios here are not gradually phased in from some other baseline. Rather, we immediately switch from a system in which there were no intergroup unions and therefore no need for a system of group assignment, to these new scenarios. In real social systems, we are more likely to observe a gradual transition from some other identification regime (e.g. hypodescent, hyperdescent) toward the new regimes identified by these scenarios. To the extent that those old regimes disallowed mixed ancestry identification, our approach will somewhat overestimate the relative growth of the mixed group population over time because we switch immediately to the new regime.
-
-Overall, we have tried to strike a balance between incorporating realistic scenarios based on contemporary data from the United States and simulating more general processes that allow us to better understand the range of population dynamics. Importantly, though the results below may not reflect real populations, the simulation approach we use here is developed to be intentionally extensible to both more specific and more complex scenarios.  Code to reproduce and extend our simulation approach will be made available on GitHub.
-
-# Results
-
-We begin by considering how the share of the population that self-identifies as mixed changes over the course of the simulation and varies across our scenarios. We then highlight how initial group size conditions the long-run population shares and, in combination with trends in intergroup partnering, can lead to dramatic shifts, including both declines in the mixed population and the near disappearance of the minority single race group. Finally, we focus on the role of group assignment, contrasting the underlying mixing of individual ancestries with varying patterns of self-identification.
-
-## Distance from the absorbing state
-
-@fig-biracial-pop-scenario shows the share of the population that is identified as mixed (AB) over the time frame of the simulation. Results are divided by starting population distribution, partnering trend scenario, and classification scenario. The "absorbing state" scenario shows the upper limit of mixed identification in which the entire population will eventually become mixed. By the end of our simulation, the final share of the population that identifies as AB does approach 100% in one case: the progress scenario with an even starting population. In the other three cases of an absorbing state scenario, the proportion AB is quite high, ranging from just over 50% of the population in the plateau scenario with an uneven population to around 75% of the population in the remaining two cases. Thus, "absorbing state" group assignment produces a majority mixed population after 200 years in all cases, but the full absorbing state is only realized by the end of the simulation in the specific instance of even starting group sizes and disappearing barriers to intergroup partnership.
-
 ```{r}
 #| label: fig-biracial-pop-scenario
 #| fig-cap: The percent of the population identified as mixed (AB), across scenarios
@@ -345,14 +253,6 @@ total_pop_group |>
        color = "scenario")+
   theme_bw()
 ```
-
-The more realistic sets of scenarios all produce mixed population shares well below the absorbing state case. In general, the placement of the first-generation biracial identification peak (high vs. low) is more a determinative factor in the final share than the assumptions about how quickly mixed identification declines in later generations (resilient vs. decay), although both play a role in the expected direction. The progress trend for intergroup partnering also produces a larger mixed population than the plateau trend, in predictable fashion.
-
-## Starting group size matters
-
-The relative size of the two groups in the initial population also plays a substantial role in the share of the mixed population at the end of the simulation. The mixed population grows faster in a population evenly split between groups A and B than in a case with a clear majority and minority population. The simple reason for this is that the even population provides more opportunity for intergroup unions.
-
-@fig-biracial-pop-scenario also reveals that in some cases the share of the mixed population actually declines by the end of the simulation period. In particular, we observe declines in the share of the mixed population in three of the classification scenarios that combine uneven starting group size with a progress trend for intergroup partnering. Interestingly, this decline happens in the more "liberal" case of a progress trend for intergroup partnering than for the "conservative" case of a plateau trend. The reasons for this downward trend are complex and provide deeper insight into the population dynamics involved here.
 
 ```{r}
 #| label: fig-group-dist
@@ -373,10 +273,6 @@ total_pop_group |>
   theme(panel.grid = element_blank(), panel.grid.major.x = element_blank())
           
 ```
-
-The downward trend in these cases of uneven starting group sizes is caused by the nearly complete depopulation of Group B. @fig-group-dist shows the relative share of each group over time in all of the simulations that use a progress trend for intergroup partnering. In the cases of an even population, the mixed population grows at the expense of both groups A and B, in equal proportion. In the uneven case, the relative share of both Group A and B initially decline as the mixed population grows, but this effect is far more evident for Group B which declines to almost non-existence by the end of the simulation. Ultimately, Group A becomes a larger share of the population toward the end of the simulation.
-
-The root cause for the decline of the mixed population is the very small size of Group B. Because relatively few Group B members remain, it is difficult to form a "first generation" union between a Group A and B member, which will have the highest likelihood of being identified as mixed. The lack of new "input" causes the generational loci of multiraciality to recede and, in the absence of "absorbing state" group assignment, the broader mixed population declines. @fig-out-marriage illustrates this process by showing the share of all new unions in each year of the simulation that are A-B intergroup unions. After an initial period of growth, this share declines across all scenarios and starting group sizes. The decline happens earlier and is sharper in the more liberal classification scenarios because the size of Group A and B declines the most in those scenarios.
 
 ```{r}
 #| label: fig-out-marriage
@@ -424,13 +320,6 @@ ggplot(mar_summary, aes(year, out12, group = scenario, color = scenario))+
   theme_bw()
 ```
 
-
-In the case of initial uneven group size, Group B declines in size much faster than Group A initially because intergroup unions will be a larger share of the Group B population, due to its smaller size. If there are no preferences for partnership by group status, then the proportion of Group B members who are partnered with Group A members will equal the share of the population that is Group A, and vice versa for Group A members. Over time this mixing will favor Group A ancestry and individuals that fold back into single group ancestry from an intergroup union in the previous generation will be much more likely to fold back into a Group A ancestry.
-
-## The role of self-identification regimes
-
-@fig-biracial-share-scenario shows the size of the mixed population in each scenario as a fraction of the corresponding absorbing state scenario by the end of the simulation. In the absorbing state scenario, anyone with mixed ancestry is identified as a member of AB, regardless of how distant the generational locus. Therefore, these fractions tell us what percentage of all those individuals who could plausibly identify as mixed are identified as such within the scenario.
-
 ```{r}
 #| label: fig-biracial-share-scenario
 #| fig-cap: The size of the mixed (AB) population at the conclusion of the simulation as a fraction of that size in the absorbing state scenario
@@ -453,10 +342,6 @@ total_pop_group |>
        x = NULL)+
   theme_bw()
 ```
-
-In most cases, the share of the identified mixed population is much less than what it could be. Only in the case of even populations with a progress trend do we observe that more than 50% of those individuals who could possibly be identified as mixed are in fact identified as such. In most of these scenarios, and especially for cases with uneven starting population sizes, the mixed population remains a small share of both the population overall and the mixed population that could possibly be identified. In these scenarios, the vast majority of people with some mixed ancestry fold back into single race categories across generations. This is true even in the case where no boundaries to intergroup unions exist for the final 100 years of the simulation.
-
-One way to see this more clearly is to examine the mean share of Group A and B ancestry across new births by group, as shown in @fig-ancestry-share. Regardless of scenario, over time all three groups will converge on the same share of Group A and B ancestry and that share will equal the initial share of Group A and B individuals at the beginning of the simulation. The speed of that convergence is mostly driven by the degree to which intergroup partnering increases because that is the primary driver of mixing actual ancestries, regardless of identification. More liberal classification regimes also tend to hasten this convergence. In cases where Group A is the majority group, the dominance of Group A membership in most individual ancestries, regardless of identification, will contribute to more Group A identification over time because the children of intergroup unions are more likely to fold back into a Group A identification. When both Group A and B are evenly represented in the population, Group A and B ancestries remain even across the population at large and thus the children of intergroup unions are equally likely to fold back into a Group B identification. This illustrates how norms of self-identification interact with other population dynamics to shape the observed size of the "mixed" population, regardless of their underlying ancestry.
 
 ```{r}
 #| label: fig-ancestry-share
@@ -519,68 +404,3 @@ ancestry_prop |>
   labs(x = "year of birth", y = "mean share of group B ancestry")+
   theme_bw()
 ```
-
-
-# Conclusions
-
-Our simulations reveal highly dynamic and interactive features of multigroup processes that can lead to novel and sometimes unanticipated outcomes. First, different assumptions about the likelihood of mixed self-identification among mixed ancestry individuals across generations can lead to very different outcomes. Although both factors play a role, we find that differences in the likelihood of mixed self-identification at the peak (i.e. among first generation mixed individuals) are more decisive of the long-term size of the self-identified population than differing assumptions about the degree of loss in mixed self-identification in later generations. More importantly, even in the most liberal self-identification scenarios we explored, the size of the identified mixed population falls well short of all those who could identify as mixed based on their ancestry. 
-
-Second, we find group size plays a very important, but complex, role. On a basic level, a more even population distribution of initial groups provides more overall opportunity for intergroup partnerships, contributing to faster growth in the mixed population, all else held constant. Less obvious is the fact that, when groups are evenly distributed, the reduction in primary group membership due to the growth of the mixed population is felt evenly by both groups. This is not the case with uneven starting group size, where the minority group experiences much larger reductions in population size than the majority group. This decline is greater in scenarios with more liberal trends in intergroup partnership and mixed identification. 
-
-However, in scenarios with uneven starting group sizes, the relative decline of the minority group also contributes to an ultimate decline in the relative size of the mixed group, because the most likely partnerships to produce self-identified mixed individuals are those between the two primary groups and those partnerships become much rarer. As the generational loci recedes, the population becomes dominated by the majority group, many of whom have some minority group ancestry. Thus, somewhat ironically, the result of a more liberal trend in intergroup partnership in the context of uneven starting group sizes may not ultimately be the growth of a multiracial population but rather the growth of the majority population and the decline of the minority population. 
-
-Though perhaps surprising to some, these results are not entirely unexpected. The continued numerical dominance of the majority group (A) in all but the most liberal "absorbing state" scenarios aligns with Richard Alba's repeated critiques of predictions for a coming "majority-minority society" that rest heavily on how to count and classify multiracial people [@alba_likely_2016b; @alba_what_2018a; @alba_great_2020b]. The near disappearance of the minority group (B) in many of our scenarios also echoes debates in the late 1990s about whether Black American political power would be harmed if federal guidelines were modified to allow people to mark multiple races, or identify explicitly as multiracial [@williams_multiracialism_2005a].
-
-At a broader level, our results underscore the many factors that would have to align to produce the kind of "post-racial" utopia of population mixing that many have imagined. They also add a necessary asterisk to contemporary claims of a rapidly growing multiracial population in the US that implies recently observed growth is likely to continue apace (see also @starr_multiracial_2024a and @ventura_rise_2025a). The post-Loving biracial baby boom produced a seismic shift in US race relations on may fronts, but its long-run consequences on the US racial landscape hinge heavily on how lasting mixed identity is as a unique social experience.
-
-<!-- Our simulations loosely mirror features of contemporary US racial dynamics, but nonetheless have applicability to a wide variety of historical and contemporary multiethnic/multiracial societies. SAY MORE HERE? Contemporary Europe? Brazil? Historical US? -->
-
-Our simulations here are intended to uncover population dynamics in a scenario that is necessarily simplified from the much more complicated reality of real multiethnic/multiracial societies. Most notably, we only consider a two-group population, but, in practice, many potential groups exist. We also do not allow for immigration during the time period that might "refuel" primary group identification, nor do we allow differential group fertility, or partnership dissolution. All of these factors may add further complexity to multigroup population processes. However, the approach we have set up here is intended to be extensible to more complex scenarios, and we hope that it provides an opportunity for future work to tease out these complexities. 
-
-# References
-
-::: {#refs}
-:::
-
-# Supplementary Appendix
-
-## Partnership Modeling
-
-The algorithm for determining who partners with whom is based on reverse-engineering a conditional logit model approach used in the study of assortative mating [@gullickson_counterfactual_2021c]. For each single woman in the population, we sample up to fifty potential single male partners to construct a potential choice set. We score each potential union of woman $w$ and man $m$ by a log-odds determined as follows:
-
-$$log(O_{mw}) = 0.072 (\textit{age}_m-\textit{age}_w) - 0.014 (\textit{age}_m-\textit{age}_w)^2 + \alpha_{mw}$$
-
-The age difference parameters are derived from @gullickson_counterfactual_2021c and produce a parabolic function of partner age difference that is maximized when the man is 2.76 years older than the woman. The $\alpha$ parameter addresses group exogamy where $g_m$ and $g_w$ are the groups for the man and woman, respectively. as follows:
-
-$$\alpha_{mw} = \begin{cases}
-  0 & \text{if } g_m = g_w\\
-  \alpha & \text{if } (g_m = A \text{ and } g_w = B) \text{ or } (g_m = B \text{ and } g_w = A)\\
-  \alpha/2 & \text{else} 
-  \end{cases}$$
-
-When both potential partners are from the same group, this parameter is zero. For intergroup partnering between the primary groups of A and B, we use a value of $\alpha$ and for intergroup partnering between A-AB or B-AB, we use half that value. We develop different values for $\alpha$ over time across scenarios as discussed in the main paper.
-
-To determine the actual union chosen, we sample from the available possibilities with weight equal to $O_{mw}$. This approach is equivalent to a conditional logit model approach in which the probability for a specific match $i$ from the available choice set would be given by:
-$$\frac{e^{O_i}}{\sum_{k=1}^{J} e^{O_j}}$$
-Using this routine, it is possible for the same male partner to be chosen by two different women. In such cases, we remove duplicate selections randomly. We also found in practice that it was necessary to set a benchmark for situations in which none of the potential male partners crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a partner and these women remain single for the next year. <!-- TODO: discuss how this algorithm produces reasonable marriage statistics across all types of marriages -->
-
-We confirm that the actual patterns of group partnership match the expectations of our input model and produce similar distributions of age at partnering across group endogamous and exogamous unions.
-
-## Group Assignment Modeling
-
-The multinomial model used to determine group assignment is defined as: $$ \log(O_{ij}) = \beta_{0j} + \beta_{1j}x_i + \beta_{2j}x_i^2 + \beta_{3j}x_i^3$$ where $O_{ij}$ is the odds that individual $i$ is assigned to group $j$ and $x_i$ is the proportion of ancestors of individual $i$ that belong to group A (e.g. a "first generation" child of A and B parents would have 0.5 group A ancestors). We use a third degree polynomial function to allow for non-linearity in this function.
-
-To determine the probability of group assignment from this model, we use:
-$$P_{ij} = \frac{e^{O_{ij}}}{\sum_{k=1}^{J} e^{O_{ij}}}$$ where $P_{ij}$ is the probability of group assignment to group $j$. We then sample a group assignment for each individual based on these probabilities.
-
-This model requires the estimation of 12 distinct $\beta$ parameters (three slopes and an intercept for each group $j$). To estimate these parameters, we determine probability of group identification at five points along the curve for each group. We then use these points to empirically estimate the full parameters of the multinomial logit model via maximum likelihood estimation.
-
-The first point we consider is the case of an individual with equal ancestry from groups A and B. This case corresponds to the concept of a "first generation" biracial individual. The probability of AB identification for this case determines the "peak" values we use for the scenario. For individuals who do not identify as AB, we give them an equally likely probability of choosing group A or B.
-
-The next two points we consider are consistent with a "second generation" multiracial individual who has one AB parent and a parent from either A or B. This person would have 75% ancestry from one group and 25% from the other group. For these cases, we determine how much the probability of identifying as AB declines in percentage terms from the peak. In these two cases, we also have to decide how to divide up the probability between single race responses. We assume that the group whose ancestry is more common will be four times more likely to be chosen than the group whose ancestry is less common.
-
-The final two points correspond to a "third generation" multiracial individual who has seven great grandparents from one group and one great grandparent from the other group. We again determine how much the probability of AB identification would decline from the second generation case. For single race identification, we assume that the group whose ancestry is more common will be 20 times more likely to be chosen than the group whose ancestry is less common.
-
-Determining the two ratios to use for the second and third generation requires some guess work. The closest empirical work on this topic is @bratter_will_2007b who used American Community Survey data to examine the racial classification of children where one or both parents identified as multiracial. Because we don't know the generational locus of the multiracial parent, we can't determine the generational loci of these children but many will likely be second or third generation. In cases where the multiracial parent was partnered with a single race parent with a racial overlap, the ratios favoring single race identification with the overlapping race ranged from about 60 to 9 [@bratter_will_2007b, p. 833]. Thus, our ratios of 4 and 20, may understate the degree to which single race identification follows the more common ancestry in later generations.
-
-
