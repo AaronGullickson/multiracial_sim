@@ -114,7 +114,7 @@ total_pop_group <- total_pop |>
 
 ```{r}
 #| label: fig-marriage-lor
-#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via Generalized Additive Model (GAM). 
+#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via a Generalized Additive Model (GAM). 
 
 mar_summary <- sims_mar |>
   filter(year >= 300) |>
@@ -322,23 +322,25 @@ ggplot(mar_summary, aes(year, out12, group = scenario, color = scenario))+
 
 ```{r}
 #| label: fig-biracial-share-scenario
-#| fig-cap: The size of the mixed (AB) population at the conclusion of the simulation as a fraction of that size in the absorbing state scenario
+#| fig-cap: The size of the self-identified mixed (AB) population at the conclusion of the simulation as a fraction of all individuals with some mixed ancestry
 
-total_pop_group |>
-  filter(scenario == "absorbing state") |>
-  rename(share_absorbing = share) |>
-  select(year, group, pop_share, mar_growth, share_absorbing) |>
-  right_join(total_pop_group, 
-             by = c("year", "group", "pop_share", "mar_growth")) |>
-  mutate(prop_absorb = share/share_absorbing) |>
-  filter(group == "AB", year == 500, scenario != "absorbing state") |>
-  ggplot(aes(x = scenario, y = prop_absorb))+
+sims_pop |>
+  # get everyone living at the end
+  filter(is.na(dod)) |>
+  # leave out absorbing state
+  filter(scenario != "absorbing state") |>
+  # only those who have mixed ancestry
+  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
+  group_by(pop_share, mar_growth, scenario) |>
+  summarize(p_identify_mixed = mean(group == "AB")) |>
+  ungroup() |>
+  ggplot(aes(x = scenario, y = p_identify_mixed))+
   geom_segment(aes(yend = 0))+
   geom_point()+
   facet_grid(pop_share~mar_growth)+
   coord_flip()+
   scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
-  labs(y = "Size of mixed (AB) population as fraction of absorbing state scenario",
+  labs(y = "Size of mixed (AB) population as fraction of all individuals with mixed ancestry",
        x = NULL)+
   theme_bw()
 ```
