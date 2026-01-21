@@ -345,6 +345,54 @@ sims_pop |>
   theme_bw()
 ```
 
+
+```{r}
+#| label: fig-ancestry-distribution
+#| fig-cap: Distribution of share of ancestry from Group A among those who have mixed ancestry at the end of the simulation
+#| eval: false
+
+# one option would be to show the histograms of group A ancestry across each case at the end of the scenario
+
+sims_pop |>
+  # get everyone living at the end
+  filter(is.na(dod)) |>
+  # only those who have mixed ancestry
+  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
+  ggplot(aes(x = ancestry_group1, 
+             y = after_stat(density),
+             fill = mar_growth))+
+  geom_density(alpha = 0.5, adjust = 2)+
+  facet_grid(pop_share~scenario)+
+  scale_x_continuous(labels = scales::percent)+
+  labs(x = "share of group A ancestry", 
+       fill = "partnership\ntrend")+
+  theme_bw()
+  
+```
+
+
+```{r}
+#| label: fig-biracial-share-scenario
+#| fig-cap: The share of the population that has mixed ancestry at the end of the simulation
+#| eval: false
+
+sims_pop |>
+  filter(is.na(dod)) |>
+  group_by(pop_share, mar_growth, scenario) |>
+  summarize(p_mixed = mean(ancestry_group1 < 1 & ancestry_group2 < 1)) |>
+  ungroup() |>
+  ggplot(aes(x = scenario, y = p_mixed))+
+  geom_segment(aes(yend = 0))+
+  geom_point()+
+  facet_grid(pop_share~mar_growth)+
+  coord_flip()+
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  labs(y = "Share of population that has mixed ancestry",
+       x = NULL)+
+  theme_bw()
+
+```
+
 ```{r}
 #| label: fig-ancestry-share
 #| fig-cap: Mean proportion of Group A and B ancestry by identified group among new births over time
