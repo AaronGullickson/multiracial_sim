@@ -352,7 +352,12 @@ sims_pop |>
 
 ```{r}
 #| label: fig-ancestry-distribution
-#| fig-cap: Distribution of share of ancestry from Group A among those who have mixed ancestry at the end of the simulation, using kernel density estimation
+#| fig-cap: Distribution of share of ancestry from Group A among those who have mixed ancestry at the end of the simulation. Distribution is estimated and smoothed using kernel density. Dotted vertical lines indicate the starting share of Group A population in each scenario. 
+
+starting_pop <- tibble(
+  share_a = c(0.85, 0.5),
+  pop_share = levels(sims_pop$pop_share), levels = levels(sims_pop$pop_share)
+)
 
 sims_pop |>
   # get everyone living at the end
@@ -363,12 +368,14 @@ sims_pop |>
              y = after_stat(density),
              fill = mar_growth))+
   geom_density(alpha = 0.5, adjust = 2)+
+  geom_vline(data = starting_pop, aes(xintercept = share_a), linetype = 3)+
   facet_grid(pop_share~scenario)+
-  scale_x_continuous(labels = scales::percent)+
+  scale_x_continuous(breaks = c(0, 0.5, 1), labels = scales::percent)+
   scale_fill_manual(values = palette_mar_growth)+
-  labs(x = "share of group A ancestry", 
+  labs(x = "share of group A ancestry",
        fill = "partnership\ntrend")+
-  theme_bw()
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45,hjust = 1))
   
 ```
 
