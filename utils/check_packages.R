@@ -32,5 +32,5 @@ package.check <- lapply(packages, FUN = function(x) {
 # the architecture we have but the old sims were working so its not clear its 
 # worth it.
 if(!require(rsocsim)) {
-   devtools::install_github("MPIDR/rsocsim")
+  # devtools::install_github("MPIDR/rsocsim")
 }

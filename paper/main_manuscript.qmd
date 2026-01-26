@@ -334,14 +334,17 @@ sims_pop |>
   group_by(pop_share, mar_growth, scenario) |>
   summarize(p_identify_mixed = mean(group == "AB")) |>
   ungroup() |>
-  ggplot(aes(x = scenario, y = p_identify_mixed))+
-  geom_segment(aes(yend = 0))+
-  geom_point()+
-  facet_grid(pop_share~mar_growth)+
+  ggplot(aes(x = scenario, y = p_identify_mixed, group = mar_growth,
+             color = mar_growth))+
+  geom_segment(aes(yend = 0), position = position_dodge(width = 0.6))+
+  geom_point(position = position_dodge(width = 0.6))+
+  facet_wrap(~pop_share)+
   coord_flip()+
   scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  scale_color_manual(values = palette_mar_growth)+
   labs(y = "Size of mixed (AB) population as fraction of all individuals with mixed ancestry",
-       x = NULL)+
+       x = NULL,
+       color = "partnership\ntrend")+
   theme_bw()
 ```
 
@@ -364,6 +367,7 @@ sims_pop |>
   geom_density(alpha = 0.5, adjust = 2)+
   facet_grid(pop_share~scenario)+
   scale_x_continuous(labels = scales::percent)+
+  scale_fill_manual(values = palette_mar_growth)+
   labs(x = "share of group A ancestry", 
        fill = "partnership\ntrend")+
   theme_bw()
@@ -375,20 +379,21 @@ sims_pop |>
 #| label: fig-biracial-share-scenario
 #| fig-cap: The share of the population that has mixed ancestry at the end of the simulation
 #| eval: false
-
 sims_pop |>
   filter(is.na(dod)) |>
   group_by(pop_share, mar_growth, scenario) |>
   summarize(p_mixed = mean(ancestry_group1 < 1 & ancestry_group2 < 1)) |>
   ungroup() |>
-  ggplot(aes(x = scenario, y = p_mixed))+
-  geom_segment(aes(yend = 0))+
-  geom_point()+
-  facet_grid(pop_share~mar_growth)+
+  ggplot(aes(x = scenario, y = p_mixed, group = mar_growth, color = mar_growth))+
+  geom_segment(aes(yend = 0), position = position_dodge(width = 0.6))+
+  geom_point(position = position_dodge(width = 0.6))+
+  facet_wrap(~pop_share)+
   coord_flip()+
   scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  scale_color_manual(values = palette_mar_growth)+
   labs(y = "Share of population that has mixed ancestry",
-       x = NULL)+
+       x = NULL,
+       color = "partnership\ntrend")+
   theme_bw()
 
 ```
