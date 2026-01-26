@@ -374,7 +374,7 @@ sims_pop |>
 
 
 ```{r}
-#| label: fig-biracial-share-scenario
+#| label: fig-mixed-ancestry-share-scenario
 #| fig-cap: The share of the population that has mixed ancestry at the end of the simulation
 #| eval: false
 sims_pop |>
