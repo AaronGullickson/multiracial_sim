@@ -338,6 +338,7 @@ sims_pop |>
              color = mar_growth))+
   geom_segment(aes(yend = 0), position = position_dodge(width = 0.6))+
   geom_point(position = position_dodge(width = 0.6))+
+  #geom_hline(yintercept = c(0.4, 0.75), linetype = 3)+
   facet_wrap(~pop_share)+
   coord_flip()+
   scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
@@ -351,10 +352,7 @@ sims_pop |>
 
 ```{r}
 #| label: fig-ancestry-distribution
-#| fig-cap: Distribution of share of ancestry from Group A among those who have mixed ancestry at the end of the simulation
-#| eval: false
-
-# one option would be to show the histograms of group A ancestry across each case at the end of the scenario
+#| fig-cap: Distribution of share of ancestry from Group A among those who have mixed ancestry at the end of the simulation, using kernel density estimation
 
 sims_pop |>
   # get everyone living at the end
@@ -407,6 +405,7 @@ sims_pop |>
 #|    - "Uneven (85/15), Group B"
 #|    - "Even (50/50), Group B"
 #| layout-ncol: 2
+#| eval: false
 
 ancestry_prop <- sims_pop |>
   filter(dob >= 300) |>
