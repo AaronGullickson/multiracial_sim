@@ -94,20 +94,11 @@ total_pop_group <- map(300:500, function(x) {
     get_pop_alive(x) |>
     group_by(group, pop_share, mar_growth, scenario) |>
     summarize(year = x, population = n(), .groups = "drop") |>
-    ungroup()
+    group_by(pop_share, mar_growth, scenario) |>
+    mutate(share = population / sum(population)) |>
+    arrange(pop_share, mar_growth, scenario, group)
 }) |>
   bind_rows()
-
-total_pop <- total_pop_group |>
-  group_by(year, pop_share, mar_growth, scenario) |>
-  summarize(population = sum(population), .groups = "drop")
-
-# add share to pop by group
-total_pop_group <- total_pop |>
-  rename(pop_total = population) |>
-  right_join(total_pop_group) |>
-  mutate(share = population / pop_total) |>
-  select(year, group, pop_share, mar_growth, scenario, population, share)
 ```
 
 {{< include main_manuscript.md >}}
