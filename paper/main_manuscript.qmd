@@ -99,6 +99,17 @@ total_pop_group <- map(300:500, function(x) {
     arrange(pop_share, mar_growth, scenario, group)
 }) |>
   bind_rows()
+
+total_pop_ancestry <- map(300:500, function(x) {
+  sims_pop |>
+    get_pop_alive(x) |>
+    group_by(pop_share, mar_growth, scenario) |>
+    summarize(year = x, 
+              share_mixed = mean(ancestry_group1 < 1 & ancestry_group2 < 1), 
+              .groups = "drop") |>
+    arrange(pop_share, mar_growth, scenario)
+}) |>
+  bind_rows()
 ```
 
 {{< include main_manuscript.md >}}
@@ -225,6 +236,22 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
   scale_color_manual(values = palette_group)+
   labs(x = "proportion group A ancestry", 
        y = "probability of group assignment")+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-mixed-ancestry-share-time
+#| fig-cap: The percent of the population with mixed ancestry regardless of identification, over time and across scenarios
+
+total_pop_ancestry |>
+  mutate(year = year - 300) |>
+  ggplot(aes(x = year, y = share_mixed, group = scenario, color = scenario))+
+  geom_line(linewidth = 1, alpha = 0.5)+
+  facet_grid(pop_share~mar_growth)+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_scenario)+
+  labs(y = "share of population with mixed ancestry",
+       color = "scenario")+
   theme_bw()
 ```
 
@@ -392,23 +419,6 @@ sims_pop |>
        color = "partnership\ntrend")+
   theme_bw()
 
-```
-
-```{r}
-#| label: fig-mixed-ancestry-shar-timee
-#| fig-cap: The percent of the population with mixed ancestry over time, across scenarios
-
-total_pop_group |>
-  filter(group == "AB") |>
-  mutate(year = year - 300) |>
-  ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
-  geom_line(linewidth = 1, alpha = 0.7)+
-  facet_grid(pop_share~mar_growth)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_scenario)+
-  labs(y = "share of population identifying as mixed (AB)",
-       color = "scenario")+
-  theme_bw()
 ```
 
 
