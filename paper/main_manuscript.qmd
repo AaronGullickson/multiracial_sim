@@ -251,13 +251,42 @@ total_pop_ancestry |>
   scale_y_continuous(labels = scales::percent)+
   scale_color_manual(values = palette_scenario)+
   labs(y = "share of population with mixed ancestry",
-       color = "scenario")+
+       color = "classification\nscenario")+
   theme_bw()
 ```
 
 ```{r}
+#| label: fig-ancestry-distribution
+#| fig-cap: Distribution of share of Group A ancestry among those who have mixed ancestry at the end of the simulation. Distribution is estimated and smoothed using kernel density. Dotted vertical lines indicate the starting share of Group A population in each scenario. 
+
+starting_pop <- tibble(
+  share_a = c(0.85, 0.5),
+  pop_share = levels(sims_pop$pop_share), levels = levels(sims_pop$pop_share)
+)
+
+sims_pop |>
+  # get everyone living at the end
+  filter(is.na(dod)) |>
+  # only those who have mixed ancestry
+  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
+  ggplot(aes(x = ancestry_group1, 
+             y = after_stat(density),
+             fill = mar_growth))+
+  geom_density(alpha = 0.5, adjust = 2)+
+  geom_vline(data = starting_pop, aes(xintercept = share_a), linetype = 3)+
+  facet_grid(pop_share~scenario)+
+  scale_x_continuous(breaks = c(0, 0.5, 1), labels = scales::percent)+
+  scale_fill_manual(values = palette_mar_growth)+
+  labs(x = "share of group A ancestry",
+       fill = "partnership\ntrend")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45,hjust = 1))
+  
+```
+
+```{r}
 #| label: fig-biracial-pop-scenario
-#| fig-cap: The percent of the population identified as mixed (AB), across scenarios
+#| fig-cap: The percent of the population identified as mixed (AB), over time and across scenarios
 
 total_pop_group |>
   filter(group == "AB") |>
@@ -268,9 +297,38 @@ total_pop_group |>
   scale_y_continuous(labels = scales::percent)+
   scale_color_manual(values = palette_scenario)+
   labs(y = "share of population identifying as mixed (AB)",
-       color = "scenario")+
+       color = "classification/nscenario")+
   theme_bw()
 ```
+
+```{r}
+#| label: fig-biracial-share-scenario
+#| fig-cap: The size of the self-identified mixed (AB) population at the conclusion of the simulation as a fraction of all individuals with some mixed ancestry
+
+sims_pop |>
+  # get everyone living at the end
+  filter(is.na(dod)) |>
+  # leave out absorbing state
+  filter(scenario != "absorbing state") |>
+  # only those who have mixed ancestry
+  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
+  group_by(pop_share, mar_growth, scenario) |>
+  summarize(p_identify_mixed = mean(group == "AB"), .groups = "drop") |>
+  ggplot(aes(x = scenario, y = p_identify_mixed, group = mar_growth,
+             color = mar_growth))+
+  geom_segment(aes(yend = 0), position = position_dodge(width = 0.6))+
+  geom_point(position = position_dodge(width = 0.6))+
+  #geom_hline(yintercept = c(0.4, 0.75), linetype = 3)+
+  facet_wrap(~pop_share)+
+  coord_flip()+
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  scale_color_manual(values = palette_mar_growth)+
+  labs(y = "Size of mixed (AB) population as fraction of all individuals with mixed ancestry",
+       x = NULL,
+       color = "partnership\ntrend")+
+  theme_bw()
+```
+
 
 ```{r}
 #| label: fig-group-dist
@@ -334,67 +392,9 @@ ggplot(mar_summary, aes(year, out12, group = scenario, color = scenario))+
   facet_grid(pop_share~mar_growth)+
   scale_color_manual(values = palette_scenario)+
   scale_y_continuous(labels = scales::percent)+
-  labs(y = "Share of all unions that are A-B intergroup unions")+
+  labs(y = "Share of all unions that are A-B intergroup unions",
+       color = "classification/scenario")+
   theme_bw()
-```
-
-```{r}
-#| label: fig-biracial-share-scenario
-#| fig-cap: The size of the self-identified mixed (AB) population at the conclusion of the simulation as a fraction of all individuals with some mixed ancestry
-
-sims_pop |>
-  # get everyone living at the end
-  filter(is.na(dod)) |>
-  # leave out absorbing state
-  filter(scenario != "absorbing state") |>
-  # only those who have mixed ancestry
-  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
-  group_by(pop_share, mar_growth, scenario) |>
-  summarize(p_identify_mixed = mean(group == "AB")) |>
-  ungroup() |>
-  ggplot(aes(x = scenario, y = p_identify_mixed, group = mar_growth,
-             color = mar_growth))+
-  geom_segment(aes(yend = 0), position = position_dodge(width = 0.6))+
-  geom_point(position = position_dodge(width = 0.6))+
-  #geom_hline(yintercept = c(0.4, 0.75), linetype = 3)+
-  facet_wrap(~pop_share)+
-  coord_flip()+
-  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
-  scale_color_manual(values = palette_mar_growth)+
-  labs(y = "Size of mixed (AB) population as fraction of all individuals with mixed ancestry",
-       x = NULL,
-       color = "partnership\ntrend")+
-  theme_bw()
-```
-
-
-```{r}
-#| label: fig-ancestry-distribution
-#| fig-cap: Distribution of share of ancestry from Group A among those who have mixed ancestry at the end of the simulation. Distribution is estimated and smoothed using kernel density. Dotted vertical lines indicate the starting share of Group A population in each scenario. 
-
-starting_pop <- tibble(
-  share_a = c(0.85, 0.5),
-  pop_share = levels(sims_pop$pop_share), levels = levels(sims_pop$pop_share)
-)
-
-sims_pop |>
-  # get everyone living at the end
-  filter(is.na(dod)) |>
-  # only those who have mixed ancestry
-  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
-  ggplot(aes(x = ancestry_group1, 
-             y = after_stat(density),
-             fill = mar_growth))+
-  geom_density(alpha = 0.5, adjust = 2)+
-  geom_vline(data = starting_pop, aes(xintercept = share_a), linetype = 3)+
-  facet_grid(pop_share~scenario)+
-  scale_x_continuous(breaks = c(0, 0.5, 1), labels = scales::percent)+
-  scale_fill_manual(values = palette_mar_growth)+
-  labs(x = "share of group A ancestry",
-       fill = "partnership\ntrend")+
-  theme_bw()+
-  theme(axis.text.x = element_text(angle = 45,hjust = 1))
-  
 ```
 
 
