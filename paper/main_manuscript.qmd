@@ -239,6 +239,25 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
   theme_bw()
 ```
 
+
+```{r}
+#| label: fig-biracial-pop-scenario
+#| fig-cap: The percent of the population identified as mixed (AB), over time and across scenarios
+
+total_pop_group |>
+  filter(group == "AB") |>
+  mutate(year = year - 300) |>
+  ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
+  geom_line(linewidth = 1, alpha = 0.7)+
+  facet_grid(pop_share~mar_growth)+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_scenario)+
+  labs(y = "share of population identifying as mixed (AB)",
+       color = "classification\nscenario")+
+  theme_bw()
+```
+
+
 ```{r}
 #| label: fig-mixed-ancestry-share-time
 #| fig-cap: The percent of the population with mixed ancestry regardless of identification, over time and across scenarios
@@ -254,6 +273,35 @@ total_pop_ancestry |>
        color = "classification\nscenario")+
   theme_bw()
 ```
+
+```{r}
+#| label: fig-biracial-share-scenario
+#| fig-cap: The size of the self-identified mixed (AB) population at the conclusion of the simulation as a fraction of all individuals with some mixed ancestry
+
+sims_pop |>
+  # get everyone living at the end
+  filter(is.na(dod)) |>
+  # leave out absorbing state
+  filter(scenario != "absorbing state") |>
+  # only those who have mixed ancestry
+  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
+  group_by(pop_share, mar_growth, scenario) |>
+  summarize(p_identify_mixed = mean(group == "AB"), .groups = "drop") |>
+  ggplot(aes(x = fct_rev(scenario), y = p_identify_mixed, group = mar_growth,
+             color = mar_growth))+
+  geom_segment(aes(yend = 0), position = position_dodge(width = 0.6))+
+  geom_point(position = position_dodge(width = 0.6))+
+  #geom_hline(yintercept = c(0.4, 0.75), linetype = 3)+
+  facet_wrap(~pop_share)+
+  coord_flip()+
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
+  scale_color_manual(values = palette_mar_growth)+
+  labs(y = "Size of mixed (AB) population as fraction of all individuals with mixed ancestry",
+       x = NULL,
+       color = "partnership\ntrend")+
+  theme_bw()
+```
+
 
 ```{r}
 #| label: fig-ancestry-distribution
@@ -284,50 +332,7 @@ sims_pop |>
   
 ```
 
-```{r}
-#| label: fig-biracial-pop-scenario
-#| fig-cap: The percent of the population identified as mixed (AB), over time and across scenarios
 
-total_pop_group |>
-  filter(group == "AB") |>
-  mutate(year = year - 300) |>
-  ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
-  geom_line(linewidth = 1, alpha = 0.7)+
-  facet_grid(pop_share~mar_growth)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_scenario)+
-  labs(y = "share of population identifying as mixed (AB)",
-       color = "classification/nscenario")+
-  theme_bw()
-```
-
-```{r}
-#| label: fig-biracial-share-scenario
-#| fig-cap: The size of the self-identified mixed (AB) population at the conclusion of the simulation as a fraction of all individuals with some mixed ancestry
-
-sims_pop |>
-  # get everyone living at the end
-  filter(is.na(dod)) |>
-  # leave out absorbing state
-  filter(scenario != "absorbing state") |>
-  # only those who have mixed ancestry
-  filter(ancestry_group1 < 1 & ancestry_group2 < 1) |>
-  group_by(pop_share, mar_growth, scenario) |>
-  summarize(p_identify_mixed = mean(group == "AB"), .groups = "drop") |>
-  ggplot(aes(x = scenario, y = p_identify_mixed, group = mar_growth,
-             color = mar_growth))+
-  geom_segment(aes(yend = 0), position = position_dodge(width = 0.6))+
-  geom_point(position = position_dodge(width = 0.6))+
-  #geom_hline(yintercept = c(0.4, 0.75), linetype = 3)+
-  facet_wrap(~pop_share)+
-  coord_flip()+
-  scale_y_continuous(labels = scales::percent, limits = c(0, 1))+
-  scale_color_manual(values = palette_mar_growth)+
-  labs(y = "Size of mixed (AB) population as fraction of all individuals with mixed ancestry",
-       x = NULL,
-       color = "partnership\ntrend")+
-  theme_bw()
-```
 
 
 ```{r}
@@ -422,65 +427,3 @@ sims_pop |>
 ```
 
 
-```{r}
-#| label: fig-ancestry-share
-#| fig-cap: Mean proportion of Group A and B ancestry by identified group among new births over time
-#| fig-subcap:
-#|    - "Uneven (85/15), Group A"
-#|    - "Even (50/50), Group A"
-#|    - "Uneven (85/15), Group B"
-#|    - "Even (50/50), Group B"
-#| layout-ncol: 2
-#| eval: false
-
-ancestry_prop <- sims_pop |>
-  filter(dob >= 300) |>
-  mutate(year = floor(dob) - 300) |>
-  group_by(year, group, pop_share, mar_growth, scenario) |>
-  summarize(prop_a = mean(ancestry_group1),
-            prop_b = mean(ancestry_group2))
-
-ancestry_prop |>
-  filter(pop_share == "uneven (85/15)" & scenario != "absorbing state") |>
-  ggplot(aes(x = year, y = prop_a, group = group, color = group))+
-  geom_hline(yintercept = 0.85, linetype = 2)+
-  geom_line()+
-  facet_grid(mar_growth~scenario)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_group)+
-  labs(x = "year of birth", y = "mean shar of group A ancestry")+
-  theme_bw()
-
-ancestry_prop |>
-  filter(pop_share == "even (50/50)", scenario != "absorbing state") |>
-  ggplot(aes(x = year, y = prop_a, group = group, color = group))+
-  geom_hline(yintercept = 0.5, linetype = 2)+
-  geom_line()+
-  facet_grid(mar_growth~scenario)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_group)+
-  labs(x = "year of birth", y = "mean share of group A ancestry")+
-  theme_bw()
-
-ancestry_prop |>
-  filter(pop_share == "uneven (85/15)", scenario != "absorbing state") |>
-  ggplot(aes(x = year, y = prop_b, group = group, color = group))+
-  geom_hline(yintercept = 0.15, linetype = 2)+
-  geom_line()+
-  facet_grid(mar_growth~scenario)+  
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_group)+
-  labs(x = "year of birth", y = "mean share of group B ancestry")+
-  theme_bw()
-
-ancestry_prop |>
-  filter(pop_share == "even (50/50)", scenario != "absorbing state") |>
-  ggplot(aes(x = year, y = prop_b, group = group, color = group))+
-  geom_hline(yintercept = 0.5, linetype = 2)+
-  geom_line()+
-  facet_grid(mar_growth~scenario)+
-  scale_y_continuous(labels = scales::percent)+
-  scale_color_manual(values = palette_group)+
-  labs(x = "year of birth", y = "mean share of group B ancestry")+
-  theme_bw()
-```
