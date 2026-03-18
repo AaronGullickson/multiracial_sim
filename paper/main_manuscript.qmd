@@ -242,7 +242,7 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
 
 ```{r}
 #| label: fig-biracial-pop-scenario
-#| fig-cap: The percent of the population identified as mixed (AB), over time and across scenarios
+#| fig-cap: The share of the population identified as mixed (AB), over time and across scenarios
 
 total_pop_group |>
   filter(group == "AB") |>
@@ -260,7 +260,7 @@ total_pop_group |>
 
 ```{r}
 #| label: fig-mixed-ancestry-share-time
-#| fig-cap: The percent of the population with mixed ancestry regardless of identification, over time and across scenarios
+#| fig-cap: The share of the population with mixed ancestry regardless of identification, over time and across scenarios
 
 total_pop_ancestry |>
   mutate(year = year - 300) |>
@@ -298,7 +298,7 @@ sims_pop |>
   scale_color_manual(values = palette_mar_growth)+
   labs(y = "Size of mixed (AB) population as fraction of all individuals with mixed ancestry",
        x = NULL,
-       color = "partnership\ntrend")+
+       color = "partnering\ntrend")+
   theme_bw()
 ```
 
@@ -313,6 +313,7 @@ starting_pop <- tibble(
 )
 
 sims_pop |>
+  filter(scenario != "absorbing state") |>
   # get everyone living at the end
   filter(is.na(dod)) |>
   # only those who have mixed ancestry
@@ -326,7 +327,7 @@ sims_pop |>
   scale_x_continuous(breaks = c(0, 0.5, 1), labels = scales::percent)+
   scale_fill_manual(values = palette_mar_growth)+
   labs(x = "share of group A ancestry",
-       fill = "partnership\ntrend")+
+       fill = "partnerin\ntrend")+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45,hjust = 1))
   
