@@ -116,6 +116,7 @@ To better understand the variation in the share identifying as AB across scenari
 
 $$P(AB) = P(M) * P(AB|M)$$
 where $P(AB)$ is the proportion who identify as AB, $P(M)$ is the proportion who have mixed ancestry from groups A and B and $P(AB|M)$ is the probability of an individual identifying as AB given they have mixed ancestry. By splitting the overall share of the AB population into these two components, we can determine how much of the growth in AB share is determined by growth in the "raw material" of a population with mixed ancestry, $P(M)$, and how much is determined by processes of identification and classification. Furthermore, we can better understand how each element of our scenarios affects each component. We examine those two components, respectively, in the next two sections.
+
 ## Growth in the mixed ancestry population 
 
  @fig-mixed-ancestry-share-time shows $P(M$), the share of the population that has any mixed ancestry, regardless of their identification, over time. Results are divided by starting population distribution, partnering trend scenario, and classification scenario. In all but one case, mixed ancestry individuals make up the majority of the population (> 50%) by the end of simulation. In most cases, the share of the mixed ancestry population is well above 50% by the end of the simulation.
