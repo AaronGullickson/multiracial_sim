@@ -5,7 +5,7 @@ shortauthors: Gullickson and Saperstein
 #keywords:
 #  - keyword1
 #  - keyword2
-thanks: Prepared for the 2026 Annual Meeting Population Association of America
+thanks: Prepared for the 2026 Annual Meeting Population Association of America, St. Louis, Missouri
 reference-section-title: References
 bibliography: ../bibliography/project.bib
 csl: ../bibliography/chicago-parenthetical.csl
@@ -327,7 +327,7 @@ sims_pop |>
   scale_x_continuous(breaks = c(0, 0.5, 1), labels = scales::percent)+
   scale_fill_manual(values = palette_mar_growth)+
   labs(x = "share of group A ancestry",
-       fill = "partnerin\ntrend")+
+       fill = "partnering\ntrend")+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 45,hjust = 1))
   
