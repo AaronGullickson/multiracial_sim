@@ -28,3 +28,4 @@ simulation/classification_gen_shiny/rsconnect/*
 
 
 **/*.quarto_ipynb
+.positai
