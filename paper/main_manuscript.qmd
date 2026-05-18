@@ -30,41 +30,28 @@ load(here("data", "data_constructed", "analytical_data.RData"))
 #| label: set-palettes
 
 palette_scenario <- c(
-  "absorbing state"       = "goldenrod",   
-  "high peak, resilient"  = "royalblue",   
-  "high peak, decay"      = "navy",   
-  "low peak, resilient"   = "coral",  
-  "low peak, decay"       = "orangered"    
-)
-
-palette_mar_growth <- c(
-  "progress" = "tomato",
-  "plateau"  = "navy"
-)
-
-palette_pop_share <- c(
-  "even"  = "goldenrod",  
-  "uneven" = "royalblue"
+  "absorbing state"      = "#E7298A",  
+  "high peak, resilient" = "#2C7FB8",  
+  "high peak, decay"     = "#66C2A5", 
+  "low peak, resilient"  = "#D95F02", 
+  "low peak, decay"      = "#FDB462"  
 )
 
 palette_group <- c(
-  "A"  = "navy",
-  "B"  = "tomato",
-  "AB" = "gold"
+  "A"  = "#000080",
+  "B"  = "#FF6347",
+  "AB" = "#FFD700"
 )
 
 palette_intermar <- c(
-  "A-B"  = "navy",
-  "A-AB"  = "tomato",
-  "B-AB" = "gold"
+  "B-AB"  = "#00A6A6",
+  "A-AB"  = "#F18F01",
+  "A-B"   = "#5F0F40"
 )
 
-palette_gen <- c(
-  "1st gen"  = "tomato",
-  "2nd gen"  = "darkgreen",
-  "3rd gen"  = "navy",
-  "4th+ gen" = "gold",
-  "Unmixed"  = "grey30"
+palette_mar_growth <- c(
+  "progress" = "#1B4332",
+  "plateau"  = "#C9184A"
 )
 ```
 
