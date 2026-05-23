@@ -10,6 +10,7 @@ packages = c(
   "knitr", # for processing quarto
   "readr","haven", # I/O
   "tidyverse","lubridate","broom", #tidyverse and friends
+  "ggtern", # ggplot extensions
   "modelsummary","gt", # for table output
   "devtools", # for installing RSOCSIM
   "fs", # for filesystem interaction
