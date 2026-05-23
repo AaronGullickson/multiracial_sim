@@ -138,7 +138,7 @@ plot_pop_pyramid(pop, 0)
 
 ```{r}
 #| label: fig-pop-pyramid-50
-#| fig-cap: Population pyramid of the population 150 years into the simulation.
+#| fig-cap: Population pyramid of the population 50 years into the simulation.
 plot_pop_pyramid(pop, 50)
 ```
 
