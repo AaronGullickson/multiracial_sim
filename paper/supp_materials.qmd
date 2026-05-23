@@ -17,9 +17,16 @@ source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
 ```
 
+
+# Testing Demographic Rates
+
+- Show observed life expectancy over time for each simulation
+- Show observed TFR over time for each simulation
+- Show growth rates over time
+
 ## Partnership Modeling
 
-The algorithm for determining who partners with whom is based on reverse-engineering a conditional logit model approach used in the study of assortative mating [@gullickson_counterfactual_2021c]. For each single woman in the population, we sample up to fifty potential single male partners to construct a potential choice set. We score each potential union of woman $w$ and man $m$ by a log-odds determined as follows:
+The algorithm for determining who partners with whom is based on reverse-engineering a conditional logit model approach used in the study of assortative mating [@gullickson_counterfactual_2021c]. For each single woman in the population, we sample up to one hundred potential single male partners to construct a potential choice set. We score each potential union of woman $w$ and man $m$ by a log-odds determined as follows:
 
 $$log(O_{mw}) = 0.072 (\textit{age}_m-\textit{age}_w) - 0.014 (\textit{age}_m-\textit{age}_w)^2 + \alpha_{mw}$$
 
@@ -31,27 +38,73 @@ $$\alpha_{mw} = \begin{cases}
   \alpha/2 & \text{else} 
   \end{cases}$$
 
-When both potential partners are from the same group, this parameter is zero. For intergroup partnering between the primary groups of A and B, we use a value of $\alpha$ and for intergroup partnering between A-AB or B-AB, we use half that value. We develop different values for $\alpha$ over time across scenarios as discussed in the main paper.
+When both potential partners are from the same group, this parameter is zero. For intergroup partnering between the primary groups of A and B, we use a value of $\alpha$ and for intergroup partnering between A-AB or B-AB, we use half that value. These $\alpha$ values correspond to exactly half the value of the log odds ratio formed by the cross-product of the two-way table formed by partner's group membership. 
 
-To determine the actual union chosen, we sample from the available possibilities with weight equal to $O_{mw}$. This approach is equivalent to a conditional logit model approach in which the probability for a specific match $i$ from the available choice set would be given by:
-$$\frac{e^{O_i}}{\sum_{k=1}^{J} e^{O_j}}$$
-Using this routine, it is possible for the same male partner to be chosen by two different women. In such cases, we remove duplicate selections randomly. We also found in practice that it was necessary to set a benchmark for situations in which none of the potential male partners crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a partner and these women remain single for the next year. <!-- TODO: discuss how this algorithm produces reasonable marriage statistics across all types of marriages -->
+We allow $\alpha$ to vary over the course of the simulation. For all simulations, $\alpha$ starts at -5, which makes intergroup partnering extremely rare.For the "progress" scenario, $\alpha$ linearly declines to zero over the first one hundred years of the scenario and then remains at zero. For the "plateau" scenario, $\alpha$ linearly declines to half its value (-2.5) over the first fifty years of the simulation and then remains at that level for the remainder of the simulation.
+
+To determine the actual union chosen, we sample from the available possibilities with weight equal to $O_{mw}$. This approach is equivalent to a conditional logit model approach in which the probability $p_i$ for a specific match $i$ from the available choice set would be given by:
+
+$$p_i = \frac{e^{O_i}}{\sum_{k=1}^{J} e^{O_j}}$$
+
+Using this routine, it is possible for the same male partner to be chosen by two different women. In such cases, we remove duplicate selections randomly. We also found in practice that it was necessary to set a benchmark for situations in which none of the potential male partners crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a partner and these women remain single for the next year. 
+When some groups are very small, sampling may lead to less intergroup partnering than implied by $\alpha$ because the small group will often not be sampled at all within the choice set of a given woman. To avoid this problem, we use stratified sampling of the groups, with a minimum of one member of each group in the given choice set.
 
 We confirm that the actual patterns of group partnership match the expectations of our input model and produce similar distributions of age at partnering across group endogamous and exogamous unions.
 
+<!-- TODO: discuss how this algorithm produces reasonable marriage statistics across all types of marriages -->
+
+- Reproduce Figure 1 from the main paper
+- Show age at marriage in endogamous and exogamous unions across scenario types
+- show difference in age at marriage in endogamou and exogamous unions across scenario types
+
+
 ## Group Assignment Modeling
 
-The multinomial model used to determine group assignment is defined as: $$ \log(O_{ij}) = \beta_{0j} + \beta_{1j}x_i + \beta_{2j}x_i^2 + \beta_{3j}x_i^3$$ where $O_{ij}$ is the odds that individual $i$ is assigned to group $j$ and $x_i$ is the proportion of ancestors of individual $i$ that belong to group A (e.g. a "first generation" child of A and B parents would have 0.5 group A ancestors). We use a third degree polynomial function to allow for non-linearity in this function.
+A multinomial model used to determine group assignment as follows: 
+
+$$\log(O_{ij}) = \beta_{0j} + \beta_{1j}x_i + \beta_{2j}x_i^2 + \beta_{3j}x_i^3$$ 
+
+where $O_{ij}$ is the odds that individual $i$ is assigned to group $j$ and $x_i$ is the proportion of ancestors of individual $i$ that belong to group A (e.g. a "first generation" child of A and B parents would have 0.5 group A ancestors). We use a third degree polynomial function to allow for non-linearity in this function.
 
 To determine the probability of group assignment from this model, we use:
-$$P_{ij} = \frac{e^{O_{ij}}}{\sum_{k=1}^{J} e^{O_{ij}}}$$ where $P_{ij}$ is the probability of group assignment to group $j$. We then sample a group assignment for each individual based on these probabilities.
 
-This model requires the estimation of 12 distinct $\beta$ parameters (three slopes and an intercept for each group $j$). To estimate these parameters, we determine probability of group identification at five points along the curve for each group. We then use these points to empirically estimate the full parameters of the multinomial logit model via maximum likelihood estimation.
+$$P_{ij} = \frac{e^{O_{ij}}}{\sum_{k=1}^{J} e^{O_{ij}}}$$ 
+
+where $P_{ij}$ is the probability of group assignment to group $j$. We then sample a group assignment for each individual based on these probabilities.
+
+This model requires the estimation of 12 distinct $\beta$ parameters (three slopes and an intercept for each group $j$). To estimate these parameters, we determine probability of group identification at five points along the curve for each group that correspond to different generational loci. We then use these points to empirically estimate the full parameters of the multinomial logit model via maximum likelihood estimation.
+
+<!-- Show a table of our x and y values -->
+
+
+```{r}
+tibble(
+  prop_a = c(0.5, 0.75, 0.25, 0.875, 0.125),
+  gen_locus = c("1st Generation", rep("2nd Generation", 2), 
+                rep("3rd Generation", 2)),
+  p_ab_high = c(0.75, 0.675, 0.675, )
+)
+
+```
+
+
+| Proportion of A ancestry | Generational Locus | P(AB) | P(A) | P(B) |
+|--------------------------|--------------------|-------|------|------|
+| 0.5                      | 1st Generation     | 0.75  | 0.125|0.125 |
+| 0.75                     | 2nd Generation     | 0.675 |
+| 0.25                     | 2nd Generation     | 0.675 |
+| 0.875                    | 3rd Generation     |
+| 0.125                    | 3rd Generation     |
 
 The first point we consider is the case of an individual with equal ancestry from groups A and B. This case corresponds to the concept of a "first generation" biracial individual. The probability of AB identification for this case determines the "peak" values we use for the scenario. For individuals who do not identify as AB, we give them an equally likely probability of choosing group A or B.
 
-The next two points we consider are consistent with a "second generation" multiracial individual who has one AB parent and a parent from either A or B. This person would have 75% ancestry from one group and 25% from the other group. For these cases, we determine how much the probability of identifying as AB declines in percentage terms from the peak. In these two cases, we also have to decide how to divide up the probability between single race responses. We assume that the group whose ancestry is more common will be four times more likely to be chosen than the group whose ancestry is less common.
+The next two points we consider are consistent with a "second generation" multiracial individual who has one AB parent and a parent from either A or B. This person would have 75% ancestry from one group and 25% from the other group. For these cases, we determine how much the probability of identifying as AB declines in percentage terms from the peak. In these two cases, we also have to decide how to divide up the probability between single race responses. We assume that the group whose ancestry is more common will be 10 times more likely to be chosen than the group whose ancestry is less common.
 
-The final two points correspond to a "third generation" multiracial individual who has seven great grandparents from one group and one great grandparent from the other group. We again determine how much the probability of AB identification would decline from the second generation case. For single race identification, we assume that the group whose ancestry is more common will be 20 times more likely to be chosen than the group whose ancestry is less common.
+The final two points correspond to a "third generation" multiracial individual who has seven great grandparents from one group and one great grandparent from the other group. We again determine how much the probability of AB identification would decline from the second generation case. For single race identification, we assume that the group whose ancestry is more common will be 50 times more likely to be chosen than the group whose ancestry is less common.
 
-Determining the two ratios to use for the second and third generation requires some guess work. The closest empirical work on this topic is @bratter_will_2007b who used American Community Survey data to examine the racial classification of children where one or both parents identified as multiracial. Because we don't know the generational locus of the multiracial parent, we can't determine the generational loci of these children but many will likely be second or third generation. In cases where the multiracial parent was partnered with a single race parent with a racial overlap, the ratios favoring single race identification with the overlapping race ranged from about 60 to 9 [@bratter_will_2007b, p. 833]. Thus, our ratios of 4 and 20, may understate the degree to which single race identification follows the more common ancestry in later generations.
+Determining the two ratios to use for the second and third generation requires some guess work. The closest empirical work on this topic is @bratter_will_2007b who used American Community Survey data to examine the racial classification of children where one or both parents identified as multiracial. Because we don't know the generational locus of the multiracial parent, we can't determine the generational loci of these children but many will likely be second or third generation. In cases where the multiracial parent was partnered with a single race parent with a racial overlap, the ratios favoring single race identification with the overlapping race ranged from about 60 to 9 [@bratter_will_2007b, p. 833]. Thus, our ratios of 10 and 50, may understate the degree to which single race identification follows the more common ancestry in later generations.
+
+- Show each fit along with points used for fitting.
+- Show each fit along with estimated probabilities from actual simulations.
+
+
