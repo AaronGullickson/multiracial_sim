@@ -15,10 +15,246 @@ format:
 library(here)
 source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
+load(here("data", "data_constructed", "analytical_data.RData"))
+
+years_runin <- 100
+```
+
+```{r}
+#| label: set-palettes
+
+palette_scenario <- c(
+  "absorbing state"      = "#E7298A",  
+  "high peak, resilient" = "#2C7FB8",  
+  "high peak, decay"     = "#66C2A5", 
+  "low peak, resilient"  = "#D95F02", 
+  "low peak, decay"      = "#FDB462"  
+)
+
+palette_group <- c(
+  "A"  = "#000080",
+  "B"  = "#FF6347",
+  "AB" = "#FFD700"
+)
+
+palette_intermar <- c(
+  "B-AB"  = "#00A6A6",
+  "A-AB"  = "#F18F01",
+  "A-B"   = "#5F0F40"
+)
+
+palette_mar_growth <- c(
+  "progress" = "#1B4332",
+  "plateau"  = "#C9184A"
+)
+```
+
+
+```{r}
+#| label: clean-up-labels
+
+sims_pop <- sims_pop |>
+  mutate(
+    group = factor(group, levels = 1:3, labels = c("A", "B", "AB")),
+    pop_share = factor(pop_share, levels = c("uneven", "even"), 
+                       labels = c("uneven (85/15)", "even (50/50)")),
+    scenario = str_replace(scenario, "_", " peak, "),
+    scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
+    scenario = factor(
+      scenario,
+      levels = c("absorbing state", "high peak, resilient", "high peak, decay",
+                 "low peak, resilient", "low peak, decay")))
+```
+
+```{r}
+#| label: count-pop-group
+#| include: false
+
+total_pop_group <- map(years_runin:(years_runin + 200), function(x) {
+  sims_pop |>
+    get_pop_alive(x) |>
+    group_by(group, pop_share, mar_growth, scenario) |>
+    summarize(year = x, population = n(), .groups = "drop") |>
+    group_by(pop_share, mar_growth, scenario) |>
+    mutate(share = population / sum(population)) |>
+    arrange(pop_share, mar_growth, scenario, group)
+}) |>
+  bind_rows()
+
+total_pop_ancestry <- map(years_runin:(years_runin + 200), function(x) {
+  sims_pop |>
+    get_pop_alive(x) |>
+    mutate(ancestry = case_when(
+      ancestry_group1 == 1 ~ "A",
+      ancestry_group2 == 1 ~ "B",
+      TRUE ~ "AB"
+    )) |>
+    group_by(ancestry, pop_share, mar_growth, scenario) |>
+    summarize(year = x, population = n(), .groups = "drop") |>
+    group_by(pop_share, mar_growth, scenario) |>
+    mutate(share = population / sum(population)) |>
+    arrange(pop_share, mar_growth, scenario, ancestry)
+}) |>
+  bind_rows()
 ```
 
 
 # Testing Demographic Rates
+
+
+```{r}
+
+calculate_py_in_year <- function(df, year, age_group) {
+  df |>
+    mutate(
+      # age at start of year
+      age_start = floor(year - dob),
+      # next birthday during year
+      next_bday = dob + age_start + 1,
+      # fraction of year alive
+      time_exit = pmin(dod, year + 1),
+      time_enter = pmax(dob, year),
+      time_total = pmax(0, time_exit - time_enter)
+    ) |>
+    # remove people who weren't born or died before this time
+    filter(time_total > 0) |>
+    # split into two ages
+    mutate(
+      # time before birthday
+      time_lower = pmax(0, pmin(time_exit, next_bday) - time_enter),
+      # time after birthday
+      time_upper = pmax(0, time_exit - pmax(time_enter, next_bday)),
+      age_lower = age_start,
+      age_upper = age_start + 1
+    ) |>
+    select(age_lower, age_upper, time_lower, time_upper) |>
+    # now pivot so each segment is on a separate row
+    pivot_longer(cols = everything(),
+                 names_to = c(".value", "part"),
+                 names_pattern = "(age|time)_(lower|upper)") |>
+    # I don't think this should happen, but just in case
+    filter(time >= 0) |>
+    # group up age and summarize time
+    mutate(age_group = cut(age, breaks = age_group, right = FALSE)) |>
+    # drop cases outside age range
+    filter(!is.na(age_group)) |>
+    group_by(age_group, .drop = FALSE) |>
+    summarize(years_lived = sum(time), .groups = "drop")
+}
+
+year <- 20
+age_group <- c(seq(from = 0, to = 100, by = 5), 150)
+
+calculate_py_in_year(opop, year, age_group)
+
+
+calculate_py <- function(df, year_group, age_group) {
+  
+  map(min(year_group):(max(year_group) - 1), function(x) {
+    calculate_py_in_year(df, x, age_group) |>
+      mutate(year = x)
+  }) |>
+    bind_rows() |>
+    mutate(year_group = cut(year, year_group, right = FALSE)) |>
+    group_by(year_group, age_group, .drop = FALSE) |>
+    summarize(years_lived = sum(years_lived), .groups = "drop")
+}
+
+year_group <- seq(from = 0, to = 300, by = 25)
+
+py <- calculate_py(opop, year_group, age_group)
+
+
+```
+
+```{r}
+asfr <- sims_pop |>
+  # test case
+  filter(pop_share == "uneven (85/15)" & mar_growth == "progress" &
+           scenario == "absorbing state") |>
+  # make it socsim-y
+  mutate(fem = if_else(sex == "Male", 0, 1),
+         dob = 12 * dob, dod = 12 * dod) |>
+  estimate_fertility_rates(final_sim_year = 300,
+                           year_min = 0, 
+                           year_max = 300, 
+                           year_group = 25, 
+                           age_min_fert = 10, 
+                           age_max_fert = 55, 
+                           age_group = 5) |>
+  rename(asfr = socsim)
+
+asfr |>
+  ggplot(aes(x = age, y = asfr, color = year, group = year))+
+  geom_point()+
+  geom_line()+
+  theme_bw()
+
+
+asfr |>
+  group_by(year) |>
+  summarize(tfr = sum(5 * socsim))
+
+opop <- sims_pop |>
+  filter(pop_share == "uneven (85/15)" & mar_growth == "progress" &
+           scenario == "absorbing state")
+
+age_groups <- seq(from = 10, to = 55, by 5)
+
+year <- 20
+opop |>
+  mutate(age = year - dob, time_to_death = dod - (year + 1)) |>
+  # drop people already dead
+  filter(time_to_death > 0) |>
+  mutate(time_interval = if_else(time_to_death > 1, 1, time_to_death)) |>
+  select(dob, dod, age, time_to_death, time_interval)
+  
+age_levels_fert <- levels(cut(seq(min(age_breaks_fert), max(age_breaks_fert) - 
+        1, by = 1), breaks = age_breaks_fert, include.lowest = FALSE, 
+        right = FALSE, ordered_results = TRUE))
+    out <- df %>% left_join(df %>% select(mom = pid, mother_birth = birth_year), 
+        by = "mom") %>% select(birth_year, mother_birth) %>% 
+        filter(birth_year %in% year_range) %>% mutate(birth_year_factor = factor(birth_year, 
+        levels = year_range), mother_age = birth_year - mother_birth, 
+        mother_agegr_factor = factor(cut(mother_age, breaks = age_breaks_fert, 
+            include.lowest = FALSE, right = FALSE, ordered_results = TRUE), 
+            levels = age_levels_fert)) %>% filter(!is.na(mother_agegr_factor)) %>% 
+        count(birth_year = birth_year_factor, mother_agegr = mother_agegr_factor) %>% 
+        tidyr::complete(birth_year = factor(year_range, levels = year_range), 
+            mother_agegr = factor(age_levels_fert, levels = age_levels_fert), 
+            fill = list(n = 0)) %>% mutate(birth_year = as.numeric(as.character(birth_year))) %>% 
+        select(year = birth_year, agegr = mother_agegr, n) %>% 
+        arrange(year, agegr)
+    return(out)
+
+
+opop <- sims_pop |>
+  filter(pop_share == "uneven (85/15)" & mar_growth == "progress" &
+           scenario == "absorbing state") |>
+  mutate(fem = if_else(sex == "Male", 0, 1),
+         dob = 12 * dob, dod = 12 * dod)
+
+last_month <- max(opop$dob)
+year_range <- year_min:(year_max - 1)
+year_breaks <- seq(year_min, year_max, by = year_group)
+age_breaks_fert <- seq(age_min_fert, age_max_fert, by = age_group)
+opop2 <- opop %>% mutate(birth_year = asYr(dob, last_month, 
+                                           final_sim_year))
+numerator <- yearly_birth_by_age_socsim(df = opop2, year_range = year_range, 
+                                        age_breaks_fert = age_breaks_fert)
+denom <- lapply(year_range, get_women_reproductive_age_socsim, 
+                df = opop2, final_sim_year = final_sim_year, age_breaks_fert = age_breaks_fert)
+denominator <- data.frame(do.call(rbind, denom))
+denominator %>% rename(deno = n) %>% full_join(numerator %>% 
+                                                 rename(nume = n), by = c("year", "agegr")) %>% mutate(deno = dplyr::coalesce(deno, 
+                                                                                                                              0L), nume = dplyr::coalesce(nume, 0L), year_gr = cut(year, 
+                                                                                                                                                                                   breaks = year_breaks, include.lowest = FALSE, right = FALSE, 
+                                                                                                                                                                                   ordered_results = TRUE)) %>% group_by(year = year_gr, 
+                                                                                                                                                                                                                         age = agegr) %>% summarise(nume = sum(nume), deno = sum(deno), 
+                                                                                                                                                                                                                                                    socsim = ifelse(sum(deno) == 0, NA_real_, sum(nume)/sum(deno)), 
+                                                                                                                                                                                                                                                    .groups = "drop") %>% select(year, age, socsim)
+
+```
 
 - Show observed life expectancy over time for each simulation
 - Show observed TFR over time for each simulation
@@ -107,11 +343,13 @@ Determining the two ratios to use for the second and third generation requires s
 - Show each fit along with points used for fitting.
 - Show each fit along with estimated probabilities from actual simulations.
 
+# Ternary Plots
 
 ```{r}
 #| label: fig-ternary-plot-equilateral
 #| fig-cap: Ternary plot showing the distribution of groups A, B, and AB over time. Group distributions are shown by dots at twenty year intervals for each scenario. 
-#| eval: false
+#| fig-height: 6.5
+#| fig-width: 6.5
 
 total_pop_group |>
   mutate(year = year - years_runin) |>
@@ -120,7 +358,7 @@ total_pop_group |>
   pivot_wider(values_from = share, names_from = group) |>
   arrange(scenario, pop_share, mar_growth, year) |>
   ggtern(aes(x = A, y = AB, z = B))+
-  geom_point(aes(color = scenario, group = scenario, shape = pop_share),
+  geom_point(aes(color = scenario, group = scenario),
              size = 1.5, alpha = 0.7)+
   geom_path(aes(color = scenario, group = scenario), alpha = 0.7)+
   geom_path(data = tibble(A = c(0.5, 0.25, 0),
@@ -129,13 +367,12 @@ total_pop_group |>
             linetype = 2)+
   scale_x_continuous(limits = c(0, 1))+
   scale_y_continuous(limits = c(0, 1))+
-  facet_wrap(~ mar_growth)+
+  facet_grid(pop_share ~ mar_growth)+
   labs(x = "A", y = "AB", z = "B")+
   scale_color_manual(values = palette_scenario)+
   theme_bw()+
   theme(legend.position = "bottom")+
   guides(color = guide_legend(nrow = 2))
-
 ```
 
 
