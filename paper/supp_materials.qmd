@@ -103,22 +103,27 @@ total_pop_ancestry <- map(years_runin:(years_runin + 200), function(x) {
 
 
 ```{r}
+#| label: functions-demographic
+
+# given a calendar year, calculate person years spent in a set of age groups
 
 calculate_py_in_year <- function(df, year, age_group) {
   df |>
     mutate(
+      # deal with missing values for living people
+      dod = if_else(is.na(dod), Inf, dod),
       # age at start of year
       age_start = floor(year - dob),
       # next birthday during year
       next_bday = dob + age_start + 1,
-      # fraction of year alive
+      # times
       time_exit = pmin(dod, year + 1),
       time_enter = pmax(dob, year),
       time_total = pmax(0, time_exit - time_enter)
     ) |>
     # remove people who weren't born or died before this time
     filter(time_total > 0) |>
-    # split into two ages
+    # split into time spent at both ages
     mutate(
       # time before birthday
       time_lower = pmax(0, pmin(time_exit, next_bday) - time_enter),
@@ -142,12 +147,7 @@ calculate_py_in_year <- function(df, year, age_group) {
     summarize(years_lived = sum(time), .groups = "drop")
 }
 
-year <- 20
-age_group <- c(seq(from = 0, to = 100, by = 5), 150)
-
-calculate_py_in_year(opop, year, age_group)
-
-
+# calculate total person years across all years where years are grouped
 calculate_py <- function(df, year_group, age_group) {
   
   map(min(year_group):(max(year_group) - 1), function(x) {
@@ -160,100 +160,107 @@ calculate_py <- function(df, year_group, age_group) {
     summarize(years_lived = sum(years_lived), .groups = "drop")
 }
 
-year_group <- seq(from = 0, to = 300, by = 25)
+# count deaths by year and age group
+calculate_deaths <- function(df, year_group, age_group) {
 
-py <- calculate_py(opop, year_group, age_group)
+    df |>
+    # remove living people
+    filter(!is.na(dod)) |>
+    # calculate age at death
+    mutate(age_death = dod - dob) |>
+    # cut age and year
+    mutate(
+      age_group = cut(age_death, age_group, right = FALSE),
+      year_group = cut(dod, year_group, right = FALSE)
+    ) |>
+    select(dob, dod, age_death, age_group, year_group) |>
+    group_by(year_group, age_group) |>
+    summarize(deaths = n(), .groups = "drop") |>
+    filter(!is.na(year_group))
+}
 
+calculate_births <- function(df, year_group, age_group) {
+  
+  # first attach mom information
+  moms <- df |>
+    select(pid, dob) |>
+    rename(mom = pid, dob_mom = dob)
+  
+  df <- df |>
+    
+  
+}
 
+# calculate life tables from a table of the format returned from functions 
+# above 
+get_le <- function(rates) {
+  
+  # get it started
+  life_table <- rates |>
+    rename(nmx = asmr) |>
+    mutate(x = as.numeric(str_extract_all(age_group, "\\d+", simplify = TRUE)[,1]),
+           n = as.numeric(str_extract_all(age_group, "\\d+", simplify = TRUE)[,2])-x,
+           nax = n / 2) |>
+    select(x, n, nax, nmx)
+    
+  # adjust for open-ended row
+  life_table$n[nrow(life_table)] <- NA
+  life_table$nax[nrow(life_table)] <- 1/life_table$nmx[nrow(life_table)]
+  
+  
+  # now do the rest
+  life_table <- life_table |>
+    mutate(nqx = c(1 - exp(-nmx[-nrow(life_table)] * n[-nrow(life_table)]), 1),
+           lx_end = cumprod(1-nqx),
+           lx_start = c(1, lx_end[-nrow(life_table)]),
+           ndx = lx_start-lx_end,
+           nLx = ifelse(is.na(n), ndx * nax, lx_end * n + ndx * nax),
+           ex = rev(cumsum(rev(nLx))))
+  
+  return(life_table)
+}
 ```
 
 ```{r}
-asfr <- sims_pop |>
-  # test case
-  filter(pop_share == "uneven (85/15)" & mar_growth == "progress" &
-           scenario == "absorbing state") |>
-  # make it socsim-y
-  mutate(fem = if_else(sex == "Male", 0, 1),
-         dob = 12 * dob, dod = 12 * dod) |>
-  estimate_fertility_rates(final_sim_year = 300,
-                           year_min = 0, 
-                           year_max = 300, 
-                           year_group = 25, 
-                           age_min_fert = 10, 
-                           age_max_fert = 55, 
-                           age_group = 5) |>
-  rename(asfr = socsim)
+#| label: calculate-mort-stats
 
-asfr |>
-  ggplot(aes(x = age, y = asfr, color = year, group = year))+
-  geom_point()+
-  geom_line()+
+year_group <- seq(from = 0, to = 300, by = 25)
+age_group <- c(0, 1, seq(from = 5, to = 100, by = 5), 150)
+
+person_years <- sims_pop |>
+  group_by(sex, pop_share, mar_growth, scenario) |>
+  group_modify(~ calculate_py(.x, year_group, age_group)) |>
+  ungroup()
+
+deaths <- sims_pop |>
+  group_by(sex, pop_share, mar_growth, scenario) |>
+  group_modify(~ calculate_deaths(.x, year_group, age_group)) |>
+  ungroup()
+
+death_rates <- full_join(deaths, person_years) |>
+  mutate(asmr = deaths / years_lived)
+
+life_tables <- death_rates |>
+  group_by(year_group, sex, pop_share, mar_growth, scenario) |>
+  group_modify(~ get_le(.x)) |>
+  ungroup()
+```
+
+```{r}
+#| label: fig-life-expectancy
+#| fig-cap: Life expectancy at zero for men and women, across all simulations in 25 year periods. A loess smoother is applied to the points. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation. The first 25 year period does not have any people at very high ages in order to calculate life expectancy. 
+
+life_expectancy <- life_tables |>
+  filter(x == 0) |>
+  select(year_group, sex, pop_share, mar_growth, scenario, ex)
+
+life_expectancy |>
+  ggplot(aes(x = year_group, group = sex, y = ex, shape = scenario, color = sex))+
+  geom_point(alpha = 0.6)+
+  geom_smooth(se = FALSE)+
+  geom_hline(yintercept = c(74.1, 79.5), linetype = 2)+
+  scale_y_continuous(limits = c(70, 80))+
   theme_bw()
-
-
-asfr |>
-  group_by(year) |>
-  summarize(tfr = sum(5 * socsim))
-
-opop <- sims_pop |>
-  filter(pop_share == "uneven (85/15)" & mar_growth == "progress" &
-           scenario == "absorbing state")
-
-age_groups <- seq(from = 10, to = 55, by 5)
-
-year <- 20
-opop |>
-  mutate(age = year - dob, time_to_death = dod - (year + 1)) |>
-  # drop people already dead
-  filter(time_to_death > 0) |>
-  mutate(time_interval = if_else(time_to_death > 1, 1, time_to_death)) |>
-  select(dob, dod, age, time_to_death, time_interval)
-  
-age_levels_fert <- levels(cut(seq(min(age_breaks_fert), max(age_breaks_fert) - 
-        1, by = 1), breaks = age_breaks_fert, include.lowest = FALSE, 
-        right = FALSE, ordered_results = TRUE))
-    out <- df %>% left_join(df %>% select(mom = pid, mother_birth = birth_year), 
-        by = "mom") %>% select(birth_year, mother_birth) %>% 
-        filter(birth_year %in% year_range) %>% mutate(birth_year_factor = factor(birth_year, 
-        levels = year_range), mother_age = birth_year - mother_birth, 
-        mother_agegr_factor = factor(cut(mother_age, breaks = age_breaks_fert, 
-            include.lowest = FALSE, right = FALSE, ordered_results = TRUE), 
-            levels = age_levels_fert)) %>% filter(!is.na(mother_agegr_factor)) %>% 
-        count(birth_year = birth_year_factor, mother_agegr = mother_agegr_factor) %>% 
-        tidyr::complete(birth_year = factor(year_range, levels = year_range), 
-            mother_agegr = factor(age_levels_fert, levels = age_levels_fert), 
-            fill = list(n = 0)) %>% mutate(birth_year = as.numeric(as.character(birth_year))) %>% 
-        select(year = birth_year, agegr = mother_agegr, n) %>% 
-        arrange(year, agegr)
-    return(out)
-
-
-opop <- sims_pop |>
-  filter(pop_share == "uneven (85/15)" & mar_growth == "progress" &
-           scenario == "absorbing state") |>
-  mutate(fem = if_else(sex == "Male", 0, 1),
-         dob = 12 * dob, dod = 12 * dod)
-
-last_month <- max(opop$dob)
-year_range <- year_min:(year_max - 1)
-year_breaks <- seq(year_min, year_max, by = year_group)
-age_breaks_fert <- seq(age_min_fert, age_max_fert, by = age_group)
-opop2 <- opop %>% mutate(birth_year = asYr(dob, last_month, 
-                                           final_sim_year))
-numerator <- yearly_birth_by_age_socsim(df = opop2, year_range = year_range, 
-                                        age_breaks_fert = age_breaks_fert)
-denom <- lapply(year_range, get_women_reproductive_age_socsim, 
-                df = opop2, final_sim_year = final_sim_year, age_breaks_fert = age_breaks_fert)
-denominator <- data.frame(do.call(rbind, denom))
-denominator %>% rename(deno = n) %>% full_join(numerator %>% 
-                                                 rename(nume = n), by = c("year", "agegr")) %>% mutate(deno = dplyr::coalesce(deno, 
-                                                                                                                              0L), nume = dplyr::coalesce(nume, 0L), year_gr = cut(year, 
-                                                                                                                                                                                   breaks = year_breaks, include.lowest = FALSE, right = FALSE, 
-                                                                                                                                                                                   ordered_results = TRUE)) %>% group_by(year = year_gr, 
-                                                                                                                                                                                                                         age = agegr) %>% summarise(nume = sum(nume), deno = sum(deno), 
-                                                                                                                                                                                                                                                    socsim = ifelse(sum(deno) == 0, NA_real_, sum(nume)/sum(deno)), 
-                                                                                                                                                                                                                                                    .groups = "drop") %>% select(year, age, socsim)
-
 ```
 
 - Show observed life expectancy over time for each simulation
