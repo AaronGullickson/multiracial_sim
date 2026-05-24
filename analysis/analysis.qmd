@@ -8,6 +8,8 @@ title: "Research Analysis Notebook"
 library(here)
 source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
+
+years_runin <- 100
 ```
 
 ```{r}
@@ -74,8 +76,8 @@ sims_pop <- sims_pop |>
 #| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation. Smoothed lines are estimated via Generalized Additive Model (GAM). 
 
 mar_summary <- sims_mar |>
-  filter(year >= 300) |>
-  mutate(year = year - 300) |>
+  filter(year >= years_runin) |>
+  mutate(year = year - years_runin) |>
   mutate(year5 = floor(year/5)*5+2.5) |>
   group_by(year5, pop_share, mar_growth, scenario) |>
   summarize(n11 = sum(hgroup == 1 & wgroup == 1),
@@ -154,9 +156,9 @@ mar_summary |>
 
 ## Baseline Regimes
 
-We run three different baseline simulations for 300 years to get a baseline population and genealogical history. In all three simulations we start with two groups, `A` and `B`. Group A is majority group at 85% of the population and group B makes up the remaining 15% of the population. 
+We run three different baseline simulations for 100 years to get a baseline population and genealogical history. In all three simulations we start with two groups, `A` and `B`. Group A is majority group at 85% of the population and group B makes up the remaining 15% of the population. 
 
-The three baseline simulations for the first 300 years are:
+The three baseline simulations for the first 100 years are:
 
 - **hypodescent regime**: unions between A and B are very rare and invidiuals from such mixed unions are always identified as members of group B. 
 - **hyperdescent regime**: unions between A and B are very rare and individuals from such mixed unions are always identified as members of group A.
@@ -164,7 +166,7 @@ The three baseline simulations for the first 300 years are:
 
 ## Novel Period
 
-After 300 years, we introduce a shift into each simulation and continue the simulation for another 150 years. This shift is defined by two factors - the rate of intermarriage between groups and the probability of group identification among individuals from mixed unions. 
+After 100 years, we introduce a shift into each simulation and continue the simulation for another 150 years. This shift is defined by two factors - the rate of intermarriage between groups and the probability of group identification among individuals from mixed unions. 
 
 ### Scenarios for Intermarriage Rates
 
@@ -247,7 +249,7 @@ In addition to these four scenarios, we also considered an "absorbing state" cas
 #| label: count-pop-group
 #| message: false
 
-total_pop_group <- map(300:500, function(x) {
+total_pop_group <- map(years_runin:(years_runin + 200), function(x) {
   sims_pop |>
     get_pop_alive(x) |>
     group_by(group, pop_share, mar_growth, scenario) |>
@@ -328,7 +330,7 @@ sims_pop |>
   group_by(year, pop_share, mar_growth, scenario) |>
   summarize(gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
   ggplot(aes(x = year, y = gen_locus, group = scenario, color = scenario))+
-  geom_vline(xintercept = 300, linetype = 2)+
+  geom_vline(xintercept = years_runin, linetype = 2)+
   geom_smooth(se = FALSE, alpha = 0.6)+
   facet_grid(pop_share~mar_growth)+
   scale_color_manual(values = palette_scenario)+
@@ -353,7 +355,7 @@ sims_summary_ancestry <- sims_pop |>
 #| fig-cap: Mean generational locus for individuals identified as biracial by year of birth and across classification scenarios. Results are smoothed using a loess smoother.
 
 sims_summary_ancestry |>
-  filter(year >= 300 & group == "AB") |>
+  filter(year >= years_runin & group == "AB") |>
   group_by(year, pop_share, mar_growth, scenario) |>
   summarize(gen_locus = mean(nearest_gen_locus, na.rm = TRUE)) |>
   ggplot(aes(x = year, y = gen_locus, group = scenario, color = scenario))+
@@ -377,7 +379,7 @@ sims_summary_ancestry |>
 #|   - Uneven population share
 
 sims_summary_ancestry |>
-  filter(pop_share == "even" & year >= 300) |>
+  filter(pop_share == "even" & year >= years_runin) |>
   ggplot(aes(x = year,  y = nearest_gen_locus, group = group, color = group))+
   geom_smooth(se = FALSE)+
   facet_grid(mar_growth~scenario)+
@@ -387,7 +389,7 @@ sims_summary_ancestry |>
   theme_bw()
 
 sims_summary_ancestry |>
-  filter(pop_share == "uneven" & year >= 300) |>
+  filter(pop_share == "uneven" & year >= years_runin) |>
   ggplot(aes(x = year,  y = nearest_gen_locus, group = group, color = group))+
   geom_smooth(se = FALSE)+
   facet_grid(mar_growth~scenario)+
@@ -408,7 +410,7 @@ sims_summary_ancestry |>
 #|   - Uneven population share
 
 sims_summary_ancestry |>
-  filter(pop_share == "even" & year >= 300) |>
+  filter(pop_share == "even" & year >= years_runin) |>
   ggplot(aes(x = year,  y = mixedness, group = group, color = group))+
   geom_line()+
   #geom_smooth(se = FALSE)+
@@ -419,7 +421,7 @@ sims_summary_ancestry |>
   theme_bw()
 
 sims_summary_ancestry |>
-  filter(pop_share == "uneven" & year >= 300) |>
+  filter(pop_share == "uneven" & year >= years_runin) |>
   ggplot(aes(x = year,  y = mixedness, group = group, color = group))+
   geom_line()+
   facet_grid(mar_growth~scenario)+
@@ -450,14 +452,14 @@ gen_share <- sims_pop |>
                                    "4th+ gen", "Unmixed")))
 
 gen_share |>
-  filter(pop_share == "even" & dob > 300) |>
+  filter(pop_share == "even" & dob > years_runin) |>
   ggplot(aes(x = dob, y = prop, color = gen, group = gen))+
   geom_smooth(se = FALSE)+
   facet_grid(mar_growth~scenario)+
   theme_bw()
 
 gen_share |>
-  filter(pop_share == "uneven" & dob > 300) |>
+  filter(pop_share == "uneven" & dob > years_runin) |>
   ggplot(aes(x = dob, y = prop, color = gen, group = gen))+
   geom_smooth(se = FALSE)+
   facet_grid(mar_growth~scenario)+theme_bw()

@@ -24,6 +24,8 @@ library(here)
 source(here("utils","check_packages.R"))
 source(here("utils","functions.R"))
 load(here("data", "data_constructed", "analytical_data.RData"))
+
+years_runin <- 100
 ```
 
 ```{r}
@@ -76,7 +78,7 @@ sims_pop <- sims_pop |>
 #| label: count-pop-group
 #| include: false
 
-total_pop_group <- map(300:500, function(x) {
+total_pop_group <- map(years_runin:(years_runin + 200), function(x) {
   sims_pop |>
     get_pop_alive(x) |>
     group_by(group, pop_share, mar_growth, scenario) |>
@@ -87,7 +89,7 @@ total_pop_group <- map(300:500, function(x) {
 }) |>
   bind_rows()
 
-total_pop_ancestry <- map(300:500, function(x) {
+total_pop_ancestry <- map(years_runin:(years_runin + 200), function(x) {
   sims_pop |>
     get_pop_alive(x) |>
     group_by(pop_share, mar_growth, scenario) |>
@@ -106,8 +108,8 @@ total_pop_ancestry <- map(300:500, function(x) {
 #| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via a Generalized Additive Model (GAM). 
 
 mar_summary <- sims_mar |>
-  filter(year >= 300) |>
-  mutate(year = year - 300) |>
+  filter(year >= years_runin) |>
+  mutate(year = year - years_runin) |>
   mutate(year5 = floor(year/5)*5+2.5) |>
   group_by(year5, pop_share, mar_growth, scenario) |>
   summarize(n11 = sum(hgroup == 1 & wgroup == 1),
@@ -233,7 +235,7 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
 
 total_pop_group |>
   filter(group == "AB") |>
-  mutate(year = year - 300) |>
+  mutate(year = year - years_runin) |>
   ggplot(aes(x = year, y = share, group = scenario, color = scenario))+
   geom_line(linewidth = 1, alpha = 0.7)+
   facet_grid(pop_share~mar_growth)+
@@ -250,7 +252,7 @@ total_pop_group |>
 #| fig-cap: The share of the population with mixed ancestry regardless of identification, over time and across scenarios
 
 total_pop_ancestry |>
-  mutate(year = year - 300) |>
+  mutate(year = year - years_runin) |>
   ggplot(aes(x = year, y = share_mixed, group = scenario, color = scenario))+
   geom_line(linewidth = 1, alpha = 0.5)+
   facet_grid(pop_share~mar_growth)+
@@ -331,7 +333,7 @@ sims_pop |>
 
 total_pop_group |>
   filter(mar_growth == "progress") |>
-  mutate(year = year - 300) |>
+  mutate(year = year - years_runin) |>
   ggplot(aes(x = year, y = share, fill = group))+
   facet_grid(scenario~pop_share)+
   geom_area(color = NA)+
@@ -352,7 +354,7 @@ triangle <- tibble(x = c(0, 0, 1), y = c(0, 1, 0))
 
 total_pop_group |>
   filter(group != "AB") |>
-  mutate(year = year - 300) |>
+  mutate(year = year - years_runin) |>
   select(-population) |>
   pivot_wider(values_from = share, names_from = group) |>
   arrange(scenario, pop_share, mar_growth, year) |>
@@ -378,8 +380,8 @@ total_pop_group |>
 #| eval: false
 
 total_pop_group |>
-  mutate(year = year - 300) |>
-  filter((year %% 20) == 0) |>
+  mutate(year = year - years_runin) |>
+  filter((year %% 10) == 0) |>
   select(-population) |>
   pivot_wider(values_from = share, names_from = group) |>
   arrange(scenario, pop_share, mar_growth, year) |>
@@ -408,8 +410,8 @@ total_pop_group |>
 #| fig-cap: Estimated share of all unions that are A-B intergroup unions over time by initial group size and scenario. Smoothed lines are estimated via GAM. 
 
 mar_summary <- sims_mar |>
-  filter(year >= 300) |>
-  mutate(year = year - 300) |>
+  filter(year >= years_runin) |>
+  mutate(year = year - years_runin) |>
   mutate(decade = floor(year/10)*10+5) |>
   group_by(year, pop_share, mar_growth, scenario) |>
   summarize(n11 = sum(hgroup == 1 & wgroup == 1),
