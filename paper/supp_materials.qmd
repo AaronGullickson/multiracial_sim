@@ -108,3 +108,34 @@ Determining the two ratios to use for the second and third generation requires s
 - Show each fit along with estimated probabilities from actual simulations.
 
 
+```{r}
+#| label: fig-ternary-plot-equilateral
+#| fig-cap: Ternary plot showing the distribution of groups A, B, and AB over time. Group distributions are shown by dots at twenty year intervals for each scenario. 
+#| eval: false
+
+total_pop_group |>
+  mutate(year = year - years_runin) |>
+  filter((year %% 10) == 0) |>
+  select(-population) |>
+  pivot_wider(values_from = share, names_from = group) |>
+  arrange(scenario, pop_share, mar_growth, year) |>
+  ggtern(aes(x = A, y = AB, z = B))+
+  geom_point(aes(color = scenario, group = scenario, shape = pop_share),
+             size = 1.5, alpha = 0.7)+
+  geom_path(aes(color = scenario, group = scenario), alpha = 0.7)+
+  geom_path(data = tibble(A = c(0.5, 0.25, 0),
+                          B = c(0.5, 0.25, 0),
+                          AB =c (0, 0.5, 1)),
+            linetype = 2)+
+  scale_x_continuous(limits = c(0, 1))+
+  scale_y_continuous(limits = c(0, 1))+
+  facet_wrap(~ mar_growth)+
+  labs(x = "A", y = "AB", z = "B")+
+  scale_color_manual(values = palette_scenario)+
+  theme_bw()+
+  theme(legend.position = "bottom")+
+  guides(color = guide_legend(nrow = 2))
+
+```
+
+

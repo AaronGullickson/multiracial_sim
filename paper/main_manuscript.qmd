@@ -345,65 +345,6 @@ total_pop_group |>
           
 ```
 
-```{r}
-#| label: fig-ternary-plot-right-angle
-#| fig-cap: Ternary plot showing the distribution of groups A, B, and AB over time
-#| eval: false
-
-triangle <- tibble(x = c(0, 0, 1), y = c(0, 1, 0))
-
-total_pop_group |>
-  filter(group != "AB") |>
-  mutate(year = year - years_runin) |>
-  select(-population) |>
-  pivot_wider(values_from = share, names_from = group) |>
-  arrange(scenario, pop_share, mar_growth, year) |>
-  ggplot(aes(x = A, y = B))+
-  #geom_abline(intercept = 1, slope = -1)+
-  #geom_point()+
-  geom_polygon(data = triangle, aes(x, y), fill = NA, color = "black")+
-  geom_path(aes(color = scenario, group = scenario), size = 1.5)+
-  scale_x_continuous(limits = c(0, 1))+
-  scale_y_continuous(limits = c(0, 1))+
-  facet_grid(pop_share ~ mar_growth)+
-  labs(x = "share of group A", y = "share of group B")+
-  scale_color_manual(values = palette_scenario)+
-  theme_bw()
-
-```
-
-```{r}
-#| label: fig-ternary-plot-equilateral
-#| fig-cap: Ternary plot showing the distribution of groups A, B, and AB over time. Group distributions are shown by dots at twenty year intervals for each scenario. 
-#| fig-height: 6.5
-#| fig-width: 6.5
-#| eval: false
-
-total_pop_group |>
-  mutate(year = year - years_runin) |>
-  filter((year %% 10) == 0) |>
-  select(-population) |>
-  pivot_wider(values_from = share, names_from = group) |>
-  arrange(scenario, pop_share, mar_growth, year) |>
-  ggtern(aes(x = A, y = AB, z = B))+
-  geom_point(aes(color = scenario, group = scenario), size = 1)+
-  geom_path(aes(color = scenario, group = scenario), apha = 0.7)+
-  geom_path(data = tibble(A = c(0.5, 0.25, 0),
-                          B = c(0.5, 0.25, 0),
-                          AB =c (0, 0.5, 1)),
-            linetype = 2)+
-  scale_x_continuous(limits = c(0, 1))+
-  scale_y_continuous(limits = c(0, 1))+
-  facet_grid(pop_share ~ mar_growth)+
-  labs(x = "A", y = "AB", z = "B")+
-  scale_color_manual(values = palette_scenario)+
-  theme_bw()+
-  theme(legend.position = "bottom")+
-  guides(color = guide_legend(nrow = 2))
-
-```
-
-
 
 ```{r}
 #| label: fig-out-marriage
