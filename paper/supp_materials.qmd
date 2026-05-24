@@ -186,9 +186,23 @@ calculate_births <- function(df, year_group, age_group) {
     select(pid, dob) |>
     rename(mom = pid, dob_mom = dob)
   
-  df <- df |>
-    
-  
+  df |> 
+    # get rid of people without moms
+    filter(!is.na(mom)) |>
+    # add mom info
+    left_join(moms, by = "mom") |>
+    select(pid, sex, dob, mom, dob_mom) |>
+    # calculate mom's age
+    mutate(age_mom = dob - dob_mom) |>
+    # cut age and year
+    mutate(
+      age_group = cut(age_mom, age_group, right = FALSE),
+      year_group = cut(dob, year_group, right = FALSE)
+    ) |>
+    # count births
+    group_by(year_group, age_group) |>
+    summarize(births = n(), .groups = "drop") |>
+    filter(!is.na(year_group))
 }
 
 # calculate life tables from a table of the format returned from functions 
@@ -244,6 +258,20 @@ life_tables <- death_rates |>
   group_by(year_group, sex, pop_share, mar_growth, scenario) |>
   group_modify(~ get_le(.x)) |>
   ungroup()
+
+births <- sims_pop |>
+  group_by(pop_share, mar_growth, scenario) |>
+  group_modify(~ calculate_births(.x, year_group, age_group)) |>
+  ungroup()
+
+birth_rates <- person_years |>
+  filter(sex == "Female") |>
+  right_join(births) |>
+  mutate(asfr = births / years_lived)
+
+tfr <- birth_rates |>
+  group_by(year_group, pop_share, mar_growth, scenario) |>
+  summarize(tfr = 5 * sum(asfr))
 ```
 
 ```{r}
@@ -255,12 +283,28 @@ life_expectancy <- life_tables |>
   select(year_group, sex, pop_share, mar_growth, scenario, ex)
 
 life_expectancy |>
-  ggplot(aes(x = year_group, group = sex, y = ex, shape = scenario, color = sex))+
-  geom_point(alpha = 0.6)+
+  ggplot(aes(x = year_group, group = sex, y = ex, color = sex))+
+  geom_point(alpha = 0.6, aes(shape = scenario))+
   geom_smooth(se = FALSE)+
   geom_hline(yintercept = c(74.1, 79.5), linetype = 2)+
   scale_y_continuous(limits = c(70, 80))+
-  theme_bw()
+  labs(y = "life expectancy at birth", x = "time period")+
+  theme_bw()+
+  theme(axis.text = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+#| label: fig-tfr
+#| fig-cap: tfr
+
+tfr |>
+  ggplot(aes(x = year_group, y = tfr, color = mar_growth))+
+  geom_smooth(se = FALSE)+
+  geom_point(alpha = 0.6, aes(shape = scenario))+
+  labs(y = "total fertility rate", x = "time period")+
+  scale_y_continuous(limits = c(1.5, 2.5))+
+  theme_bw()+
+  theme(axis.text = element_text(angle = 45, hjust = 1))
 ```
 
 - Show observed life expectancy over time for each simulation
