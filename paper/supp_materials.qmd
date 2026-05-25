@@ -70,18 +70,23 @@ sims_pop <- sims_pop |>
 #| label: count-pop-group
 #| include: false
 
-total_pop_group <- map(years_runin:(years_runin + 200), function(x) {
+total_pop_group <- map(0:300, function(x) {
   sims_pop |>
     get_pop_alive(x) |>
     group_by(group, pop_share, mar_growth, scenario) |>
     summarize(year = x, population = n(), .groups = "drop") |>
     group_by(pop_share, mar_growth, scenario) |>
-    mutate(share = population / sum(population)) |>
+    mutate(share = population / sum(population), .groups = "drop") |>
     arrange(pop_share, mar_growth, scenario, group)
 }) |>
   bind_rows()
 
-total_pop_ancestry <- map(years_runin:(years_runin + 200), function(x) {
+total_pop <- total_pop_group |>
+  group_by(year, pop_share, mar_growth, scenario) |>
+  summarize(population = sum(population), .groups = "drop")
+
+
+total_pop_ancestry <- map(0:300, function(x) {
   sims_pop |>
     get_pop_alive(x) |>
     mutate(ancestry = case_when(
@@ -92,7 +97,7 @@ total_pop_ancestry <- map(years_runin:(years_runin + 200), function(x) {
     group_by(ancestry, pop_share, mar_growth, scenario) |>
     summarize(year = x, population = n(), .groups = "drop") |>
     group_by(pop_share, mar_growth, scenario) |>
-    mutate(share = population / sum(population)) |>
+    mutate(share = population / sum(population), .groups = "drop") |>
     arrange(pop_share, mar_growth, scenario, ancestry)
 }) |>
   bind_rows()
@@ -233,10 +238,25 @@ get_le <- function(rates) {
   
   return(life_table)
 }
+
+# caculate midpoint of year_group and nicer display name
+convert_year_group <- function(df) {
+  
+  years <- str_extract_all(df$year_group, "\\d+", simplify = TRUE)
+  start <- as.numeric(years[,1])
+  end <- as.numeric(years[,2])
+  midpoint <- start + (end - start) / 2
+  interval <- paste(start, end-1, sep = "-")
+  
+  
+  df |>
+    mutate(year_midpoint = midpoint,
+           year_group = fct_reorder(interval, midpoint, max))
+}
 ```
 
 ```{r}
-#| label: calculate-mort-stats
+#| label: calculate-demog-rates
 
 year_group <- seq(from = 0, to = 300, by = 25)
 age_group <- c(0, 1, seq(from = 5, to = 100, by = 5), 150)
@@ -271,26 +291,43 @@ birth_rates <- person_years |>
 
 tfr <- birth_rates |>
   group_by(year_group, pop_share, mar_growth, scenario) |>
-  summarize(tfr = 5 * sum(asfr))
+  summarize(tfr = 5 * sum(asfr), .groups = "drop")
+
+# population growth rates at 10 year intervals
+pop_growth <- total_pop |>
+  filter(year %% 10 == 0) |>
+  arrange(scenario, pop_share, mar_growth, year) |>
+  group_by(scenario, pop_share, mar_growth) |>
+  mutate(
+    growth_rate = log(lead(population) / population) / 10,
+    year_midpoint = year + 5,
+    year_group = paste(year, lead(year) - 1, sep = "-"),
+    year_group = fct_reorder(year_group, year_midpoint, max)
+  ) |>
+  filter(year_midpoint < 300) |>
+  ungroup() |>
+  select(year_group, year_midpoint, pop_share, mar_growth, scenario, 
+         growth_rate)
 ```
 
 ```{r}
 #| label: fig-life-expectancy
-#| fig-cap: Life expectancy at zero for men and women, across all simulations in 25 year periods. A loess smoother is applied to the points. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation. The first 25 year period does not have any people at very high ages in order to calculate life expectancy. 
+#| fig-cap: Life expectancy at zero for men and women, across all simulations in 25 year periods. A loess smoother is applied to the points. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation. The first 25 year period does not have anyone at very high ages in order to calculate life expectancy. 
 
 life_expectancy <- life_tables |>
   filter(x == 0) |>
   select(year_group, sex, pop_share, mar_growth, scenario, ex)
 
 life_expectancy |>
-  ggplot(aes(x = year_group, group = sex, y = ex, color = sex))+
-  geom_point(alpha = 0.6, aes(shape = scenario))+
+  convert_year_group() |>
+  ggplot(aes(x = year_midpoint, group = sex, y = ex, color = sex))+
+  geom_point(alpha = 0.6)+
   geom_smooth(se = FALSE)+
   geom_hline(yintercept = c(74.1, 79.5), linetype = 2)+
-  scale_y_continuous(limits = c(70, 80))+
-  labs(y = "life expectancy at birth", x = "time period")+
-  theme_bw()+
-  theme(axis.text = element_text(angle = 45, hjust = 1))
+  scale_y_continuous(limits = c(70, 82))+
+  scale_x_continuous(breaks = seq(from = 0, to= 300, by = 25))+
+  labs(y = "life expectancy at birth", x = "year of simulation")+
+  theme_bw()
 ```
 
 ```{r}
@@ -298,18 +335,34 @@ life_expectancy |>
 #| fig-cap: tfr
 
 tfr |>
-  ggplot(aes(x = year_group, y = tfr, color = mar_growth))+
+  convert_year_group() |>
+  ggplot(aes(x = year_midpoint, y = tfr))+
   geom_smooth(se = FALSE)+
-  geom_point(alpha = 0.6, aes(shape = scenario))+
-  labs(y = "total fertility rate", x = "time period")+
-  scale_y_continuous(limits = c(1.5, 2.5))+
-  theme_bw()+
-  theme(axis.text = element_text(angle = 45, hjust = 1))
+  geom_point(alpha = 0.6)+
+  labs(y = "total fertility rate", x = "year of simulation")+
+  scale_y_continuous(limits = c(1.75, 2.5))+
+  scale_x_continuous(breaks = seq(from = 0, to= 300, by = 25))+
+  theme_bw()
+```
+
+```{r}
+#| label: fig-growth-rate
+#| fig-cap: Population growth rate across simulations at 10 year intervals. GAM smoother shown in blue.
+
+pop_growth |>
+  ggplot(aes(x = year_midpoint, y = growth_rate))+
+  geom_point(alpha = 0.6)+
+  geom_smooth(se = FALSE, method = "gam")+
+  scale_y_continuous(labels = scales::percent)+
+  scale_x_continuous(breaks = seq(from = 0, to= 300, by = 25))+
+  labs(y = "population growth rate", x = "year of simulation")+
+  theme_bw()
 ```
 
 - Show observed life expectancy over time for each simulation
 - Show observed TFR over time for each simulation
 - Show growth rates over time
+- Show population pyramids in run in period
 
 ## Partnership Modeling
 
@@ -404,7 +457,7 @@ Determining the two ratios to use for the second and third generation requires s
 
 total_pop_group |>
   mutate(year = year - years_runin) |>
-  filter((year %% 10) == 0) |>
+  filter(year > 0 & (year %% 10) == 0) |>
   select(-population) |>
   pivot_wider(values_from = share, names_from = group) |>
   arrange(scenario, pop_share, mar_growth, year) |>
