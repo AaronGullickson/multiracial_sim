@@ -594,37 +594,81 @@ $$P_{ij} = \frac{e^{O_{ij}}}{\sum_{k=1}^{J} e^{O_{ij}}}$$
 
 where $P_{ij}$ is the probability of group assignment to group $j$. We then sample a group assignment for each individual based on these probabilities.
 
-This model requires the estimation of 12 distinct $\beta$ parameters (three slopes and an intercept for each group $j$). To estimate these parameters, we determine probability of group identification at five points along the curve for each group that correspond to different generational loci. We then use these points to empirically estimate the full parameters of the multinomial logit model via maximum likelihood estimation.
-
-<!-- Show a table of our x and y values -->
-
+This model requires twelve distinct $\beta$ parameters (three slopes and an intercept for each group $j$). To estimate these parameters, we determine probability of group identification at five points along the curve for each group that correspond to different generational loci. The values used for each scenario are shown in full in @tbl-gen-classification. For each scenario, we generate 60,000 individuals at the given values of proportion A ancestry (20,000 for the first generation and 10,000 for each of the other points). We then estimate the model above from this sample to empirically estimate the full parameters of the multinomial logit model. We can then use that model to estimate the probabilities at any value of proportion A ancestry. 
 
 ```{r}
-tibble(
-  prop_a = c(0.5, 0.75, 0.25, 0.875, 0.125),
-  gen_locus = c("1st Generation", rep("2nd Generation", 2), 
-                rep("3rd Generation", 2)),
-  p_ab_high = c(0.75, 0.675, 0.675, )
-)
+#| label: tbl-gen-classification
+#| tbl-cap: Probability of group classification for five different generational loci, under four different scenarios. Probabilities sum to one within rows, except for rounding error.
 
+
+tibble(
+  # set out parameters
+  scenario = c("High peak, resilient", "High peak, decay", 
+               "Low peak, resilient", "Low peak, decay"),
+  first_gen_peak = c(0.75, 0.75, 0.4, 0.4),
+  second_gen_loss = c(0.1, 0.5, 0.1, 0.5),
+  second_gen_ratio= rep(10, 4),
+  third_gen_loss = c(0.25, 0.5, 0.25, 0.5),
+  third_gen_ratio = rep(50, 4)
+) |>
+  # calculate values
+  mutate(
+    second_gen_peak = first_gen_peak * (1- second_gen_loss),
+    second_gen_pref = (1-second_gen_peak)*second_gen_ratio/(second_gen_ratio+1),
+    second_gen_dis = (1-second_gen_peak)*1/(second_gen_ratio+1),
+    third_gen_peak = second_gen_peak * (1 - third_gen_loss),
+    third_gen_pref = (1-third_gen_peak)*third_gen_ratio/(third_gen_ratio+1),
+    third_gen_dis = (1-third_gen_peak)*1/(third_gen_ratio+1)
+  ) |>
+  # turn into P(AB), P(A), and P(B) at each prop_a value
+  mutate(
+    p_ab_500 = first_gen_peak,
+    p_a_500 = (1 - first_gen_peak) / 2,
+    p_b_500 = (1 - first_gen_peak) / 2,
+    p_ab_750 = second_gen_peak,
+    p_a_750 = second_gen_pref,
+    p_b_750 = second_gen_dis,
+    p_ab_250 = second_gen_peak,
+    p_a_250 = second_gen_dis,
+    p_b_250 = second_gen_pref,
+    p_ab_875 = third_gen_peak,
+    p_a_875 = third_gen_pref,
+    p_b_875 = third_gen_dis,
+    p_ab_125 = third_gen_peak,
+    p_a_125 = third_gen_dis,
+    p_b_125 = third_gen_pref
+  ) |>
+  select(scenario, starts_with("p_")) |>
+  # pivot it to get it how we want
+  pivot_longer(cols = -scenario,
+               names_to = c(".value", "prop_a"),
+               names_pattern = "(p_[ab]+)_(.*)") |>
+  mutate(prop_a = as.numeric(prop_a)/1000,
+         generation = case_when(prop_a == 0.5 ~ "1st",
+                                prop_a == 0.75 | prop_a == 0.25 ~ "2nd",
+                                TRUE ~ "3rd")) |>
+  select(scenario, generation, prop_a, starts_with("p_")) |>
+  group_by(scenario) |>
+  gt() |>
+  cols_label(
+    generation ~ "Generation",
+    prop_a ~ "A ancestry",
+    p_ab ~ "P(AB)",
+    p_a ~ "P(A)",
+    p_b ~ "P(B)"
+  ) |>
+  fmt_number(starts_with("p_"), decimals = 3) |>
+  fmt_percent(prop_a, decimals = 1) |>
+  tab_spanner(starts_with("p_"), label = "Classification probability")
 ```
 
+The first point we consider is the case of an individual with equal ancestry from groups A and B. This case corresponds to the concept of a "first generation" biracial individual. The probability of AB identification for this case determines the "peak" values we use for the scenario. We assign probabilities of AB identification of 75% and 40% in our "high peak" and "low peak" scenarios, respectively. For individuals who do not identify as AB, we give them an equally likely probability of choosing group A or B.
 
-| Proportion of A ancestry | Generational Locus | P(AB) | P(A) | P(B) |
-|--------------------------|--------------------|-------|------|------|
-| 0.5                      | 1st Generation     | 0.75  | 0.125|0.125 |
-| 0.75                     | 2nd Generation     | 0.675 |
-| 0.25                     | 2nd Generation     | 0.675 |
-| 0.875                    | 3rd Generation     |
-| 0.125                    | 3rd Generation     |
+The next two points we consider are consistent with a "second generation" multiracial individual who has one AB parent and a parent from either A or B. This person would have 75% ancestry from one group and 25% from the other group. For these cases, we determine how much the probability of identifying as AB declines in percentage terms from the first generation case. In the "resilient" case, we specify a 10% decline from the first generation peak, while, in the "decay" case, we specify a 50% decline. We also have to decide how to divide up the probability between single race responses. We assume that the group whose ancestry is more common will be 10 times more likely to be chosen than the group whose ancestry is less common.
 
-The first point we consider is the case of an individual with equal ancestry from groups A and B. This case corresponds to the concept of a "first generation" biracial individual. The probability of AB identification for this case determines the "peak" values we use for the scenario. For individuals who do not identify as AB, we give them an equally likely probability of choosing group A or B.
+The final two points correspond to a "third generation" multiracial individual who has seven great grandparents from one group and one great grandparent from the other group. We determine how much the probability of AB identification would decline from the second generation case. In the "resilient" case, we specify a 25% decline from the second generation value, while, in the "decay" case, we specify a 50% decline. For single race identification, we assume that the group whose ancestry is more common will be 50 times more likely to be chosen than the group whose ancestry is less common.
 
-The next two points we consider are consistent with a "second generation" multiracial individual who has one AB parent and a parent from either A or B. This person would have 75% ancestry from one group and 25% from the other group. For these cases, we determine how much the probability of identifying as AB declines in percentage terms from the peak. In these two cases, we also have to decide how to divide up the probability between single race responses. We assume that the group whose ancestry is more common will be 10 times more likely to be chosen than the group whose ancestry is less common.
-
-The final two points correspond to a "third generation" multiracial individual who has seven great grandparents from one group and one great grandparent from the other group. We again determine how much the probability of AB identification would decline from the second generation case. For single race identification, we assume that the group whose ancestry is more common will be 50 times more likely to be chosen than the group whose ancestry is less common.
-
-Determining the two ratios to use for the second and third generation requires some guess work. The closest empirical work on this topic is @bratter_will_2007b who used American Community Survey data to examine the racial classification of children where one or both parents identified as multiracial. Because we don't know the generational locus of the multiracial parent, we can't determine the generational loci of these children but many will likely be second or third generation. In cases where the multiracial parent was partnered with a single race parent with a racial overlap, the ratios favoring single race identification with the overlapping race ranged from about 60 to 9 [@bratter_will_2007b, p. 833]. Thus, our ratios of 10 and 50, may understate the degree to which single race identification follows the more common ancestry in later generations.
+The rationale for the values we chose for the peak and the rate of decline are provided in the main paper. Determining the two ratios to use for the second and third generation requires some guess work. The closest empirical work on this topic is @bratter_will_2007b who used American Community Survey data to examine the racial classification of children where one or both parents identified as multiracial. Because we don't know the generational locus of the multiracial parent, we can't determine the generational loci of these children but many will likely be second or third generation. In cases where the multiracial parent was partnered with a single race parent with a racial overlap, the ratios favoring single race identification with the overlapping race ranged from about 60 to 9 [@bratter_will_2007b, p. 833].
 
 - Show each fit along with points used for fitting.
 - Show each fit along with estimated probabilities from actual simulations.
