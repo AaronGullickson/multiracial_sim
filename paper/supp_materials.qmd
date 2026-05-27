@@ -506,6 +506,9 @@ mar_summary |>
 
 Notably, the proportion of outgroup partnering declines for the majority group A and increases for minority group B in the uneven group size scenarios in the last 100 years of the simulation, despite the fact that $\alpha$ is held constant during this period. This decline is a result of a decline in the relative size of the group B population making intergroup partnering more difficult for group A, but easier for group B. Some differences across classification scenario types are also driven by underlying group differences, or greater sampling variability when groups become very small (as in the absorbing state case).
 
+@fig-marriage-age compares the distribution of age at partnering for men and women by whether the union is within group or between group. In both cases, unions occur quite early for most individuals with a long right tail. This distribution of age at marriage does not match contemporary patterns in the United States or other developed countries, but for the purposes of our simulation is not necessary that the timing of union formation follow contemporary patterns. More importantly, we see no differences in the timing of unions depending on whether they are within or between group.
+
+
 ```{r}
 #| label: fig-marriage-age
 #| fig-cap: Kernel density plots of the distribution of partner age at marriage, pooled across all simulations. Densities are shown separately for within-group unions and between-group unions.
@@ -516,7 +519,7 @@ sims_mar |>
   mutate(type = if_else(hgroup == wgroup, "within group", "between group"),
          spouse = factor(spouse, 
                          levels = c("hage", "wage"), 
-                         labels = c("husband", "wife"))) |>
+                         labels = c("man", "woman"))) |>
   ggplot(aes(x = age, y = after_stat(density), group = type, fill = type))+
   geom_density(alpha = 0.7, color = NA)+
   facet_wrap(~spouse)+
@@ -524,12 +527,34 @@ sims_mar |>
   labs(x = "age at marriage", fill = "type of marriage")+
   theme_bw()
 ```
+@fig-marriage-age-time shows the mean age at partnering for men and women over time, pooling across all simulations. The initial mean age is high because all individuals began the simulation unmarried regardless of age. After 50 years of simulation, the mean ages of partnering are stationary for men and women.  The mean difference in the age of partnering between men and women is `r round(mean(sims_mar$hage-sims_mar$wage), 2)`, which corresponds closely to the 2.57 expected from the model.
+
+```{r}
+#| label: fig-marriage-age-time
+#| fig-cap: Mean age of men and women by year of union, across all simulations.
+
+sims_mar |>
+  group_by(year) |>
+  summarize(mean_age_h = mean(hage),
+            mean_age_w = mean(wage)) |>
+  pivot_longer(cols = starts_with("mean_age"), values_to = "mean_age",
+               names_to = "spouse", names_prefix = "mean_age_") |>
+  mutate(spouse = factor(spouse, levels = c("h", "w"), labels = c("man", "woman"))) |>
+  ggplot(aes(x = year, y = mean_age, color = spouse))+
+  geom_point(alpha = 0.5)+
+  geom_line()+
+  labs(x = "year of marriage", y = "mean age at partnering", color = "sex")+
+  theme_bw()
+
+```
+@tbl-age-marriage shows the mean age at marriage for men and women separately for between-group and within-group unions across all simulations. The first 100 year run-in period is excluded from the estimation. The mean ages are similar across simulations and for the same gender within simulations.
 
 ```{r}
 #| label: tbl-age-marriage
-#| tbl-cap: Mean age at marriage across simulations for husbands and wives. Results are shown separately for within-group and between-group unions.
+#| tbl-cap: Mean age at marriage across simulations for husbands and wives. Results are shown separately for within-group and between-group unions. Calculations are based on the final 200 years of simulation.
 
 sims_mar |>
+  filter(year > 100) |>
   mutate(type = if_else(hgroup == wgroup, "w", "b")) |>
   group_by(pop_share, mar_growth, scenario, type) |>
   summarize(mean_age_h = mean(hage),
@@ -548,12 +573,12 @@ sims_mar |>
     mean_age_w_w ~ "Within",
     mean_age_w_b ~ "Between"
   ) |>
-  tab_spanner(starts_with("mean_age_h"), label = "Husband") |>
-  tab_spanner(starts_with("mean_age_w"), label = "Wife") |>
+  tab_spanner(starts_with("mean_age_h"), label = "Man") |>
+  tab_spanner(starts_with("mean_age_w"), label = "Woman") |>
   fmt_number(starts_with("mean_age"), decimals = 1)
 ```
 
-`r round(mean(sims_mar$hage-sims_mar$wage), 2)`
+
 
 ## Group Assignment Modeling
 
