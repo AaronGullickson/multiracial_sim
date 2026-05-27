@@ -160,7 +160,7 @@ mar_summary |>
   scale_shape_manual(values = c(19, 15, 17, 18, 3))+
   #scale_y_continuous(limits = c(-10, 0.1))+
   labs(y = "log odds ratio of intergroup union",
-       x = "year of marriage",
+       x = "year of union",
        color = "combination")+
   theme_bw()
 ```
