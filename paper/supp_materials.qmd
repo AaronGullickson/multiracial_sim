@@ -106,7 +106,6 @@ total_pop_ancestry <- map(0:300, function(x) {
 
 # Testing Demographic Rates
 
-
 ```{r}
 #| label: functions-demographic
 
@@ -309,6 +308,9 @@ pop_growth <- total_pop |>
   select(year_group, year_midpoint, pop_share, mar_growth, scenario, 
          growth_rate)
 ```
+
+
+# Check Demographic Measures
 
 ```{r}
 #| label: fig-life-expectancy
