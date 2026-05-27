@@ -14,6 +14,11 @@ project:
     - presentation/
     - "!bibliography/"
 
+# bibliography information
+reference-section-title: References
+bibliography: ../bibliography/project.bib
+csl: ../bibliography/chicago-parenthetical.csl
+
 author:
   - name: Aaron Gullickson
     orcid: 0000-0001-7237-8131

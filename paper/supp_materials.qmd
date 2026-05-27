@@ -1,12 +1,14 @@
 ---
-title: "Supplementary Materials"
+title: "Supplementary Materials for The Dynamics of Population Mixing: A Simulation Approach"
 format:
   pdf:
     keep-tex: false
-    fig-pos: "!t"
-    include-in-header: 
-      text: |
-        \usepackage{dcolumn}
+    fig-pos: "tb"
+    fig-width: 7.5
+    colorlinks: true
+    urlcolor: red
+header-includes:
+  - \renewcommand{\thefigure}{S\arabic{figure}}
 ---
 
 ```{r}
@@ -46,6 +48,11 @@ palette_intermar <- c(
 palette_mar_growth <- c(
   "progress" = "#1B4332",
   "plateau"  = "#C9184A"
+)
+
+palette_sex <- c(
+  "man" = "#1B4332",
+  "woman"  = "#C9184A"
 )
 ```
 
@@ -115,9 +122,6 @@ total_pop_ancestry <- map(0:300, function(x) {
 }) |>
   bind_rows()
 ```
-
-
-# Testing Demographic Rates
 
 ```{r}
 #| label: functions-demographic
@@ -322,16 +326,20 @@ pop_growth <- total_pop |>
          growth_rate)
 ```
 
-
 # Check Demographic Measures
+
+We begin by checking the actual demographic rates from our simulation compared to those expected from the input. We calculate age-specific fertility and mortality rates at 25 year intervals across each simulation.
+
+We first estimate age-specific mortality rates and corresponding life tables. We use five year age groups, except for the first year of life which we split into a [0,1) and [1, 4) group. The open-ended age group is 100+. We estimate separate rates for men and women. The mortality rates we input into the simulation are from the USA in 2000 and produce life expectancy of birth of 79.5 for women and 74.1 for men.
 
 ```{r}
 #| label: fig-life-expectancy
-#| fig-cap: Life expectancy at zero for men and women, across all simulations in 25 year periods. A loess smoother is applied to the points. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation. The first 25 year period does not have anyone at very high ages in order to calculate life expectancy. 
+#| fig-cap: Life expectancy at zero for men and women, across all simulations in 25 year periods. A loess smoother is applied to the points. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation.
 
 life_expectancy <- life_tables |>
   filter(x == 0) |>
-  select(year_group, sex, pop_share, mar_growth, scenario, ex)
+  select(year_group, sex, pop_share, mar_growth, scenario, ex) |>
+  mutate(sex = fct_relabel(sex, \(x) case_when(x == "Male" ~ "man", TRUE ~ "woman")))
 
 life_expectancy |>
   convert_year_group() |>
@@ -341,13 +349,18 @@ life_expectancy |>
   geom_hline(yintercept = c(74.1, 79.5), linetype = 2)+
   scale_y_continuous(limits = c(70, 82))+
   scale_x_continuous(breaks = seq(from = 0, to= 300, by = 25))+
+  scale_color_manual(values = palette_sex)+
   labs(y = "life expectancy at birth", x = "year of simulation")+
   theme_bw()
 ```
 
+@fig-life-expectancy shows the estimated life expectancy at birth for men and women across all simulations at 25 year intervals. The dotted lines show the life exceptancy at birth from the input data. @fig-life-expectancy shows a very close fit between the empirically estimated life expectancy at birth and the "true" life expectancy. All of the simulations for a given period are also very close, with no observable outliers. We also observe no change over time in life expectancy at birth. 
+
+Age-specific fertility rates are estimated based on five year age groups over 25 year periods. The age-specific fertility rates we use as the input for the simulation produce a total fertility rate (TFR) of 2.36. However, we only allow childbearing among partnered women because we must track the group of both partners. Therefore, our actual TFR will be somewhat lower than 2.36 because women do not spend all their person-years in each age category in a partnered state.
+
 ```{r}
 #| label: fig-tfr
-#| fig-cap: tfr
+#| fig-cap: Total fertility rate, across all simulations in 25 year periods. A loess smoother is applied to the points.
 
 tfr |>
   convert_year_group() |>
@@ -360,6 +373,9 @@ tfr |>
   theme_bw()
 ```
 
+@fig-tfr shows the empirically estimated TFR over time across all simulations. As expected the overall TFR is lower than 2.36. Across all simulations, the average TFR was 2.12. The TFR does not vary across time.
+
+@fig-growth-rate shows the annual population growth rate across all simulations at 10 year intervals. The population experiences an unusually high growth rate in the initial period of the simulation because the age distribution of the starting population is not the long term stable population distribution. Instead we draw uniformly from an age distribution up to age 70, which leads to a faster growing population. However, by year 100, the population has settled into a constant stable population growth rate of about 0.1% per year. 
 
 ```{r}
 #| label: fig-growth-rate
@@ -375,33 +391,7 @@ pop_growth |>
   theme_bw()
 ```
 
-```{r}
-sims_pop |>
-  filter(scenario == "absorbing state" & mar_growth == "progress" & 
-           pop_share == "uneven (85/15)") |>
-plot_pop_pyramid(0)
-
-sims_pop |>
-  filter(scenario == "absorbing state" & mar_growth == "progress" & 
-           pop_share == "uneven (85/15)") |>
-plot_pop_pyramid(50)
-
-sims_pop |>
-  filter(scenario == "absorbing state" & mar_growth == "progress" & 
-           pop_share == "uneven (85/15)") |>
-plot_pop_pyramid(75)
-
-sims_pop |>
-  filter(scenario == "absorbing state" & mar_growth == "progress" & 
-           pop_share == "uneven (85/15)") |>
-plot_pop_pyramid(100)
-```
-
-
-- Show observed life expectancy over time for each simulation
-- Show observed TFR over time for each simulation
-- Show growth rates over time
-- Show population pyramids in run in period
+Our goal was to generate a largely stationary population to avoid having population growth play an important role in our analysis. However, given the issues with partnered fertility discussed above, benchmarking the level of the fertility rates required some guess work and is difficult to target to exactly 0%. Furthermore, we wanted to avoid declining populations due to random chance. Thus, we settled on a very slow growth rate of around 0.1%. Although this growth rate is slow, it does lead to an increase in population size from 50,000 at the start to around 70,000 after 300 years.
 
 ## Partnership Modeling
 
@@ -474,7 +464,7 @@ mar_summary |>
   scale_y_continuous(limits = c(-11, 1))+
   labs(y = "log odds ratio of intergroup union",
        x = "year of union",
-       shape = "classification scenario")+
+       shape = "classification\nscenario")+
   theme_bw()
 ```
 
@@ -511,7 +501,7 @@ Notably, the proportion of outgroup partnering declines for the majority group A
 
 ```{r}
 #| label: fig-marriage-age
-#| fig-cap: Kernel density plots of the distribution of partner age at marriage, pooled across all simulations. Densities are shown separately for within-group unions and between-group unions.
+#| fig-cap: Kernel density plots of the distribution of partner age at time of partnering, pooled across all simulations. Densities are shown separately for within-group unions and between-group unions.
 
 sims_mar |>
   pivot_longer(cols = ends_with("age"), 
@@ -524,7 +514,7 @@ sims_mar |>
   geom_density(alpha = 0.7, color = NA)+
   facet_wrap(~spouse)+
   scale_fill_manual(values = c("tomato", "navy"))+
-  labs(x = "age at marriage", fill = "type of marriage")+
+  labs(x = "age at time of partnering", fill = "type of union")+
   theme_bw()
 ```
 @fig-marriage-age-time shows the mean age at partnering for men and women over time, pooling across all simulations. The initial mean age is high because all individuals began the simulation unmarried regardless of age. After 50 years of simulation, the mean ages of partnering are stationary for men and women.  The mean difference in the age of partnering between men and women is `r round(mean(sims_mar$hage-sims_mar$wage), 2)`, which corresponds closely to the 2.57 expected from the model.
@@ -543,15 +533,18 @@ sims_mar |>
   ggplot(aes(x = year, y = mean_age, color = spouse))+
   geom_point(alpha = 0.5)+
   geom_line()+
-  labs(x = "year of marriage", y = "mean age at partnering", color = "sex")+
+  scale_color_manual(values = palette_sex)+
+  labs(x = "year of union", y = "mean age at time of partnering", color = "sex")+
   theme_bw()
 
 ```
-@tbl-age-marriage shows the mean age at marriage for men and women separately for between-group and within-group unions across all simulations. The first 100 year run-in period is excluded from the estimation. The mean ages are similar across simulations and for the same gender within simulations.
+<!-- @tbl-age-marriage shows the mean age at marriage for men and women separately for between-group and within-group unions across all simulations. The first 100 year run-in period is excluded from the estimation. The mean ages are similar across simulations and for the same gender within simulations.
+-->
 
 ```{r}
 #| label: tbl-age-marriage
-#| tbl-cap: Mean age at marriage across simulations for husbands and wives. Results are shown separately for within-group and between-group unions. Calculations are based on the final 200 years of simulation.
+#| tbl-cap: Mean age at time of partnering across simulations for husbands and wives. Results are shown separately for within-group and between-group unions. Calculations are based on the final 200 years of simulation.
+#| eval: false
 
 sims_mar |>
   filter(year > 100) |>
@@ -599,6 +592,7 @@ This model requires twelve distinct $\beta$ parameters (three slopes and an inte
 ```{r}
 #| label: tbl-gen-classification
 #| tbl-cap: Probability of group classification for five different generational loci, under four different scenarios. Probabilities sum to one within rows, except for rounding error.
+#| tbl-pos: "p"
 
 
 class_param <- tibble(
@@ -671,8 +665,6 @@ The next two points we consider are consistent with a "second generation" multir
 The final two points correspond to a "third generation" multiracial individual who has seven great grandparents from one group and one great grandparent from the other group. We determine how much the probability of AB identification would decline from the second generation case. In the "resilient" case, we specify a 25% decline from the second generation value, while, in the "decay" case, we specify a 50% decline. For single race identification, we assume that the group whose ancestry is more common will be 50 times more likely to be chosen than the group whose ancestry is less common.
 
 The rationale for the values we chose for the peak and the rate of decline are provided in the main paper. Determining the two ratios to use for the second and third generation requires some guess work. The closest empirical work on this topic is @bratter_will_2007b who used American Community Survey data to examine the racial classification of children where one or both parents identified as multiracial. Because we don't know the generational locus of the multiracial parent, we can't determine the generational loci of these children but many will likely be second or third generation. In cases where the multiracial parent was partnered with a single race parent with a racial overlap, the ratios favoring single race identification with the overlapping race ranged from about 60 to 9 [@bratter_will_2007b, p. 833].
-
-@fig-scenarios shows the probability of group assignment for the four classification scenarios, overlaid by the probabilities from @tbl-gen-classification that were used to fit the model. @fig-scenarios shows that the models fit the data quite closely. Some experimentation with the third generation ratios was necessary to avoid an increase in the reporting of the less common ancestry at extreme values, due to the polynomial fit. 
 
 ```{r}
 #| label: fig-scenarios
@@ -751,6 +743,9 @@ gp |>
   theme_bw()
 ```
 
+
+@fig-scenarios shows the probability of group assignment for the four classification scenarios, overlaid by the probabilities from @tbl-gen-classification that were used to fit the model. @fig-scenarios shows that the models fit the data quite closely. Some experimentation with the third generation ratios was necessary to avoid an increase in the reporting of the less common ancestry at extreme values, due to the polynomial fit. 
+
 @fig-ancestry-rules shows the empirical probabilities of group classification for individuals who trigger a classification decision (individuals whose parents identify with different groups). The lines show the probabilities derived from the model itself. @fig-ancestry-rules shows that the empirical estimates match closely with the expected probabilities from the model.
 
 ```{r}
@@ -801,6 +796,7 @@ sims_pop |>
 #| fig-cap: Ternary plot showing the distribution of groups A, B, and AB over time. Group distributions are shown by dots at twenty year intervals for each scenario. 
 #| fig-height: 6.5
 #| fig-width: 6.5
+#| fig-pos: "p"
 
 total_pop_group |>
   mutate(year = year - years_runin) |>
