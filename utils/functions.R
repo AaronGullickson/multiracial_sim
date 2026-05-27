@@ -8,24 +8,34 @@ get_pop_alive <- function(pop, date) {
 }
 
 # functions shared across scripts are placed here
-plot_pop_pyramid <- function(pop, date, age_width = 5) {
-  dat_pyramid <- pop |>
+get_pop_pyramid_data <- function(pop, date, age_width = 5, max_age = 99) {
+  
+  pop |>
     get_pop_alive(date) |>
-    mutate(age = floor(date - dob),
-           age_group = cut(age, seq(from = 0, 
+    mutate(age = floor(date - dob)) |>
+    filter(age <= max_age) |>
+    mutate(age_group = cut(age, seq(from = 0, 
                                     by = age_width, 
                                     length.out = ceiling(max(age) / age_width)+2), 
                            right = FALSE)) |>
     select(sex, age, age_group) |> 
     group_by(sex, age_group) |>
-    summarize(n = n()) |>
-    ungroup() |>
-    mutate(n = ifelse(sex == "Female", -n, n)) 
+    summarize(n = n(), .groups = "drop") |>
+    #mutate(n = ifelse(sex == "Female", -n, n)) |>
+    group_by(sex) |>
+    mutate(prop = n / sum(n),
+           prop = ifelse(sex == "Female", -prop, prop))
+}
+
+
+plot_pop_pyramid <- function(pop, date, age_width = 5, max_age = 99) {
   
-  max_value <- max(abs(range(dat_pyramid$n)))
+  dat_pyramid <- get_pop_pyramid_data(pop, date, age_width, max_age)
+  
+  max_value <- max(abs(range(dat_pyramid$prop)))
   pop_breaks <- pretty(c(-max_value, max_value))
   
-  ggplot(dat_pyramid, aes(x = factor(age_group), y  = n, fill = sex))+
+  ggplot(dat_pyramid, aes(x = factor(age_group), y  = prop, fill = sex))+
     geom_col()+
     scale_y_continuous(breaks = pop_breaks, labels = abs(pop_breaks))+
     labs(y = NULL, x = "age group")+
