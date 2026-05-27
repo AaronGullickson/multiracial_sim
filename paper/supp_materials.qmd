@@ -64,6 +64,19 @@ sims_pop <- sims_pop |>
       scenario,
       levels = c("absorbing state", "high peak, resilient", "high peak, decay",
                  "low peak, resilient", "low peak, decay")))
+
+sims_mar <- sims_mar |>
+  mutate(
+    hgroup = factor(hgroup, levels = 1:3, labels = c("A", "B", "AB")),
+    wgroup = factor(wgroup, levels = 1:3, labels = c("A", "B", "AB")),
+    pop_share = factor(pop_share, levels = c("uneven", "even"), 
+                       labels = c("uneven (85/15)", "even (50/50)")),
+    scenario = str_replace(scenario, "_", " peak, "),
+    scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
+    scenario = factor(
+      scenario,
+      levels = c("absorbing state", "high peak, resilient", "high peak, decay",
+                 "low peak, resilient", "low peak, decay")))
 ```
 
 ```{r}
@@ -408,7 +421,7 @@ When both potential partners are from the same group, this parameter is zero. Fo
 
 We allow $\alpha$ to vary over time within the simulation. Empirically, we determined that the $\alpha$ value roughly corresponds to half the log-odds ratio formed by the cross-product of the two-way table partners' group membership.[^twoway] We use this feature to benchmark a starting $\alpha$ of -5, which corresponds to a log-odds ratio of -10 and an odds of intergroup partnership of less than 0.0001. We then allow $\alpha$ to linearly decline over time, which indicates an exponential increase in the odds of intergroup partnership. For the "progress" scenario, this linear decline continues until $\alpha = 0$ after 100 years, at which point $\alpha$ remains at zero. For the "plateau" scenario, this linear decline continues until $\alpha$ is halved (-2.5) after 50 years and then remains constant. Thus, for the first fifty years of the simulations, the two intergroup partnership scenarios are identical. 
 
-[^twoway]: Formally, if $F_{ij}$ is the frequency of new marriages where $i$ is the husband's group and $j$ is the wife's group, the log-odds ratio is given by $\log(\frac{F_{AA}F_{BB}}{F_{AB}F_{BA}})$.
+[^twoway]: Formally, if $F_{ij}$ is the frequency of new marriages where $i$ is the husband's group and $j$ is the wife's group, the log-odds ratio is given by $\log(\frac{F_{AB}F_{BA}}{F_{AA}F_{BB}})$.
 
 To determine the actual union chosen, we sample from the available possibilities with weight equal to $O_{mw}$. This approach is equivalent to a conditional logit model approach in which the probability $p_i$ for a specific match $i$ from the available choice set would be given by:
 
@@ -427,39 +440,31 @@ mar_summary <- sims_mar |>
   mutate(year = year - years_runin) |>
   mutate(year5 = floor(year/5)*5+2.5) |>
   group_by(year5, pop_share, mar_growth, scenario) |>
-  summarize(n11 = sum(hgroup == 1 & wgroup == 1),
-            n22 = sum(hgroup == 2 & wgroup == 2),
-            n12 = sum(hgroup == 1 & wgroup == 2),
-            n21 = sum(hgroup == 2 & wgroup == 1),
-            lor12 = log(n12) + log(n21) - log(n11) - log(n22),
-            out1 = (n12+n21)/(2*n11+n12+n21),
-            out2 = (n12+n21)/(2*n22+n12+n21)) |>
-  mutate(lor12 = if_else(is.na(lor12) | lor12 == Inf | lor12 == -Inf, NA, lor12),
-         mar_growth = factor(mar_growth, levels = c("progress", "plateau")),
-         pop_share = factor(pop_share, levels = c("even", "uneven")),
-         pop_share = factor(pop_share, levels = c("uneven", "even"), 
-                       labels = c("uneven (85/15)", "even (50/50)")),
-         scenario = str_replace(scenario, "_", " peak, "),
-         scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
-         scenario = factor(
-           scenario,
-           levels = c("absorbing state", "high peak, resilient", "high peak, decay",
-                      "low peak, resilient", "low peak, decay"))) |>
-  select(year5, pop_share, mar_growth, scenario, starts_with("lor"), 
-         starts_with("out"))
-
-# add alpha value at each year
-mar_summary <- mar_summary |>
+  summarize(f_aa = sum(hgroup == "A" & wgroup == "A"),
+            f_bb = sum(hgroup == "B" & wgroup == "B"),
+            f_ab = sum(hgroup == "A" & wgroup == "B"),
+            f_ba = sum(hgroup == "B" & wgroup == "A"),
+            lor_ab = log(f_ab) + log(f_ba) - log(f_aa) - log(f_bb),
+            out_a = (f_ab+f_ba)/(2*f_aa+f_ab+f_ba),
+            out_b = (f_ab+f_ba)/(2*f_bb+f_ab+f_ba),
+            .groups = "drop") |>
   mutate(
+    # remove cases with zeroes somewhere
+    lor_ab = if_else(
+      is.na(lor_ab) | lor_ab == Inf | lor_ab == -Inf, 
+      NA, lor_ab),
+    # add alpha value at each year
     alpha = if_else(
       mar_growth == "progress",
       if_else(year5 > 100, 0, -5 - -5 * (year5/100)),
       if_else(year5 > 50, -2.5, -5 - -5 * (year5/100))
     )
-  )
+  ) |>
+  select(year5, pop_share, mar_growth, scenario, starts_with("lor"), 
+         starts_with("out"), alpha)
 
 mar_summary |>
-  ggplot(aes(x = year5 + 100, y = lor12))+
+  ggplot(aes(x = year5 + 100, y = lor_ab))+
   geom_hline(yintercept = 0, linetype = 3)+
   geom_point(alpha = 0.3, aes(shape = scenario))+
   geom_smooth(se = FALSE, method = "gam")+
@@ -486,7 +491,7 @@ mar_summary |>
                names_to = "group", 
                values_to = "out") |>
   mutate(group = factor(group, 
-                        levels = c("out1", "out2"), 
+                        levels = c("out_a", "out_b"), 
                         labels = c("A", "B"))) |>
   ggplot(aes(x = year5 + 100, y = out, group = group, color = group))+
   geom_point(alpha = 0.3, aes(shape = scenario))+
@@ -500,6 +505,7 @@ mar_summary |>
 ```
 
 Notably, the proportion of outgroup partnering declines for the majority group A and increases for minority group B in the uneven group size scenarios in the last 100 years of the simulation, despite the fact that $\alpha$ is held constant during this period. This decline is a result of a decline in the relative size of the group B population making intergroup partnering more difficult for group A, but easier for group B. Some differences across classification scenario types are also driven by underlying group differences, or greater sampling variability when groups become very small (as in the absorbing state case).
+
 
 - Show age at marriage in endogamous and exogamous unions across scenario types
 - show difference in age at marriage in endogamou and exogamous unions across scenario types
