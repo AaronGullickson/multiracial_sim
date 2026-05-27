@@ -735,7 +735,9 @@ estimates <- class_param |>
     group = factor(str_to_upper(group), levels = c("A", "B", "AB"))
   )
 
-bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
+gp <- bind_rows(gp_hr, gp_hd, gp_lr, gp_ld)
+
+gp |>
   mutate(scenario_decline = factor(scenario_decline, 
                                    levels = c("resilient", "decay"))) |>
   ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
@@ -749,8 +751,48 @@ bind_rows(gp_hr, gp_hd, gp_lr, gp_ld) |>
   theme_bw()
 ```
 
+@fig-ancestry-rules shows the empirical probabilities of group classification for individuals who trigger a classification decision (individuals whose parents identify with different groups). The lines show the probabilities derived from the model itself. @fig-ancestry-rules shows that the empirical estimates match closely with the expected probabilities from the model.
 
-- Show each fit along with estimated probabilities from actual simulations.
+```{r}
+#| label: fig-ancestry-rules
+#| fig-cap: Probability of being assigned to a given group among individuals with a generational locus of one as a function of proportion of ancestry from group A. Estimates from data pooled across group size and partnering trend scenarios. Estimates are grouped into bins of 5% and the size of the point indicates the number of individuals in that bin. Lines are drawn for the actual probabilitis from the classification model.
+
+sims_pop |>
+  # drop absorbing state
+  filter(scenario != "absorbing state") |>
+  # only keep individuals where a decision was made
+  filter(nearest_gen_locus == 1) |>
+  # remove cases from before intergroup partnering was allowed
+  filter(dob > 100) |>
+  # cut prop_a ancestry into bins of 5%
+  mutate(ancestry_group1 = cut_width(ancestry_group1, width = 0.05, boundary = 0.5)) |>
+  # calculate distributions
+  group_by(ancestry_group1, scenario) |>
+  summarize(prob_A = mean(group == "A"),
+            prob_B = mean(group == "B"),
+            prob_AB = mean(group == "AB"),
+            n = n(), 
+            .groups = "drop") |>
+  pivot_longer(cols = starts_with("prob_"), names_prefix = "prob_",
+               names_to = "group", values_to = "prob") |>
+  mutate(group = factor(group, levels = c("A", "B", "AB")),
+         prop_a = as.numeric(str_extract(ancestry_group1, 
+                                         "(?<=\\[|\\()\\d*\\.?\\d+")),
+         scenario_peak = str_split_i(scenario, ", ", 1),
+         scenario_decline = str_split_i(scenario, ", ", 2),
+         scenario_decline = factor(scenario_decline, levels = c("resilient", "decay"))) |>
+  ggplot(aes(x = prop_a, y = prob, group = group, color = group))+
+  geom_point(aes(size = n), alpha = 0.4)+
+  geom_line(data = gp)+
+  facet_grid(scenario_decline~scenario_peak)+
+  scale_y_continuous(labels = scales::percent)+
+  scale_color_manual(values = palette_group)+
+  labs(x = "proportion of ancestry from group A", 
+       y = "probability of being assigned to group",
+       color = "group assignment",
+       size = "sample size")+
+  theme_bw()
+```
 
 # Ternary Plots
 
