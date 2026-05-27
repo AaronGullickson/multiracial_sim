@@ -6,9 +6,6 @@ shortauthors: Gullickson and Saperstein
 #  - keyword1
 #  - keyword2
 #thanks: Prepared for the 2026 Annual Meeting Population Association of America, St. Louis, Missouri
-reference-section-title: References
-bibliography: ../bibliography/project.bib
-csl: ../bibliography/chicago-parenthetical.csl
 filters:
   - abstract-section
 format:
