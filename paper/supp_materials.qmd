@@ -345,6 +345,7 @@ tfr |>
   theme_bw()
 ```
 
+
 ```{r}
 #| label: fig-growth-rate
 #| fig-cap: Population growth rate across simulations at 10 year intervals. GAM smoother shown in blue.
@@ -358,6 +359,29 @@ pop_growth |>
   labs(y = "population growth rate", x = "year of simulation")+
   theme_bw()
 ```
+
+```{r}
+sims_pop |>
+  filter(scenario == "absorbing state" & mar_growth == "progress" & 
+           pop_share == "uneven (85/15)") |>
+plot_pop_pyramid(0)
+
+sims_pop |>
+  filter(scenario == "absorbing state" & mar_growth == "progress" & 
+           pop_share == "uneven (85/15)") |>
+plot_pop_pyramid(50)
+
+sims_pop |>
+  filter(scenario == "absorbing state" & mar_growth == "progress" & 
+           pop_share == "uneven (85/15)") |>
+plot_pop_pyramid(75)
+
+sims_pop |>
+  filter(scenario == "absorbing state" & mar_growth == "progress" & 
+           pop_share == "uneven (85/15)") |>
+plot_pop_pyramid(100)
+```
+
 
 - Show observed life expectancy over time for each simulation
 - Show observed TFR over time for each simulation
