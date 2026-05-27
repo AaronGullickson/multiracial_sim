@@ -506,10 +506,54 @@ mar_summary |>
 
 Notably, the proportion of outgroup partnering declines for the majority group A and increases for minority group B in the uneven group size scenarios in the last 100 years of the simulation, despite the fact that $\alpha$ is held constant during this period. This decline is a result of a decline in the relative size of the group B population making intergroup partnering more difficult for group A, but easier for group B. Some differences across classification scenario types are also driven by underlying group differences, or greater sampling variability when groups become very small (as in the absorbing state case).
 
+```{r}
+#| label: fig-marriage-age
+#| fig-cap: Kernel density plots of the distribution of partner age at marriage, pooled across all simulations. Densities are shown separately for within-group unions and between-group unions.
 
-- Show age at marriage in endogamous and exogamous unions across scenario types
-- show difference in age at marriage in endogamou and exogamous unions across scenario types
+sims_mar |>
+  pivot_longer(cols = ends_with("age"), 
+               values_to = "age", names_to = "spouse") |>
+  mutate(type = if_else(hgroup == wgroup, "within group", "between group"),
+         spouse = factor(spouse, 
+                         levels = c("hage", "wage"), 
+                         labels = c("husband", "wife"))) |>
+  ggplot(aes(x = age, y = after_stat(density), group = type, fill = type))+
+  geom_density(alpha = 0.7, color = NA)+
+  facet_wrap(~spouse)+
+  scale_fill_manual(values = c("tomato", "navy"))+
+  labs(x = "age at marriage", fill = "type of marriage")+
+  theme_bw()
+```
 
+```{r}
+#| label: tbl-age-marriage
+#| tbl-cap: Mean age at marriage across simulations for husbands and wives. Results are shown separately for within-group and between-group unions.
+
+sims_mar |>
+  mutate(type = if_else(hgroup == wgroup, "w", "b")) |>
+  group_by(pop_share, mar_growth, scenario, type) |>
+  summarize(mean_age_h = mean(hage),
+            mean_age_w = mean(wage),
+            .groups = "drop") |>
+  pivot_wider(names_from = type, values_from = starts_with("mean_age")) |>
+  select(pop_share, mar_growth, scenario, mean_age_h_w, mean_age_h_b, 
+         mean_age_w_w, mean_age_w_b) |>
+  gt() |>
+  cols_label(
+    pop_share ~ "Group size",
+    mar_growth ~ "Partnering",
+    scenario ~ "Classification",
+    mean_age_h_w ~ "Within",
+    mean_age_h_b ~ "Between",
+    mean_age_w_w ~ "Within",
+    mean_age_w_b ~ "Between"
+  ) |>
+  tab_spanner(starts_with("mean_age_h"), label = "Husband") |>
+  tab_spanner(starts_with("mean_age_w"), label = "Wife") |>
+  fmt_number(starts_with("mean_age"), decimals = 1)
+```
+
+`r round(mean(sims_mar$hage-sims_mar$wage), 2)`
 
 ## Group Assignment Modeling
 
