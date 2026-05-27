@@ -396,7 +396,7 @@ The algorithm for determining who partners with whom is based on reverse-enginee
 
 $$log(O_{mw}) = 0.072 (\textit{age}_m-\textit{age}_w) - 0.014 (\textit{age}_m-\textit{age}_w)^2 + \alpha_{mw}$$
 
-The age difference parameters are derived from @gullickson_counterfactual_2021c and produce a parabolic function of partner age difference that is maximized when the man is 2.76 years older than the woman. The $\alpha$ parameter addresses group exogamy where $g_m$ and $g_w$ are the groups for the man and woman, respectively. as follows:
+The age difference parameters are derived from @gullickson_counterfactual_2021c and produce a parabolic function of partner age difference that is maximized when the man is 2.57 years older than the woman. The $\alpha$ parameter measures group exogamy where $g_m$ and $g_w$ are the groups for the man and woman, respectively, as follows:
 
 $$\alpha_{mw} = \begin{cases}
   0 & \text{if } g_m = g_w\\
@@ -404,22 +404,94 @@ $$\alpha_{mw} = \begin{cases}
   \alpha/2 & \text{else} 
   \end{cases}$$
 
-When both potential partners are from the same group, this parameter is zero. For intergroup partnering between the primary groups of A and B, we use a value of $\alpha$ and for intergroup partnering between A-AB or B-AB, we use half that value. These $\alpha$ values correspond to exactly half the value of the log odds ratio formed by the cross-product of the two-way table formed by partner's group membership. 
+When both potential partners are from the same group, this parameter is zero. For intergroup partnering between the primary groups of A and B, we use a value of $\alpha$ and for intergroup partnering between A-AB or B-AB, we use half that value. 
 
-We allow $\alpha$ to vary over the course of the simulation. For all simulations, $\alpha$ starts at -5, which makes intergroup partnering extremely rare.For the "progress" scenario, $\alpha$ linearly declines to zero over the first one hundred years of the scenario and then remains at zero. For the "plateau" scenario, $\alpha$ linearly declines to half its value (-2.5) over the first fifty years of the simulation and then remains at that level for the remainder of the simulation.
+We allow $\alpha$ to vary over time within the simulation. Empirically, we determined that the $\alpha$ value roughly corresponds to half the log-odds ratio formed by the cross-product of the two-way table partners' group membership.[^twoway] We use this feature to benchmark a starting $\alpha$ of -5, which corresponds to a log-odds ratio of -10 and an odds of intergroup partnership of less than 0.0001. We then allow $\alpha$ to linearly decline over time, which indicates an exponential increase in the odds of intergroup partnership. For the "progress" scenario, this linear decline continues until $\alpha = 0$ after 100 years, at which point $\alpha$ remains at zero. For the "plateau" scenario, this linear decline continues until $\alpha$ is halved (-2.5) after 50 years and then remains constant. Thus, for the first fifty years of the simulations, the two intergroup partnership scenarios are identical. 
+
+[^twoway]: Formally, if $F_{ij}$ is the frequency of new marriages where $i$ is the husband's group and $j$ is the wife's group, the log-odds ratio is given by $\log(\frac{F_{AA}F_{BB}}{F_{AB}F_{BA}})$.
 
 To determine the actual union chosen, we sample from the available possibilities with weight equal to $O_{mw}$. This approach is equivalent to a conditional logit model approach in which the probability $p_i$ for a specific match $i$ from the available choice set would be given by:
 
 $$p_i = \frac{e^{O_i}}{\sum_{k=1}^{J} e^{O_j}}$$
 
-Using this routine, it is possible for the same male partner to be chosen by two different women. In such cases, we remove duplicate selections randomly. We also found in practice that it was necessary to set a benchmark for situations in which none of the potential male partners crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a partner and these women remain single for the next year. 
-When some groups are very small, sampling may lead to less intergroup partnering than implied by $\alpha$ because the small group will often not be sampled at all within the choice set of a given woman. To avoid this problem, we use stratified sampling of the groups, with a minimum of one member of each group in the given choice set.
+Using this routine, it is possible for the same male partner to be chosen by two different women. In such cases, we remove duplicate selections randomly. We also found that it was necessary to set a benchmark for situations in which none of the potential male partners crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a partner and these women remain single for the next year. 
 
-We confirm that the actual patterns of group partnership match the expectations of our input model and produce similar distributions of age at partnering across group endogamous and exogamous unions.
+When some groups are very small, sampling may lead to less intergroup partnering than implied by $\alpha$ because the small group will often not be sampled at all within the choice set of a given woman. To avoid this problem, we use stratified sampling of the groups, with a minimum of one member of each group (if greater than zero) in a given choice set.
+
+```{r}
+#| label: fig-marriage-lor
+#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Smoothed blue lines are estimated via a Generalized Additive Model (GAM). Red dashed lines show twice the $\alpha$ parameter for each year.
+
+mar_summary <- sims_mar |>
+  filter(year >= years_runin) |>
+  mutate(year = year - years_runin) |>
+  mutate(year5 = floor(year/5)*5+2.5) |>
+  group_by(year5, pop_share, mar_growth, scenario) |>
+  summarize(n11 = sum(hgroup == 1 & wgroup == 1),
+            n22 = sum(hgroup == 2 & wgroup == 2),
+            n12 = sum(hgroup == 1 & wgroup == 2),
+            n21 = sum(hgroup == 2 & wgroup == 1),
+            lor12 = log(n12) + log(n21) - log(n11) - log(n22),
+            out1 = (n12+n21)/(2*n11+n12+n21),
+            out2 = (n12+n21)/(2*n22+n12+n21)) |>
+  mutate(lor12 = if_else(is.na(lor12) | lor12 == Inf | lor12 == -Inf, NA, lor12),
+         mar_growth = factor(mar_growth, levels = c("progress", "plateau")),
+         pop_share = factor(pop_share, levels = c("even", "uneven")),
+         pop_share = factor(pop_share, levels = c("uneven", "even"), 
+                       labels = c("uneven (85/15)", "even (50/50)")),
+         scenario = str_replace(scenario, "_", " peak, "),
+         scenario = str_replace(scenario, "total peak, rigid", "absorbing state"),
+         scenario = factor(
+           scenario,
+           levels = c("absorbing state", "high peak, resilient", "high peak, decay",
+                      "low peak, resilient", "low peak, decay"))) |>
+  select(year5, pop_share, mar_growth, scenario, starts_with("lor"), 
+         starts_with("out"))
+
+# add alpha value at each year
+mar_summary <- mar_summary |>
+  mutate(
+    alpha = if_else(
+      mar_growth == "progress",
+      if_else(year5 > 100, 0, -5 - -5 * (year5/100)),
+      if_else(year5 > 50, -2.5, -5 - -5 * (year5/100))
+    )
+  )
+
+mar_summary |>
+  ggplot(aes(x = year5 + 100, y = lor12))+
+  geom_hline(yintercept = 0, linetype = 3)+
+  geom_point(alpha = 0.3, aes(shape = scenario))+
+  geom_smooth(se = FALSE, method = "gam")+
+  geom_line(aes(y = 2 * alpha), linetype = 2, color = "red", size = 0.75)+
+  facet_grid(pop_share~mar_growth)+
+  scale_shape_manual(values = c(19, 15, 17, 18, 3))+
+  scale_y_continuous(limits = c(-11, 1))+
+  labs(y = "log odds ratio of intergroup union",
+       x = "year of union")+
+  theme_bw()
+```
+
+@fig-marriage-lor shows the estimated log-odds ratios of an A-B integroup union over time across all simulations, separated by scenario types. For reference, twice the $\alpha$ value is shown by a red dashed line. The progress and plateau patterns are behaving exactly as expected and we observe no differences in the trend by the starting group distribution. The overall trend within each panel closely matches what was expected based on the $\alpha$ parameter. The only noticeable deviation from expectation is for the uneven starting group size scenario paired with the progress scenario. In this case, the empirical log-odds ratio has a tendency to fall somewhat below the expected value of zero near the end of the simulation. This deviation is a result of the very small size of group B in these scenarios, as discussed in the main paper. When a group is very small, the sampling procedure used to to determine potential partners can break down because the same small set of members are sampled across many possible partnerships. This bias is relatively small except for some years of the absorbing state scenarios. 
+
+```{r}
+
+mar_summary |>
+  ggplot(aes(x = year5 + 100, y = lor12))+
+  geom_hline(yintercept = 0, linetype = 3)+
+  geom_point(alpha = 0.3, aes(shape = scenario))+
+  geom_smooth(se = FALSE, method = "gam")+
+  geom_line(aes(y = 2 * alpha), linetype = 2, color = "red", size = 0.75)+
+  facet_grid(pop_share~mar_growth)+
+  scale_shape_manual(values = c(19, 15, 17, 18, 3))+
+  scale_y_continuous(limits = c(-11, 1))+
+  labs(y = "log odds ratio of intergroup union",
+       x = "year of union")+
+  theme_bw()
+```
 
 <!-- TODO: discuss how this algorithm produces reasonable marriage statistics across all types of marriages -->
 
-- Reproduce Figure 1 from the main paper
 - Show age at marriage in endogamous and exogamous unions across scenario types
 - show difference in age at marriage in endogamou and exogamous unions across scenario types
 
