@@ -420,7 +420,7 @@ When some groups are very small, sampling may lead to less intergroup partnering
 
 ```{r}
 #| label: fig-marriage-lor
-#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Smoothed blue lines are estimated via a Generalized Additive Model (GAM). Red dashed lines show twice the $\alpha$ parameter for each year.
+#| fig-cap: Estimated log odds ratio of an A-B union over time in five year intervals, across scenario types. Smoothed blue lines are estimated across classification scenarios via a Generalized Additive Model (GAM). Red dashed lines show twice the $\alpha$ parameter for each year.
 
 mar_summary <- sims_mar |>
   filter(year >= years_runin) |>
@@ -468,29 +468,38 @@ mar_summary |>
   scale_shape_manual(values = c(19, 15, 17, 18, 3))+
   scale_y_continuous(limits = c(-11, 1))+
   labs(y = "log odds ratio of intergroup union",
-       x = "year of union")+
+       x = "year of union",
+       shape = "classification scenario")+
   theme_bw()
 ```
 
 @fig-marriage-lor shows the estimated log-odds ratios of an A-B integroup union over time across all simulations, separated by scenario types. For reference, twice the $\alpha$ value is shown by a red dashed line. The progress and plateau patterns are behaving exactly as expected and we observe no differences in the trend by the starting group distribution. The overall trend within each panel closely matches what was expected based on the $\alpha$ parameter. The only noticeable deviation from expectation is for the uneven starting group size scenario paired with the progress scenario. In this case, the empirical log-odds ratio has a tendency to fall somewhat below the expected value of zero near the end of the simulation. This deviation is a result of the very small size of group B in these scenarios, as discussed in the main paper. When a group is very small, the sampling procedure used to to determine potential partners can break down because the same small set of members are sampled across many possible partnerships. This bias is relatively small except for some years of the absorbing state scenarios. 
 
+Importantly, the $\alpha$ parameters are indifferent to group size differences, which allows us to provide identical parameters across scenarios with different group sizes. The proportion of each group who will partner with members of another group, however, will vary substantially by group size even when $\alpha$ is held constant. @fig-marriage-out shows the proportion of A and B partners who who partner with a member of the other primary group (B and A, respectively) across time and simulation scenario. For the case of even population size, the these proportions are similar for A and B individuals because the group sizes are similar. For the uneven group sizes, however, the proportion is much higher for minority B individuals because they have many more options for partnership with group A than group A members have with group B.
+
 ```{r}
+#| label: fig-marriage-out
+#| fig-cap: Estimated proportion of partners from groups A and B partnered with a member of the other primary group (B and A, respectively) over time in five year intervals, across scenario types. Smoothed blue lines are estimated across classification scenarios via a Generalized Additive Model (GAM).
 
 mar_summary |>
-  ggplot(aes(x = year5 + 100, y = lor12))+
-  geom_hline(yintercept = 0, linetype = 3)+
+  pivot_longer(cols = starts_with("out"), 
+               names_to = "group", 
+               values_to = "out") |>
+  mutate(group = factor(group, 
+                        levels = c("out1", "out2"), 
+                        labels = c("A", "B"))) |>
+  ggplot(aes(x = year5 + 100, y = out, group = group, color = group))+
   geom_point(alpha = 0.3, aes(shape = scenario))+
   geom_smooth(se = FALSE, method = "gam")+
-  geom_line(aes(y = 2 * alpha), linetype = 2, color = "red", size = 0.75)+
   facet_grid(pop_share~mar_growth)+
   scale_shape_manual(values = c(19, 15, 17, 18, 3))+
-  scale_y_continuous(limits = c(-11, 1))+
+  scale_color_manual(values = palette_group)+
   labs(y = "log odds ratio of intergroup union",
-       x = "year of union")+
+       x = "year of union", shape = "classification\nscenario")+
   theme_bw()
 ```
 
-<!-- TODO: discuss how this algorithm produces reasonable marriage statistics across all types of marriages -->
+Notably, the proportion of outgroup partnering declines for the majority group A and increases for minority group B in the uneven group size scenarios in the last 100 years of the simulation, despite the fact that $\alpha$ is held constant during this period. This decline is a result of a decline in the relative size of the group B population making intergroup partnering more difficult for group A, but easier for group B. Some differences across classification scenario types are also driven by underlying group differences, or greater sampling variability when groups become very small (as in the absorbing state case).
 
 - Show age at marriage in endogamous and exogamous unions across scenario types
 - show difference in age at marriage in endogamou and exogamous unions across scenario types
