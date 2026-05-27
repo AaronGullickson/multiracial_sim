@@ -105,7 +105,7 @@ total_pop_ancestry <- map(years_runin:(years_runin + 200), function(x) {
 
 ```{r}
 #| label: fig-marriage-lor
-#| fig-cap: Estimated log odds ratio of an A-B union in each year of simulation in the plateau and progress scenarios. Estimates are pooled across scenarios. Smoothed lines are estimated via a Generalized Additive Model (GAM). 
+#| fig-cap: Estimated log odds ratio of an intergroup union in each year of simulation in the plateau and progress scenarios. Smoothed lines are estimated via a Generalized Additive Model (GAM). 
 
 mar_summary <- sims_mar |>
   filter(year >= years_runin) |>
