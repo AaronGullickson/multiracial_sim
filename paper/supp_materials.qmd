@@ -791,16 +791,28 @@ sims_pop |>
 
 # Ternary Plots
 
+The main article shows change in the distribution of groups by stacked area plots. Another approach is to use a ternary plot. A ternary plot can be used to show changes in the relative distribution of three groups. Ternary plots are drawn on an equilateral triangle, where each side gives the relative share of one of the groups. Two of the axes are represented by diagonal lines, while the third axis is represented by horizontal lines giving the vertical dimension. A point drawn in the space represents a particular distribution of groups and lines can be drawn to show the shift or change in group distribution.
+
 ```{r}
 #| label: fig-ternary-plot-equilateral
-#| fig-cap: Ternary plot showing the distribution of groups A, B, and AB over time. Group distributions are shown by dots at twenty year intervals for each scenario. 
+#| fig-cap: Ternary plot showing the distribution of groups A, B, and AB over time. Group distributions are shown by dots at twenty year intervals for each scenario. Dashed lines indicate points where the distribution of groups A and B relative to each other are equal to their starting distribution. 
 #| fig-height: 6.5
 #| fig-width: 6.5
 #| fig-pos: "p"
 
+df_dotted <- tibble(
+  A  = c(rep(c(0.5, 0.25, 0), 2), rep(c(0.85, 0.425,  0), 2)),
+  B  = c(rep(c(0.5, 0.25, 0), 2), rep(c(0.15, 0.0725, 0), 2)),
+  AB = c(rep(c(0,   0.5,  1), 2), rep(c(0,    0.5,  1), 2)),
+  pop_share = c(rep("even (50/50)", 6), rep("uneven (85/15)", 6)),
+  mar_growth = rep(c("plateau", "progress"), 6)
+) |>
+  mutate(pop_share = factor(pop_share, 
+                            levels = c("uneven (85/15)", "even (50/50)")))
+
 total_pop_group |>
   mutate(year = year - years_runin) |>
-  filter(year > 0 & (year %% 10) == 0) |>
+  filter(year > 0 & (year %% 20) == 0) |>
   select(-population) |>
   pivot_wider(values_from = share, names_from = group) |>
   arrange(scenario, pop_share, mar_growth, year) |>
@@ -808,9 +820,7 @@ total_pop_group |>
   geom_point(aes(color = scenario, group = scenario),
              size = 1.5, alpha = 0.7)+
   geom_path(aes(color = scenario, group = scenario), alpha = 0.7)+
-  geom_path(data = tibble(A = c(0.5, 0.25, 0),
-                          B = c(0.5, 0.25, 0),
-                          AB =c (0, 0.5, 1)),
+  geom_path(data = df_dotted,
             linetype = 2)+
   scale_x_continuous(limits = c(0, 1))+
   scale_y_continuous(limits = c(0, 1))+
@@ -822,4 +832,8 @@ total_pop_group |>
   guides(color = guide_legend(nrow = 2))
 ```
 
+@fig-ternary-plot-equilateral shows ternary plots of the change in group distribution across all of our simulations. Each combination of scenarios for intergroup partnering and starting group size are shown on separate panels, while the lines for for each classification scenario are shown by different colors within each panel. Dots are shown at 20 year intervals. We set the relative size of the AB group as the vertical dimension, so the height of each point indicates the relative size of the AB group. The A and B groups are drawn to the left and right vertices, respectively, so that as the lines shifts to (from) the left or right, it indicates an increase (decrease) in that group size. 
 
+The bottom panels for even starting group size show the simplest pattern. Across all classification scenarios, the AB population grows at the equal expense of the A and B groups, leading to vertical lines that differ only in their height. Those differences in height are substantial, indicating that the classification process plays a large role in the growth of the AB population.
+
+For the unequal group size scenarios shown in the upper panels, we see a more complex pattern. While we see initial growth in the AB population here as well, that growth comes more at the expense of the minority B group, as indicated by the leftward shift in the points. For some scenarios, we also see a bend in which the AB population itself begins to decline and the distribution moves toward the A vertex. This indicates that the ultimately it is the A population that will become the absorbing state. 
