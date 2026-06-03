@@ -326,15 +326,15 @@ pop_growth <- total_pop |>
          growth_rate)
 ```
 
-# Check Demographic Measures
+# Diagnostic Checks on Demographic Measures
 
-We begin by checking the actual demographic rates from our simulation compared to those expected from the input. We calculate age-specific fertility and mortality rates at 25 year intervals across each simulation.
+We check the actual demographic rates from our simulation compared to those expected from the input. To do so, we calculate age-specific fertility and mortality rates at 25 year intervals across each simulation.
 
 We first estimate age-specific mortality rates and corresponding life tables. We use five year age groups, except for the first year of life which we split into a [0,1) and [1, 4) group. The open-ended age group is 100+. We estimate separate rates for men and women. The mortality rates we input into the simulation are from the USA in 2000 and produce life expectancy of birth of 79.5 for women and 74.1 for men.
 
 ```{r}
 #| label: fig-life-expectancy
-#| fig-cap: Life expectancy at zero for men and women, across all simulations in 25 year periods. A loess smoother is applied to the points. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation.
+#| fig-cap: Life expectancy at zero for men and women, in 25 year periods. Each point represents a separate simulation, with a loess smoother applied across simulations. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation.
 
 life_expectancy <- life_tables |>
   filter(x == 0) |>
@@ -354,13 +354,13 @@ life_expectancy |>
   theme_bw()
 ```
 
-@fig-life-expectancy shows the estimated life expectancy at birth for men and women across all simulations at 25 year intervals. The dotted lines show the life exceptancy at birth from the input data. @fig-life-expectancy shows a very close fit between the empirically estimated life expectancy at birth and the "true" life expectancy. All of the simulations for a given period are also very close, with no observable outliers. We also observe no change over time in life expectancy at birth. 
+@fig-life-expectancy shows the estimated life expectancy at birth for men and women across all simulations at 25 year intervals. The dotted lines show the life exceptancy at birth anticipated from the input data. @fig-life-expectancy shows a very close fit between the empirically estimated life expectancy at birth and the "true" life expectancy. All of the simulations for a given period are also very close, with no observable outliers. We also observe no change over time in life expectancy at birth. 
 
 Age-specific fertility rates are estimated based on five year age groups over 25 year periods. The age-specific fertility rates we use as the input for the simulation produce a total fertility rate (TFR) of 2.36. However, we only allow childbearing among partnered women because we must track the group of both partners. Therefore, our actual TFR will be somewhat lower than 2.36 because women do not spend all their person-years in each age category in a partnered state.
 
 ```{r}
 #| label: fig-tfr
-#| fig-cap: Total fertility rate, across all simulations in 25 year periods. A loess smoother is applied to the points.
+#| fig-cap: Total fertility rate, in 25 year periods. Each point represents a separate simulation, with a loess smoother applied across simulations.
 
 tfr |>
   convert_year_group() |>
@@ -375,11 +375,11 @@ tfr |>
 
 @fig-tfr shows the empirically estimated TFR over time across all simulations. As expected the overall TFR is lower than 2.36. Across all simulations, the average TFR was 2.12. The TFR does not vary across time.
 
-@fig-growth-rate shows the annual population growth rate across all simulations at 10 year intervals. The population experiences an unusually high growth rate in the initial period of the simulation because the age distribution of the starting population is not the long term stable population distribution. Instead we draw uniformly from an age distribution up to age 70, which leads to a faster growing population. However, by year 100, the population has settled into a constant stable population growth rate of about 0.1% per year. 
+To check how quickly the simulations converge to a stable population, we estimate annual population growth rates at 10 year intervals. @fig-growth-rate these growth rates across all simulations. The population experiences an unusually high growth rate in the initial period of the simulation because the age distribution of the starting population is not the long term stable population distribution. Instead we draw uniformly from an age distribution up to age 70, which leads to a faster growing population. However, by year 100, the population has settled into a constant stable population growth rate of about 0.1% per year. 
 
 ```{r}
 #| label: fig-growth-rate
-#| fig-cap: Population growth rate across simulations at 10 year intervals. GAM smoother shown in blue.
+#| fig-cap: Population growth rate across simulations at 10 year intervals. Each point represents a separate simulation. GAM smoother shown in blue.
 
 pop_growth |>
   ggplot(aes(x = year_midpoint, y = growth_rate))+
@@ -391,13 +391,13 @@ pop_growth |>
   theme_bw()
 ```
 
-Our goal was to generate a largely stationary population to avoid having population growth play an important role in our analysis. However, given the issues with partnered fertility discussed above, benchmarking the level of the fertility rates required some guess work and is difficult to target to exactly 0%. Furthermore, we wanted to avoid declining populations due to random chance. Thus, we settled on a very slow growth rate of around 0.1%. Although this growth rate is slow, it does lead to an increase in population size from 50,000 at the start to around 70,000 after 300 years.
+Our goal was to generate a largely stationary population to avoid having population growth play an important role in our analysis. However, given the issues with partnered fertility discussed above, benchmarking the level of the fertility rates required some guess work and is difficult to target to exactly 0%. Furthermore, we wanted to avoid declining populations due to random chance. Thus, we settled on a very slow growth rate of around 0.1%. Although this growth rate is slow, it does lead to an increase in population size from 50,000 at the beginning of the simulation to around 70,000 after 300 years.
 
-## Partnership Modeling
+# Partnership Modeling
 
 The algorithm for determining who partners with whom is based on reverse-engineering a conditional logit model approach used in the study of assortative mating [@gullickson_counterfactual_2021c]. For each single woman in the population, we sample up to one hundred potential single male partners to construct a potential choice set. We score each potential union of woman $w$ and man $m$ by a log-odds determined as follows:
 
-$$log(O_{mw}) = 0.072 (\textit{age}_m-\textit{age}_w) - 0.014 (\textit{age}_m-\textit{age}_w)^2 + \alpha_{mw}$$
+$$log(O_{mw}) = 0.072 (\textit{age}_m-\textit{age}_w) - 0.014 (\textit{age}_m-\textit{age}_w)^2 + \alpha_{mw}$$ {#eq-cond-logit}
 
 The age difference parameters are derived from @gullickson_counterfactual_2021c and produce a parabolic function of partner age difference that is maximized when the man is 2.57 years older than the woman. The $\alpha$ parameter measures group exogamy where $g_m$ and $g_w$ are the groups for the man and woman, respectively, as follows:
 
@@ -405,21 +405,21 @@ $$\alpha_{mw} = \begin{cases}
   0 & \text{if } g_m = g_w\\
   \alpha & \text{if } (g_m = A \text{ and } g_w = B) \text{ or } (g_m = B \text{ and } g_w = A)\\
   \alpha/2 & \text{else} 
-  \end{cases}$$
+  \end{cases}$$ {#eq-alpha}
 
 When both potential partners are from the same group, this parameter is zero. For intergroup partnering between the primary groups of A and B, we use a value of $\alpha$ and for intergroup partnering between A-AB or B-AB, we use half that value. 
 
-We allow $\alpha$ to vary over time within the simulation. Empirically, we determined that the $\alpha$ value roughly corresponds to half the log-odds ratio formed by the cross-product of the two-way table partners' group membership.[^twoway] We use this feature to benchmark a starting $\alpha$ of -5, which corresponds to a log-odds ratio of -10 and an odds of intergroup partnership of less than 0.0001. We then allow $\alpha$ to linearly decline over time, which indicates an exponential increase in the odds of intergroup partnership. For the "progress" scenario, this linear decline continues until $\alpha = 0$ after 100 years, at which point $\alpha$ remains at zero. For the "plateau" scenario, this linear decline continues until $\alpha$ is halved (-2.5) after 50 years and then remains constant. Thus, for the first fifty years of the simulations, the two intergroup partnership scenarios are identical. 
+We allow $\alpha$ to vary over time within the simulation. Empirically, we determined that the $\alpha$ value roughly corresponds to half the log-odds ratio formed by the inverse of the cross-product of the two-way table for partners' group membership.[^twoway] We use this feature to benchmark a starting $\alpha$ of -5, which corresponds to a log-odds ratio of -10 and an odds of intergroup partnership of less than 0.0001. We then allow $\alpha$ to linearly decline over time, which indicates an exponential increase in the odds of intergroup partnership. For the "progress" scenario, this linear decline continues until $\alpha = 0$ after 100 years, at which point $\alpha$ remains at zero. For the "plateau" scenario, this linear decline continues until $\alpha$ is halved (-2.5) after 50 years and then remains constant. Thus, for the first fifty years of the simulations, the two intergroup partnership scenarios are identical. 
 
 [^twoway]: Formally, if $F_{ij}$ is the frequency of new marriages where $i$ is the husband's group and $j$ is the wife's group, the log-odds ratio is given by $\log(\frac{F_{AB}F_{BA}}{F_{AA}F_{BB}})$.
 
 To determine the actual union chosen, we sample from the available possibilities with weight equal to $O_{mw}$. This approach is equivalent to a conditional logit model approach in which the probability $p_i$ for a specific match $i$ from the available choice set would be given by:
 
-$$p_i = \frac{e^{O_i}}{\sum_{k=1}^{J} e^{O_j}}$$
+$$p_i = \frac{e^{O_i}}{\sum_{k=1}^{J} e^{O_j}}$$ {#eq-prob-odds1}
 
 Using this routine, it is possible for the same male partner to be chosen by two different women. In such cases, we remove duplicate selections randomly. We also found that it was necessary to set a benchmark for situations in which none of the potential male partners crossed a reasonable threshold for acceptability. In cases where women were left with four or fewer options or the highest odds ratio was below 0.12, we terminated the search for a partner and these women remain single for the next year. 
 
-When some groups are very small, sampling may lead to less intergroup partnering than implied by $\alpha$ because the small group will often not be sampled at all within the choice set of a given woman. To avoid this problem, we use stratified sampling of the groups, with a minimum of one member of each group (if greater than zero) in a given choice set.
+When some groups are very small, sampling may lead to less intergroup partnering than implied by $\alpha$ because the small group will often not be sampled at all within the choice set of a given woman. To avoid this problem, we use stratified sampling of the groups, with a minimum of one member of each group (if more than zero potential partners from this group were available) in a given choice set.
 
 ```{r}
 #| label: fig-marriage-lor
@@ -468,9 +468,9 @@ mar_summary |>
   theme_bw()
 ```
 
-@fig-marriage-lor shows the estimated log-odds ratios of an A-B integroup union over time across all simulations, separated by scenario types. For reference, twice the $\alpha$ value is shown by a red dashed line. The progress and plateau patterns are behaving exactly as expected and we observe no differences in the trend by the starting group distribution. The overall trend within each panel closely matches what was expected based on the $\alpha$ parameter. The only noticeable deviation from expectation is for the uneven starting group size scenario paired with the progress scenario. In this case, the empirical log-odds ratio has a tendency to fall somewhat below the expected value of zero near the end of the simulation. This deviation is a result of the very small size of group B in these scenarios, as discussed in the main paper. When a group is very small, the sampling procedure used to to determine potential partners can break down because the same small set of members are sampled across many possible partnerships. This bias is relatively small except for some years of the absorbing state scenarios. 
+@fig-marriage-lor shows the estimated log-odds ratios of an A-B integroup union over time across all simulations, separated by scenario types. For reference, twice the $\alpha$ value is shown by a red dashed line. The progress and plateau patterns are behaving exactly as expected and we observe no differences in the trend by the starting group distribution. The overall trend within each panel closely matches the expected trend based on the $\alpha$ parameter. The only noticeable deviation from expectation is for the uneven starting group size scenario paired with the progress scenario. In this case, the empirical log-odds ratio has a tendency to fall somewhat below the expected value of zero near the end of the simulation. This deviation is a result of the very small size of group B in these scenarios, as discussed in the main paper. When a group is very small, the sampling procedure used to to determine potential partners can break down because the same small set of members are sampled across many possible partnerships. This bias is relatively small except for some years of the absorbing state scenarios. 
 
-Importantly, the $\alpha$ parameters are indifferent to group size differences, which allows us to provide identical parameters across scenarios with different group sizes. The proportion of each group who will partner with members of another group, however, will vary substantially by group size even when $\alpha$ is held constant. @fig-marriage-out shows the proportion of A and B partners who who partner with a member of the other primary group (B and A, respectively) across time and simulation scenario. For the case of even population size, the these proportions are similar for A and B individuals because the group sizes are similar. For the uneven group sizes, however, the proportion is much higher for minority B individuals because they have many more options for partnership with group A than group A members have with group B.
+Importantly, the $\alpha$ parameters are indifferent to changes in group size, which allows us to provide identical parameters across scenarios with different group sizes. The actual proportion of each group who will partner with members of another group, however, will vary substantially by group size even when $\alpha$ is held constant. @fig-marriage-out shows the proportion of A and B partners who partner with a member of the other primary group (B and A, respectively) across time and simulation scenario. For the case of even population size, these proportions are similar for A and B individuals because their group sizes are similar. For the uneven group sizes, however, the proportion is much higher for minority B individuals because they have many more options for partnership with group A than group A members have with group B.
 
 ```{r}
 #| label: fig-marriage-out
@@ -496,7 +496,7 @@ mar_summary |>
 
 Notably, the proportion of outgroup partnering declines for the majority group A and increases for minority group B in the uneven group size scenarios in the last 100 years of the simulation, despite the fact that $\alpha$ is held constant during this period. This decline is a result of a decline in the relative size of the group B population making intergroup partnering more difficult for group A, but easier for group B. Some differences across classification scenario types are also driven by underlying group differences, or greater sampling variability when groups become very small (as in the absorbing state case).
 
-@fig-marriage-age compares the distribution of age at partnering for men and women by whether the union is within group or between group. In both cases, unions occur quite early for most individuals with a long right tail. This distribution of age at marriage does not match contemporary patterns in the United States or other developed countries, but for the purposes of our simulation is not necessary that the timing of union formation follow contemporary patterns. More importantly, we see no differences in the timing of unions depending on whether they are within or between group.
+@fig-marriage-age compares the distribution of age at partnering for men and women by whether the union is within group or between group. In both cases, unions occur quite early for most individuals. However, the long right tail of the distribution indicates that a small share of individuals continue to partner until they reach the age of cutoff (60 for women and 70 for men). This distribution of age at marriage does not match contemporary patterns in the United States or other developed countries, but for the purposes of our simulation is not necessary that the timing of union formation follow contemporary patterns. More importantly, we see no differences in the timing of unions depending on whether they are within or between group.
 
 
 ```{r}
@@ -521,7 +521,7 @@ sims_mar |>
 
 ```{r}
 #| label: fig-marriage-age-time
-#| fig-cap: Mean age of men and women by year of union, across all simulations.
+#| fig-cap: Mean age of men and women by year of union, pooled across all simulations.
 
 sims_mar |>
   group_by(year) |>
@@ -573,21 +573,21 @@ sims_mar |>
 
 
 
-## Group Assignment Modeling
+# Group Assignment Modeling
 
-A multinomial model used to determine group assignment as follows: 
+A multinomial model is used to determine group assignment as follows: 
 
-$$\log(O_{ij}) = \beta_{0j} + \beta_{1j}x_i + \beta_{2j}x_i^2 + \beta_{3j}x_i^3$$ 
+$$\log(O_{ij}) = \beta_{0j} + \beta_{1j}x_i + \beta_{2j}x_i^2 + \beta_{3j}x_i^3$$ {#eq-group-assignment}
 
 where $O_{ij}$ is the odds that individual $i$ is assigned to group $j$ and $x_i$ is the proportion of ancestors of individual $i$ that belong to group A (e.g. a "first generation" child of A and B parents would have 0.5 group A ancestors). We use a third degree polynomial function to allow for non-linearity in this function.
 
 To determine the probability of group assignment from this model, we use:
 
-$$P_{ij} = \frac{e^{O_{ij}}}{\sum_{k=1}^{J} e^{O_{ij}}}$$ 
+$$P_{ij} = \frac{e^{O_{ij}}}{\sum_{k=1}^{J} e^{O_{ij}}}$$ {#eq-prob-odds2}
 
-where $P_{ij}$ is the probability of group assignment to group $j$. We then sample a group assignment for each individual based on these probabilities.
+where $P_{ij}$ is the probability of group assignment to group $j$. We then sample a group assignment for each triggering individual based on these probabilities. Individuals only trigger a classification decision when their parents are classified into different groups. Otherwise, the child receives the same classification as the parents.
 
-This model requires twelve distinct $\beta$ parameters (three slopes and an intercept for each group $j$). To estimate these parameters, we determine probability of group identification at five points along the curve for each group that correspond to different generational loci. The values used for each scenario are shown in full in @tbl-gen-classification. For each scenario, we generate 60,000 individuals at the given values of proportion A ancestry (20,000 for the first generation and 10,000 for each of the other points). We then estimate the model above from this sample to empirically estimate the full parameters of the multinomial logit model. We can then use that model to estimate the probabilities at any value of proportion A ancestry. 
+This model requires twelve distinct $\beta$ parameters (three slopes and an intercept for each group $j$). To estimate these parameters, we determine probability of identification with each group at five points along the curve that correspond to different generational loci. The values used for each scenario are shown in full in @tbl-gen-classification. For each scenario, we generate 60,000 individuals at the given values of proportion A ancestry (20,000 for the first generation and 10,000 for each of the other points). We then use maximum likelihood estimation to estimate the parameters of the multinomial logit model shown in @eq-group-assignment. We can then use that model to estimate the probabilities of group membership at any value of proportion A ancestry. 
 
 ```{r}
 #| label: tbl-gen-classification
@@ -660,7 +660,7 @@ class_param |>
 
 The first point we consider is the case of an individual with equal ancestry from groups A and B. This case corresponds to the concept of a "first generation" biracial individual. The probability of AB identification for this case determines the "peak" values we use for the scenario. We assign probabilities of AB identification of 75% and 40% in our "high peak" and "low peak" scenarios, respectively. For individuals who do not identify as AB, we give them an equally likely probability of choosing group A or B.
 
-The next two points we consider are consistent with a "second generation" multiracial individual who has one AB parent and a parent from either A or B. This person would have 75% ancestry from one group and 25% from the other group. For these cases, we determine how much the probability of identifying as AB declines in percentage terms from the first generation case. In the "resilient" case, we specify a 10% decline from the first generation peak, while, in the "decay" case, we specify a 50% decline. We also have to decide how to divide up the probability between single race responses. We assume that the group whose ancestry is more common will be 10 times more likely to be chosen than the group whose ancestry is less common.
+The next two points we consider are consistent with a "second generation" multiracial individual who has one AB parent and a parent from either A or B. This person would have 75% ancestry from one group and 25% from the other group. For these cases, we determine how much the probability of identifying as AB declines in percentage terms from the first generation case. In the "resilient" case, we specify a 10% decline from the first generation peak, while, in the "decay" case, we specify a 50% decline. We also have to decide how to apportion the remaining probability between single race responses. We assume that the group whose ancestry is more common will be 10 times more likely to be chosen than the group whose ancestry is less common.
 
 The final two points correspond to a "third generation" multiracial individual who has seven great grandparents from one group and one great grandparent from the other group. We determine how much the probability of AB identification would decline from the second generation case. In the "resilient" case, we specify a 25% decline from the second generation value, while, in the "decay" case, we specify a 50% decline. For single race identification, we assume that the group whose ancestry is more common will be 50 times more likely to be chosen than the group whose ancestry is less common.
 
@@ -746,7 +746,7 @@ gp |>
 
 @fig-scenarios shows the probability of group assignment for the four classification scenarios, overlaid by the probabilities from @tbl-gen-classification that were used to fit the model. @fig-scenarios shows that the models fit the data quite closely. Some experimentation with the third generation ratios was necessary to avoid an increase in the reporting of the less common ancestry at extreme values, due to the polynomial fit. 
 
-@fig-ancestry-rules shows the empirical probabilities of group classification for individuals who trigger a classification decision (individuals whose parents identify with different groups). The lines show the probabilities derived from the model itself. @fig-ancestry-rules shows that the empirical estimates match closely with the expected probabilities from the model.
+@fig-ancestry-rules shows the empirical probabilities of group classification for individuals who trigger a classification decision (individuals whose parents identify with different groups). The lines show the expected probabilities derived from the model. The empirical estimates match closely with the expected probabilities from the model.
 
 ```{r}
 #| label: fig-ancestry-rules
@@ -791,7 +791,7 @@ sims_pop |>
 
 # Ternary Plots
 
-The main article shows change in the distribution of groups by stacked area plots. Another approach is to use a ternary plot. A ternary plot can be used to show changes in the relative distribution of three groups. Ternary plots are drawn on an equilateral triangle, where each side gives the relative share of one of the groups. Two of the axes are represented by diagonal lines, while the third axis is represented by horizontal lines giving the vertical dimension. A point drawn in the space represents a particular distribution of groups and lines can be drawn to show the shift or change in group distribution.
+The main article shows change in the distribution of groups by stacked area plots. Another approach is to use a ternary plot. A ternary plot can be used to show changes in the relative distribution of three groups. Ternary plots are drawn on an equilateral triangle, where each side gives the relative share of one of the groups. Two of the axes are represented by diagonal lines, while the third axis is represented by horizontal lines. A point drawn in the space represents a particular distribution of groups and lines can be drawn to show the shift or change in group distribution over time.
 
 ```{r}
 #| label: fig-ternary-plot-equilateral
@@ -832,8 +832,8 @@ total_pop_group |>
   guides(color = guide_legend(nrow = 2))
 ```
 
-@fig-ternary-plot-equilateral shows ternary plots of the change in group distribution across all of our simulations. Each combination of scenarios for intergroup partnering and starting group size are shown on separate panels, while the lines for for each classification scenario are shown by different colors within each panel. Dots are shown at 20 year intervals. We set the relative size of the AB group as the vertical dimension, so the height of each point indicates the relative size of the AB group. The A and B groups are drawn to the left and right vertices, respectively, so that as the lines shifts to (from) the left or right, it indicates an increase (decrease) in that group size. 
+@fig-ternary-plot-equilateral shows ternary plots of the change in group distribution across all of our simulations. Each combination of scenarios for intergroup partnering and starting group size are shown on separate panels, while the lines for for each classification scenario are shown by different colors within each panel. Dots are shown at 20 year intervals. We set the relative size of the AB group as the vertical dimension, so the height of each point indicates the relative size of the AB group. The A and B groups are drawn to the left and right vertices, respectively, so  that shifts toward (away from) that vertex indicate an increase (decrease) in that group's size. 
 
-The bottom panels for even starting group size show the simplest pattern. Across all classification scenarios, the AB population grows at the equal expense of the A and B groups, leading to vertical lines that differ only in their height. Those differences in height are substantial, indicating that the classification process plays a large role in the growth of the AB population.
+The bottom panels for the case of an even starting group size both show a simple pattern. Across all classification scenarios, the AB population grows at the equal expense of the A and B groups, leading to vertical lines that differ only in their height. Those differences in height are substantial, indicating that the classification process plays a large role in the growth of the AB population.
 
-For the unequal group size scenarios shown in the upper panels, we see a more complex pattern. While we see initial growth in the AB population here as well, that growth comes more at the expense of the minority B group, as indicated by the leftward shift in the points. For some scenarios, we also see a bend in which the AB population itself begins to decline and the distribution moves toward the A vertex. This indicates that the ultimately it is the A population that will become the absorbing state. 
+For the unequal group size scenarios shown in the upper panels, we see a more complex pattern. While we see initial growth in the AB population, that growth comes more at the expense of the minority B group, as indicated by the leftward shift in the points. For some scenarios, we also see a bend in which the AB population itself begins to decline and the distribution moves toward the A vertex. In those scenarios, the A population is the absorbing state. 
