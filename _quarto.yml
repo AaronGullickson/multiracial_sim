@@ -17,7 +17,7 @@ project:
 # bibliography information
 reference-section-title: References
 bibliography: ../bibliography/project.bib
-csl: ../bibliography/chicago-parenthetical.csl
+csl: ../bibliography/demographic-research.csl
 
 author:
   - name: Aaron Gullickson
