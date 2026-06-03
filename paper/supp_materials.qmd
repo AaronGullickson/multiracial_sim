@@ -7,8 +7,11 @@ format:
     fig-width: 7.5
     colorlinks: true
     urlcolor: red
+    include-in-header:
+      - text: \pagenumbering{gobble}
 header-includes:
   - \renewcommand{\thefigure}{S\arabic{figure}}
+  
 ---
 
 ```{r}

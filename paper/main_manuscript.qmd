@@ -21,6 +21,8 @@ format:
     titlepage: false
     linestretch: 2
     fontsize: 12pt
+    include-in-header:
+      - text: \pagenumbering{gobble}
   submittable-docx: default
 ---
 
