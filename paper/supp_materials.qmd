@@ -326,15 +326,22 @@ pop_growth <- total_pop |>
          growth_rate)
 ```
 
-# Diagnostic Checks on Demographic Measures
+This supplementary appendix expands on methodological details of the simulation approach used in the main paper. We begin by showing diagnostic checks on the demographic parameters governing the simulation to ensure they are producing the expected output. We then proceed to describe the modeling procedure used for union formation in more detail, with additional diagnostic checks. We then describe the estimation of the model used for group assignment, with additional diagnostic checks. We conclude by displaying alternate ternary plots for showing the change in group distribution over time in the simulation.
+
+# Diagnostic Checks on Demographic Parameters
 
 We check the actual demographic rates from our simulation compared to those expected from the input. To do so, we calculate age-specific fertility and mortality rates at 25 year intervals across each simulation.
 
 We first estimate age-specific mortality rates and corresponding life tables. We use five year age groups, except for the first year of life which we split into a [0,1) and [1, 4) group. The open-ended age group is 100+. We estimate separate rates for men and women. The mortality rates we input into the simulation are from the USA in 2000 and produce life expectancy of birth of 79.5 for women and 74.1 for men.
 
 ```{r}
-#| label: fig-life-expectancy
-#| fig-cap: Life expectancy at zero for men and women, in 25 year periods. Each point represents a separate simulation, with a loess smoother applied across simulations. Dashed lines indicate the life expectancy values estimated from the age-specific mortality rates uses as input to the simulation.
+#| label: fig-dem-parameter
+#| fig-cap: Demographic summary measures, in 25 year periods.Each point represents a separate simulation, with a loess smoother applied across simulations. Dashed lines indicate expected values based on age-specific rates used as input to the simulation.
+#| layout-ncol: 2
+#| fig-height: 6
+#| fig-subcap: 
+#|   - "Life expectancy at zero for men and women" 
+#|   - "Total fertility rate for women"
 
 life_expectancy <- life_tables |>
   filter(x == 0) |>
@@ -352,28 +359,24 @@ life_expectancy |>
   scale_color_manual(values = palette_sex)+
   labs(y = "life expectancy at birth", x = "year of simulation")+
   theme_bw()
-```
-
-@fig-life-expectancy shows the estimated life expectancy at birth for men and women across all simulations at 25 year intervals. The dotted lines show the life exceptancy at birth anticipated from the input data. @fig-life-expectancy shows a very close fit between the empirically estimated life expectancy at birth and the "true" life expectancy. All of the simulations for a given period are also very close, with no observable outliers. We also observe no change over time in life expectancy at birth. 
-
-Age-specific fertility rates are estimated based on five year age groups over 25 year periods. The age-specific fertility rates we use as the input for the simulation produce a total fertility rate (TFR) of 2.36. However, we only allow childbearing among partnered women because we must track the group of both partners. Therefore, our actual TFR will be somewhat lower than 2.36 because women do not spend all their person-years in each age category in a partnered state.
-
-```{r}
-#| label: fig-tfr
-#| fig-cap: Total fertility rate, in 25 year periods. Each point represents a separate simulation, with a loess smoother applied across simulations.
 
 tfr |>
   convert_year_group() |>
   ggplot(aes(x = year_midpoint, y = tfr))+
   geom_smooth(se = FALSE)+
   geom_point(alpha = 0.6)+
+  geom_hline(yintercept = 2.36, linetype = 2)+
   labs(y = "total fertility rate", x = "year of simulation")+
   scale_y_continuous(limits = c(1.75, 2.5))+
   scale_x_continuous(breaks = seq(from = 0, to= 300, by = 25))+
   theme_bw()
 ```
 
-@fig-tfr shows the empirically estimated TFR over time across all simulations. As expected the overall TFR is lower than 2.36. Across all simulations, the average TFR was 2.12. The TFR does not vary across time.
+@fig-dem-parameter-1 shows the estimated life expectancy at birth for men and women across all simulations at 25 year intervals. The dotted lines show the life expectancy at birth anticipated from the input data. @fig-dem-parameter-1 shows a very close fit between the empirically estimated life expectancy at birth and the "true" life expectancy. All of the simulations for a given period are also very close, with no observable outliers. We also observe no change over time in life expectancy at birth. 
+
+Age-specific fertility rates are estimated based on five year age groups over 25 year periods. The age-specific fertility rates we use as the input for the simulation produce a total fertility rate (TFR) of 2.36. However, we only allow childbearing among partnered women because we must track the group of both partners. Therefore, our actual TFR will be somewhat lower than 2.36 because women do not spend all their person-years in each age category in a partnered state.
+
+@fig-dem-parameter-2 shows the empirically estimated TFR over time across all simulations. As expected the overall TFR is lower than 2.36. Across all simulations, the average TFR was 2.12. The TFR does not vary across time.
 
 To check how quickly the simulations converge to a stable population, we estimate annual population growth rates at 10 year intervals. @fig-growth-rate these growth rates across all simulations. The population experiences an unusually high growth rate in the initial period of the simulation because the age distribution of the starting population is not the long term stable population distribution. Instead we draw uniformly from an age distribution up to age 70, which leads to a faster growing population. However, by year 100, the population has settled into a constant stable population growth rate of about 0.1% per year. 
 
@@ -575,7 +578,7 @@ sims_mar |>
 
 # Group Assignment Modeling
 
-A multinomial model is used to determine group assignment as follows: 
+We use a multinomial model to determine group assignment as follows: 
 
 $$\log(O_{ij}) = \beta_{0j} + \beta_{1j}x_i + \beta_{2j}x_i^2 + \beta_{3j}x_i^3$$ {#eq-group-assignment}
 
