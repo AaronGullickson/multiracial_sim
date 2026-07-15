@@ -1,5 +1,6 @@
 ---
 title: "Supplementary Materials for The Dynamics of Population Mixing: A Simulation Approach"
+author: []
 format:
   pdf:
     keep-tex: false
