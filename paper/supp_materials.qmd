@@ -3,6 +3,8 @@ title: "Supplementary Materials for The Dynamics of Population Mixing: A Simulat
 format:
   pdf:
     keep-tex: false
+    toc: true
+    number-sections: true
     fig-pos: "tb"
     fig-width: 7.5
     colorlinks: true
@@ -11,7 +13,7 @@ format:
       - text: \pagenumbering{gobble}
 header-includes:
   - \renewcommand{\thefigure}{S\arabic{figure}}
-  
+  - \renewcommand{\thesection}{S\arabic{section}}
 ---
 
 ```{r}
