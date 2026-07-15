@@ -112,21 +112,8 @@ total_pop_ancestry <- map(years_runin:(years_runin + 200), function(x) {
 
 # Abstract
 
-## BACKGROUND
-
 The population processes involved in the growth of a self-identified multiracial population are complex and depend on a variety of social factors not easily captured in standard demographic projections.
-
-## METHODS
-
-We use a microsimulation approach with a two-group population to explore how variation in relative group size, the frequency of intergroup partnering, and the probability of self-identification contribute to the growth of a self-identified multiracial population over a 200-year simulation period.
-
-## RESULTS
-
-Under most realistic scenarios, the tendency for mixed-ancestry lineages to fold back into single-race identification leads to relatively modest growth in the multiracial population. Furthermore, in cases of unequal starting group size, the most liberal partnering scenarios can lead to the growth of the majority population at the expense of both the minority and multiracial populations.
-
-## CONTRIBUTIONS
-
-Our results underscore the many factors that would have to align to produce a "post-racial" utopia of population mixing, not only in the U.S. case that inspired our simulated scenarios but more broadly in places seeking to understand how the presence of racial or ethnic diversity might shape future population dynamics. 
+We use a microsimulation approach with a two-group population to explore how variation in relative group size, the frequency of intergroup partnering, and the probability of self-identification contribute to the growth of a self-identified multiracial population over a 200-year simulation period. Under most realistic scenarios, the tendency for mixed-ancestry lineages to fold back into single-race identification leads to relatively modest growth in the multiracial population. Furthermore, in cases of unequal starting group size, the most liberal partnering scenarios can lead to the growth of the majority population at the expense of both the minority and multiracial populations. Our results underscore the many factors that would have to align to produce a "post-racial" utopia of population mixing, not only in the U.S. case that inspired our simulated scenarios but more broadly in places seeking to understand how the presence of racial or ethnic diversity might shape future population dynamics. 
 
 
 # Introduction
